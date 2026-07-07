@@ -1,6 +1,5 @@
 (function(){
-  const SHEET_ID='1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4';
-  const DEFAULT_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
+  const DEFAULT_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vR9ia11l3jmxAp2Fpvs64i6fQMPYNU7ffViZkJmUdHoRScK-xAfH32rsbpM3d40BtGMknixtxLUBHV7/pub?output=csv';
   let rows=[];
 
   function normalizeUrl(input){
@@ -58,8 +57,10 @@
   }
 
   async function loadFromUrl(){
-    const saved=LWHStorage.get('inventoryUrl',DEFAULT_URL);
-    const url=normalizeUrl(saved);
+    let saved=LWHStorage.get('inventoryUrl','');
+    // Migrate the first test Sheet URL to the published CSV URL Tim provided.
+    if(saved.includes('1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4')) saved=DEFAULT_URL;
+    const url=normalizeUrl(saved || DEFAULT_URL);
     if(url!==saved) LWHStorage.set('inventoryUrl',url);
     invStatus.textContent='Loading inventory...';
     const res=await fetch(url,{cache:'no-store'});
