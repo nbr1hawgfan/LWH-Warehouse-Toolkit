@@ -1,15 +1,14 @@
 {
   "name": "LWH Warehouse Toolkit",
   "short_name": "LWH Toolkit",
-  "description": "Logistics Warehouse label, sign, QR, and visitor badge toolkit.",
+  "description": "Warehouse labels, signs, visitor badges, and inventory lookup for Logistics Warehouse.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#7a0019",
   "icons": [
-    {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
