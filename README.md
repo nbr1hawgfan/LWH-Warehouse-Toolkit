@@ -1,19 +1,24 @@
-# LWH Warehouse Toolkit v1.1.0
+# LWH Warehouse Toolkit v1.1.4
 
-Installable PWA for Logistics Warehouse operations.
+Patch focus:
 
-## What's included
-- Inventory Lookup from Google Sheet CSV/export or pasted Excel/Sheet data
-- Print pallet labels directly from lookup results
-- Improved 4x6 rack label layout using more label width
-- Smart batch numbering by start/end bay
-- Settings page for company name, logo, primary color, calibration, and inventory source
-- Rack labels, 8.5x11 signs, pallet labels, contact QR cards, visitor badges
-- PWA manifest and service worker for GitHub Pages install/offline support
+- Hard-coded Tim's published Google CSV as the default inventory source.
+- Shows the exact URL being loaded on the Inventory Lookup screen.
+- Adds Reset to Default CSV in Settings.
+- Improves lookup error messages so a failed URL is visible.
+- Updates service worker cache to v1.1.4 and uses network-first for app files.
+- Keeps 4x6 auto-fit label improvements from v1.1.3.
 
-## Deployment
-Upload the contents of this folder to the root of your GitHub Pages repo.
-Then hard refresh the site with Ctrl+Shift+R.
+## Changed files
 
-## Inventory source
-Default source is the current Google Sheet CSV export URL. If loading fails, publish/share the sheet for read access or use the Lookup screen paste option.
+Replace these files in the repo:
+
+```text
+index.html
+service-worker.js
+js/app.js
+js/inventory.js
+js/labels.js
+```
+
+After upload, open the app and press Ctrl+Shift+R. If the old app still appears, open DevTools > Application > Service Workers > Unregister, then refresh.
