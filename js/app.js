@@ -3,7 +3,7 @@ function applySettings(){
   const company=LWHStorage.get('companyName','Logistics Warehouse'); document.getElementById('companyTitle').textContent=company+' Toolkit'; setCompany.value=company;
   const color=LWHStorage.get('primaryColor','#7a0019'); document.documentElement.style.setProperty('--maroon',color); setColor.value=color;
   const logo=LWHStorage.get('companyLogo',''); if(logo){brandLogoBox.hidden=false; brandLogoBox.style.backgroundImage=`url(${logo})`;} else {brandLogoBox.hidden=true;}
-  let invUrl=LWHStorage.get('inventoryUrl',''); if(invUrl.includes('1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4')){invUrl=LWHInventory.DEFAULT_URL; LWHStorage.set('inventoryUrl',invUrl);} setInventoryUrl.value=invUrl||LWHInventory.DEFAULT_URL; calX.value=LWHStorage.get('calX',0); calY.value=LWHStorage.get('calY',0); calScale.value=LWHStorage.get('calScale',100);
+  let invUrl=LWHStorage.get('inventoryUrl',''); if(invUrl.includes('1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4')){invUrl=LWHInventory.DEFAULT_URL; LWHStorage.set('inventoryUrl',invUrl);} setInventoryUrl.value=invUrl||LWHInventory.DEFAULT_URL; if(window.invCurrentUrl) invCurrentUrl.textContent=setInventoryUrl.value; calX.value=LWHStorage.get('calX',0); calY.value=LWHStorage.get('calY',0); calScale.value=LWHStorage.get('calScale',100);
   statPrints.textContent=LWHStorage.get('printJobs',0); statLookups.textContent=LWHStorage.get('lookupCount',0); statVisitors.textContent=(LWHStorage.get('visitorLog',[])||[]).length;
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;installBtn.hidden=false});
@@ -18,13 +18,13 @@ conGenerate.onclick=()=>{LWHLabels.generateContact();applySettings()}; conSample
 visGenerate.onclick=()=>{LWHVisitors.generateVisitor();setTimeout(applySettings,100)}; visLogBtn.onclick=LWHVisitors.showVisitorLog;
 invSearchBtn.onclick=()=>{const res=LWHInventory.search(invSearch.value); LWHInventory.render(res); LWHStorage.set('lookupCount',(+LWHStorage.get('lookupCount',0))+1); applySettings();};
 invSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();invSearchBtn.click();}};
-invLoadBtn.onclick=async()=>{try{await LWHInventory.loadFromUrl();LWHUI.toast('Inventory loaded')}catch(e){invStatus.textContent='Could not load inventory URL. Try publishing the Sheet or use paste mode. '+e.message;}};
+invLoadBtn.onclick=async()=>{try{await LWHInventory.loadFromUrl();LWHUI.toast('Inventory loaded')}catch(e){invStatus.textContent='Inventory load failed: '+e.message; console.error(e);}};
 invPasteBtn.onclick=()=>{const rows=LWHInventory.parseDelimited(invPaste.value);LWHStorage.set('inventoryRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted row(s)`)};
 saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#7a0019');LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
 saveCalibration.onclick=()=>{LWHStorage.set('calX',calX.value||0);LWHStorage.set('calY',calY.value||0);LWHStorage.set('calScale',calScale.value||100);LWHUI.toast('Calibration saved')};
-saveInventoryUrl.onclick=()=>{LWHStorage.set('inventoryUrl',setInventoryUrl.value||LWHInventory.DEFAULT_URL);LWHUI.toast('Inventory source saved')};
-testInventoryUrl.onclick=async()=>{try{await LWHInventory.loadFromUrl();LWHUI.toast('Inventory source works')}catch(e){LWHUI.toast('Inventory load failed')}};
+saveInventoryUrl.onclick=()=>{const url=LWHInventory.normalizeUrl(setInventoryUrl.value||LWHInventory.DEFAULT_URL); LWHStorage.set('inventoryUrl',url); setInventoryUrl.value=url; if(window.invCurrentUrl) invCurrentUrl.textContent=url; LWHUI.toast('Inventory source saved')};
+testInventoryUrl.onclick=async()=>{try{await LWHInventory.loadFromUrl();LWHUI.toast('Inventory source works')}catch(e){invStatus.textContent='Inventory test failed: '+e.message; LWHUI.toast('Inventory load failed')}}; if(window.resetInventoryUrl){resetInventoryUrl.onclick=()=>{LWHInventory.resetSource(); LWHUI.toast('Inventory source reset')}};
 calRack.onclick=()=>{rackList.value='TEST-4X6';LWHUI.show('rack');LWHLabels.generateRack();setTimeout(()=>print(),250)};
 calLetter.onclick=()=>{signList.value='TEST SIGN';LWHUI.show('signs');LWHLabels.generateSigns();setTimeout(()=>print(),250)};
 clearStorage.onclick=()=>{if(confirm('Clear saved settings and cached data?')){LWHStorage.clear();applySettings();LWHUI.toast('Saved settings cleared')}};
