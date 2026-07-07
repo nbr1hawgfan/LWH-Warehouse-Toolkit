@@ -1,6 +1,61 @@
 function page(cls,html){const d=document.createElement('div');d.className='label-page '+cls;d.innerHTML=html;const x=+LWHStorage.get('calX',0),y=+LWHStorage.get('calY',0),sc=+LWHStorage.get('calScale',100);d.style.transform=`translate(${x}px,${y}px) scale(${sc/100})`;d.style.transformOrigin='top left';return d}
 function finishBarcodes(root){root.querySelectorAll('svg[data-barcode]').forEach(svg=>LWHBarcode.make(svg,svg.dataset.barcode,{height:+svg.dataset.height||80,width:+svg.dataset.width||2}));root.querySelectorAll('.qrbox[data-qr]').forEach(q=>LWHQR.make(q,q.dataset.qr,+q.dataset.size||110));}
-function generateRack(){const out=document.getElementById('rackOutput');out.innerHTML='';const vals=LWHUI.lines(rackList.value);const copies=+rackCopies.value||1;vals.forEach(v=>{for(let i=0;i<copies;i++){out.append(page(`rack-label rack-${rackSpacing.value}`,`<div class="rack-title">${LWHUI.safe(v)}</div><div class="rack-code-row"><div class="barcode-wrap"><svg data-barcode="${LWHUI.safe(v)}" data-height="${rackBarcodeHeight.value}" data-width="${rackBarcodeWidth.value}"></svg><div class="barcode-text">${LWHUI.safe(v)}</div></div><div class="qrbox" data-qr="${LWHUI.safe(v)}" data-size="126"></div></div>`))}});finishBarcodes(out);LWHStorage.set('rackList',rackList.value);LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);LWHUI.toast(`Generated ${out.children.length} rack label(s)`)}
+
+function autoFitText(el,minPx=30){
+  if(!el)return;
+
+  const cs=getComputedStyle(el);
+  const maxPx=parseFloat(el.dataset.maxFont || cs.fontSize) || 108;
+  const rect=el.getBoundingClientRect();
+
+  // Use actual content box width instead of scrollWidth only. This is much more
+  // reliable on print-sized elements and flex-centered text.
+  const padX=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
+  const padY=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
+  const boxW=Math.max(10,(rect.width || el.clientWidth)-padX-10);
+  const boxH=Math.max(10,(rect.height || el.clientHeight)-padY-6);
+  const text=(el.textContent||'').trim();
+
+  const canvas=autoFitText._canvas || (autoFitText._canvas=document.createElement('canvas'));
+  const ctx=canvas.getContext('2d');
+  let size=maxPx;
+
+  function measure(px){
+    ctx.font=`${cs.fontStyle} ${cs.fontWeight} ${px}px ${cs.fontFamily}`;
+    return ctx.measureText(text).width;
+  }
+
+  const measured=measure(maxPx);
+  if(measured>boxW){
+    size=Math.floor(maxPx*(boxW/measured));
+  }
+
+  // Also protect the title height, because some Zebra/browser combos render fonts taller.
+  const lineHeightRatio=0.98;
+  size=Math.min(size,Math.floor(boxH/lineHeightRatio));
+  size=Math.max(minPx,Math.min(maxPx,size));
+
+  el.style.fontSize=size+'px';
+  el.style.lineHeight='0.95';
+  el.style.whiteSpace='nowrap';
+  el.style.overflow='hidden';
+  el.style.textOverflow='clip';
+
+  // Final safety loop for browser differences.
+  let guard=0;
+  while(size>minPx && guard<30 && (el.scrollWidth>el.clientWidth+1 || el.scrollHeight>el.clientHeight+2)){
+    size-=2;
+    el.style.fontSize=size+'px';
+    guard++;
+  }
+}
+function autoFitRackTitles(root){
+  // Run now and once more after barcode/QR rendering and layout settle.
+  root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,28));
+  requestAnimationFrame(()=>root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,28)));
+}
+
+function generateRack(){const out=document.getElementById('rackOutput');out.innerHTML='';const vals=LWHUI.lines(rackList.value);const copies=+rackCopies.value||1;vals.forEach(v=>{for(let i=0;i<copies;i++){out.append(page(`rack-label rack-${rackSpacing.value}`,`<div class="rack-title">${LWHUI.safe(v)}</div><div class="rack-code-row"><div class="barcode-wrap"><svg data-barcode="${LWHUI.safe(v)}" data-height="${rackBarcodeHeight.value}" data-width="${rackBarcodeWidth.value}"></svg><div class="barcode-text">${LWHUI.safe(v)}</div></div><div class="qrbox" data-qr="${LWHUI.safe(v)}" data-size="126"></div></div>`))}});autoFitRackTitles(out);finishBarcodes(out);LWHStorage.set('rackList',rackList.value);LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);LWHUI.toast(`Generated ${out.children.length} rack label(s)`)}
 function generateBatch(start,end,pad){const m=String(start).match(/^(.*?)(\d+)$/);if(!m)return '';const prefix=m[1],num=+m[2];const width=pad||m[2].length;let count=1;const em=String(end||'').match(/^(.*?)(\d+)$/);if(em){count=(+em[2]-num)+1}else{count=+end||1} if(count<1)count=1;return Array.from({length:count},(_,i)=>prefix+String(num+i).padStart(width,'0')).join('\n')}
 function generateSigns(){const out=signOutput;out.innerHTML='';LWHUI.lines(signList.value).forEach(v=>{out.append(page(`sign-page ${signOrientation.value==='portrait'?'portrait':''}`,`<div class="sign-title">${LWHUI.safe(v)}</div><div class="sign-subtitle">${LWHUI.safe(signSubtitle.value||'Scan location barcode')}</div><div class="sign-codes">${signShowBarcode.checked?`<div class="barcode-wrap"><svg data-barcode="${LWHUI.safe(v)}" data-height="150" data-width="3"></svg><div class="barcode-text">${LWHUI.safe(v)}</div></div>`:''}${signShowQR.checked?`<div class="qrbox" data-qr="${LWHUI.safe(v)}" data-size="210"></div>`:''}</div>`))});finishBarcodes(out);LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);LWHUI.toast(`Generated ${out.children.length} sign(s)`)}
 function palletDataFromSimple(){return[{lwhid:palLwhid.value,custId:palCustId.value,customer:palCustomer.value,bay:palBay.value,item:palItem.value,lot:palLot.value,qty:palQty.value,date:palDate.value,desc:palDesc.value}]}
