@@ -1,34 +1,19 @@
-# LWH Warehouse Toolkit v1.0.0
+# LWH Warehouse Toolkit v1.1.0
 
-Installable GitHub Pages PWA for Logistics Warehouse tag/sign generation.
+Installable PWA for Logistics Warehouse operations.
 
-## Included modules
+## What's included
+- Inventory Lookup from Google Sheet CSV/export or pasted Excel/Sheet data
+- Print pallet labels directly from lookup results
+- Improved 4x6 rack label layout using more label width
+- Smart batch numbering by start/end bay
+- Settings page for company name, logo, primary color, calibration, and inventory source
+- Rack labels, 8.5x11 signs, pallet labels, contact QR cards, visitor badges
+- PWA manifest and service worker for GitHub Pages install/offline support
 
-- 4x6 Rack Labels
-- 8.5x11 Bay / Aisle Signs
-- Pallet Labels with Simple Entry and Bulk Paste
-- Contact QR Cards with optional logo
-- Visitor Badges with visitor log
-- PWA manifest and service worker
+## Deployment
+Upload the contents of this folder to the root of your GitHub Pages repo.
+Then hard refresh the site with Ctrl+Shift+R.
 
-## Deploy
-
-Upload all files/folders to the root of your GitHub Pages repo:
-
-```text
-index.html
-manifest.json
-service-worker.js
-css/
-js/
-icons/
-assets/
-README.md
-```
-
-Then hard refresh the published GitHub Pages URL with Ctrl+Shift+R.
-Chrome/Edge should show Install App once the manifest and service worker are detected.
-
-## Important
-
-This app uses JsBarcode and QRCode.js from CDN for barcode/QR rendering. The service worker will cache them after first successful load.
+## Inventory source
+Default source is the current Google Sheet CSV export URL. If loading fails, publish/share the sheet for read access or use the Lookup screen paste option.
