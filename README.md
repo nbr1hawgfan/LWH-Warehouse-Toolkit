@@ -1,19 +1,21 @@
-# LWH Warehouse Toolkit v1.1.5
+# LWH Warehouse Toolkit v1.1.6
 
-## Changed in this release
-- Added Customer ID QR code to pallet labels.
-- Fixed pallet bulk import mapping for Google Sheets/Excel paste.
-- Added Location to pallet simple entry, bulk import, and pallet labels.
-- Added Android/Chrome/Edge camera barcode scanning for Inventory Lookup using the browser BarcodeDetector API.
-- Updated PWA cache to force fresh files.
+Maintenance release focused on scanner fallback and pallet label print fit.
 
-## Files changed from v1.1.4
+## Changed in v1.1.6
+- Added camera scanner fallback path for browsers without native BarcodeDetector support.
+- Improved scanner messaging for PC and Android.
+- Tightened pallet label layout so barcodes/QR codes fit inside the 4x6 label.
+- Reduced pallet label barcode/QR sizes to prevent bottom clipping.
+- Kept Customer ID QR on pallet labels.
+
+## Replace for patch
+Replace these files in the GitHub repo:
 - index.html
+- service-worker.js
 - css/app.css
-- js/app.js
-- js/inventory.js
 - js/labels.js
 - js/scanner.js
-- service-worker.js
 - README.md
 
+After upload, hard refresh and/or clear the PWA cache if an older version remains.
