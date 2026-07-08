@@ -183,9 +183,9 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pallet-codes .qrbox canvas,.pallet-codes .qrbox img{max-width:.72in!important;max-height:.72in!important}
 .qr-labeled{text-align:center;font-size:.065in;font-weight:900;line-height:1.0}
 .qr-labeled .qrbox{margin:0 auto}
-.cust-id-qr .qr-heading{font-size:.06in;font-weight:900;line-height:1;margin-bottom:.01in}
-.cust-id-qr .cust-qr-value{font-size:.072in;font-weight:900;line-height:1.05;max-width:1in;overflow:hidden;text-overflow:clip;white-space:nowrap;margin-top:.01in}
-.cust-id-qr{min-width:.82in}
+.cust-id-qr .qr-heading{font-size:.075in;font-weight:900;line-height:1;margin-bottom:.01in}
+.cust-id-qr .cust-qr-value{font-size:.095in;font-weight:900;line-height:1.05;max-width:1.15in;overflow:hidden;text-overflow:clip;white-space:nowrap;margin-top:.01in}
+.cust-id-qr{min-width:.95in}
 .contact-card{width:3.375in;height:2.125in;padding:.12in;border:1px solid #000;display:flex;gap:.12in;align-items:center}
 .contact-card.qronly{justify-content:center}
 .contact-info{font-size:.13in;line-height:1.2}
