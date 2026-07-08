@@ -19,6 +19,6 @@
 - Manager dashboard
 - Query library
 
-## Added in v1.2.1
+## Added in v1.2.2
 
 - Customer Lookup module with all-field search and friendly labels.

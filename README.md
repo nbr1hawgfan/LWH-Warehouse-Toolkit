@@ -1,8 +1,8 @@
-# LWH Warehouse Toolkit v1.2.1
+# LWH Warehouse Toolkit v1.2.2
 
 Internal PWA for Logistics Warehouse labels, signs, visitor badges, inventory lookup, receiving label printing, camera scanning, and customer lookup.
 
-## v1.2.1 additions
+## v1.2.2 additions
 
 - New **Customer Lookup** module.
 - Separate Customer Lookup CSV source.

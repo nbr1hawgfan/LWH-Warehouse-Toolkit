@@ -1,6 +1,15 @@
 # Changelog
 
-## v1.2.1
+## v1.2.2
+- Changed Master Lookup to use the expanded customer inventory CSV as the default source.
+- Added automatic CSV loading on app startup so users do not have to click Load first.
+- Main lookup now supports the expanded customer fields while keeping pallet label printing.
+- Customer ID now prints as readable text under the Customer ID QR on pallet labels.
+- Kept Customer Lookup as a detailed phone-call lookup view with all columns visible/searchable.
+
+# Changelog
+
+## v1.2.2
 
 - Added Customer Lookup module.
 - Added separate Customer Lookup CSV data source.

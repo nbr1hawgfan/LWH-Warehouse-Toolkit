@@ -1,5 +1,5 @@
 (function(){
-  const DEFAULT_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vQrB8PJ7Mok49e-HmIrEmArRUMyRkA8d1bhq0PIbkp80pEN3viACRzh0y7XxWSmw3EmqjIfXfWZv6af/pub?output=csv';
+  const DEFAULT_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vR88eoG2Hhmq_JCsS_jZMnBiTWlcmehB4i0A5Z6BXZ2oykJ0KqGB6IhrZc0Tr5l5ZOYxtuy8OffpPL-/pub?output=csv';
   const CUSTOMER_DEFAULT_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vR88eoG2Hhmq_JCsS_jZMnBiTWlcmehB4i0A5Z6BXZ2oykJ0KqGB6IhrZc0Tr5l5ZOYxtuy8OffpPL-/pub?output=csv';
   const OLD_SHEET_ID='1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4';
   let rows=[];
@@ -67,6 +67,10 @@
       datereceived:'dateReceived', received:'dateReceived', receiveddate:'dateReceived'
     };
     const idx={}; head.forEach((h,i)=>{ if(map[h] && idx[map[h]]===undefined) idx[map[h]]=i; });
+    const customerMasterLayout=head.join('|').startsWith('controlnumber|invreceipt|subcustnm|itemnm|lotnum|qty|location|comments|vendor|unique2|unique3|unique5|unique6|unique7|unique8|warehouse|bayname|stillininventory|currentbay');
+    if(customerMasterLayout){
+      return parseCustomerDelimited(text).map(customerToPalletRow).filter(r=>Object.values(r).some(Boolean));
+    }
     const known13=head.join('|').startsWith('location|lwhid|customerid|customer|invrec|billtoref|itemnm|itemdesc|lotnum|qty|units|bayname|datereceived');
     if(known13) Object.assign(idx,{location:0,lwhid:1,custId:2,customer:3,invRec:4,billToRef:5,item:6,desc:7,lot:8,qty:9,units:10,bay:11,dateReceived:12});
     const hasHeader=Object.keys(idx).length>=2; const data=hasHeader?lines:[rawHead,...lines];
@@ -121,8 +125,8 @@
   async function loadCustomerFromUrl(){ const url=getCustomerUrl(); customerStatus('Loading customer lookup from: '+url); const {text,ctype}=await fetchText(url); customerRows=(ctype.includes('json')||/^[\s\r\n]*[\[{]/.test(text))?parseCustomerJson(JSON.parse(text)):parseCustomerDelimited(text); LWHStorage.set('customerLookupRows',customerRows); customerStatus(`Loaded ${customerRows.length} customer lookup row(s).`); return customerRows; }
   function parseCustomerJson(data){ const arr=Array.isArray(data)?data:(data&&(data.rows||data.data))||[]; return arr.map(x=>({controlNumber:x.ControlNumber||x.controlNumber||'',invReceipt:x.INV_Receipt||x.InvRec||x.invReceipt||'',subCustNm:x.SubCustNm||x.Customer||'',itemNm:x.ItemNm||'',lotNum:x.LotNum||'',qty:x.Qty||'',location:x.Location||'',comments:x.Comments||'',vendor:x.Vendor||'',unique2:x.Unique2||'',unique3:x.Unique3||'',unique5:x.Unique5||'',unique6:x.Unique6||'',unique7:x.Unique7||'',unique8:x.Unique8||'',warehouse:x.Warehouse||'',bayName:x.BayName||'',stillInInventory:x.Still_In_Inventory||'',currentBay:x.CurrentBay||''})); }
 
-  function loadCached(){ rows=LWHStorage.get('inventoryRows',[]); customerRows=LWHStorage.get('customerLookupRows',[]); setCurrentUrl(LWHStorage.get('inventoryUrl',DEFAULT_URL)||DEFAULT_URL); setCustomerCurrentUrl(LWHStorage.get('customerLookupUrl',CUSTOMER_DEFAULT_URL)||CUSTOMER_DEFAULT_URL); status(rows.length?`Using ${rows.length} cached row(s).`:'Inventory not loaded yet.'); customerStatus(customerRows.length?`Using ${customerRows.length} cached customer lookup row(s).`:'Customer lookup not loaded yet.'); }
-  function resetSource(){ LWHStorage.set('inventoryUrl',DEFAULT_URL); const input=el('setInventoryUrl'); if(input) input.value=DEFAULT_URL; setCurrentUrl(DEFAULT_URL); status('Inventory source reset to the published CSV link. Click Load / Refresh Data.'); }
+  function loadCached(){ rows=LWHStorage.get('inventoryRows',[]); customerRows=LWHStorage.get('customerLookupRows',[]); setCurrentUrl(LWHStorage.get('inventoryUrl',DEFAULT_URL)||DEFAULT_URL); setCustomerCurrentUrl(LWHStorage.get('customerLookupUrl',CUSTOMER_DEFAULT_URL)||CUSTOMER_DEFAULT_URL); status(rows.length?`Using ${rows.length} cached master row(s).`:'Master lookup not loaded yet. Auto-load will try to refresh.'); customerStatus(customerRows.length?`Using ${customerRows.length} cached customer lookup row(s).`:'Customer lookup not loaded yet. Auto-load will try to refresh.'); }
+  function resetSource(){ LWHStorage.set('inventoryUrl',DEFAULT_URL); const input=el('setInventoryUrl'); if(input) input.value=DEFAULT_URL; setCurrentUrl(DEFAULT_URL); status('Master lookup source reset to the published CSV link. The app will auto-load it, or click Load / Refresh Data.'); }
   function resetCustomerSource(){ LWHStorage.set('customerLookupUrl',CUSTOMER_DEFAULT_URL); const input=el('setCustomerLookupUrl'); if(input) input.value=CUSTOMER_DEFAULT_URL; setCustomerCurrentUrl(CUSTOMER_DEFAULT_URL); customerStatus('Customer lookup source reset. Click Load / Refresh Data.'); }
 
   function search(q){ q=String(q||'').toLowerCase().trim(); if(!q) return rows.slice(0,50); const terms=q.split(/\s+/); return rows.filter(r=>{const hay=Object.values(r).join(' ').toLowerCase(); return terms.every(t=>hay.includes(t));}).slice(0,100); }

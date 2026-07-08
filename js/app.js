@@ -10,7 +10,21 @@ function applySettings(){
   statPrints.textContent=LWHStorage.get('printJobs',0); statLookups.textContent=LWHStorage.get('lookupCount',0); statVisitors.textContent=(LWHStorage.get('visitorLog',[])||[]).length;
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;installBtn.hidden=false});
-window.addEventListener('load',()=>{applySettings(); LWHInventory.loadCached(); if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js').then(()=>pwaStatus.textContent='Service worker registered. App is installable from HTTPS/GitHub Pages.').catch(err=>pwaStatus.textContent='Service worker error: '+err.message)}else{pwaStatus.textContent='Service workers not supported in this browser.'}});
+window.addEventListener('load',()=>{
+  applySettings();
+  LWHInventory.loadCached();
+  // Auto-load master CSV so users do not have to remember the Load button.
+  setTimeout(async()=>{
+    try{
+      await LWHInventory.loadFromUrl();
+      if(window.custLookupStatus) custLookupStatus.textContent = custLookupStatus.textContent || 'Customer lookup ready.';
+    }catch(e){
+      if(window.invStatus) invStatus.textContent='Auto-load failed: '+e.message;
+      console.error(e);
+    }
+  },300);
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js').then(()=>pwaStatus.textContent='Service worker registered. App is installable from HTTPS/GitHub Pages.').catch(err=>pwaStatus.textContent='Service worker error: '+err.message)}else{pwaStatus.textContent='Service workers not supported in this browser.'}
+});
 document.addEventListener('click',e=>{const v=e.target.closest('[data-view]'); if(v){LWHUI.show(v.dataset.view); return}});
 installBtn.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;installBtn.hidden=true};
 rackGenerate.onclick=()=>{LWHLabels.generateRack();applySettings()}; rackClear.onclick=()=>{rackList.value='';rackOutput.innerHTML=''}; rackBatchBtn.onclick=()=>{rackList.value=LWHLabels.generateBatch(rackBatchStart.value,rackBatchEnd.value,+rackBatchPad.value)};
