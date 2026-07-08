@@ -21,6 +21,11 @@ invSearchBtn.onclick=()=>{const res=LWHInventory.search(invSearch.value); LWHInv
 invSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();invSearchBtn.click();}};
 invLoadBtn.onclick=async()=>{try{await LWHInventory.loadFromUrl();LWHUI.toast('Inventory loaded')}catch(e){invStatus.textContent='Inventory load failed: '+e.message; console.error(e);}};
 invPasteBtn.onclick=()=>{const rows=LWHInventory.parseDelimited(invPaste.value);LWHStorage.set('inventoryRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted row(s)`)};
+if(window.recLoadBtn){recLoadBtn.onclick=invLoadBtn.onclick;}
+if(window.recFindBtn){recFindBtn.onclick=()=>LWHInventory.findReceiving();}
+if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();recFindBtn.click();}};}
+if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findReceiving(); if(list && list.length) LWHInventory.printRows(list,receivingPrintOutput);};}
+if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseDelimited(recPaste.value);LWHStorage.set('inventoryRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} receiving row(s)`);};}
 saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#7a0019');LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
 saveCalibration.onclick=()=>{LWHStorage.set('calX',calX.value||0);LWHStorage.set('calY',calY.value||0);LWHStorage.set('calScale',calScale.value||100);LWHUI.toast('Calibration saved')};
