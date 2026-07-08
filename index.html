@@ -24,7 +24,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.1.6</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.1.7</div></div></div>
     <div class="header-actions"><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -94,7 +94,8 @@
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">
       <div class="scanner-head"><b>Camera Barcode Scan</b><button type="button" id="scannerClose" class="ghost">Close</button></div>
-      <video id="scannerVideo" playsinline></video>
+      <video id="scannerVideo" playsinline muted></video>
+      <canvas id="scannerCanvas" hidden></canvas>
       <p id="scannerStatus" class="hint">Point the camera at a barcode or QR code.</p><p class="hint small">If camera scanning is not supported, type or paste the barcode into Search.</p>
     </div>
   </div>
