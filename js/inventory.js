@@ -36,29 +36,72 @@
     text=(text||'').replace(/^\uFEFF/,'').trim(); if(!text) return [];
     const delim=text.indexOf('\t')>-1?'\t':',';
     const lines=[]; let cur='', row=[], q=false;
-    for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1]; if(c==='"'){ if(q&&n==='"'){cur+='"';i++;} else q=!q; } else if(!q && c===delim){row.push(cur);cur='';} else if(!q && (c==='\n'||c==='\r')){ if(c==='\r'&&n==='\n')i++; row.push(cur); if(row.some(x=>String(x).trim())) lines.push(row); row=[]; cur='';} else cur+=c;}
+    for(let i=0;i<text.length;i++){
+      const c=text[i],n=text[i+1];
+      if(c==='"'){
+        if(q&&n==='"'){cur+='"';i++;} else q=!q;
+      } else if(!q && c===delim){
+        row.push(cur);cur='';
+      } else if(!q && (c==='\n'||c==='\r')){
+        if(c==='\r'&&n==='\n')i++;
+        row.push(cur); if(row.some(x=>String(x).trim())) lines.push(row); row=[]; cur='';
+      } else cur+=c;
+    }
     row.push(cur); if(row.some(x=>String(x).trim())) lines.push(row);
     if(!lines.length) return [];
-    const rawHead=lines.shift();
-    const head=rawHead.map(h=>String(h||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''));
-    const map={location:'location',warehouse:'location',lwhid:'lwhid',lwhidcontrolnumber:'lwhid',controlnumber:'lwhid',palletid:'lwhid',customerid:'custId',comments:'custId',customer:'customer',subcustnm:'customer',subcustomer:'customer',invrec:'invRec',invreceipt:'invRec',invreceiptno:'invRec',invreceiptid:'invRec',billtoref:'billToRef',billtorefnum:'billToRef',billtoreference:'billToRef',itemnm:'item',itemnumber:'item',item:'item',itemdesc:'desc',description:'desc',lotnum:'lot',lotnumber:'lot',lot:'lot',qty:'qty',quantity:'qty',units:'units',unit:'units',bayname:'bay',baylocation:'bay',bay:'bay',datereceived:'dateReceived',received:'dateReceived'};
-    const idx={}; head.forEach((h,i)=>{ if(map[h]) idx[map[h]]=i; });
+
+    const rawHead=lines.shift().map(v=>String(v||'').trim());
+    const head=rawHead.map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,''));
+
+    // Header aliases. Keep this very explicit because the receiving print module
+    // depends on InvRec being column E in the new sheet, not ItemNm column G.
+    const map={
+      location:'location', warehouse:'location', whse:'location',
+      lwhid:'lwhid', lwhidcontrolnumber:'lwhid', controlnumber:'lwhid', palletid:'lwhid',
+      customerid:'custId', custid:'custId', comments:'custId',
+      customer:'customer', subcustnm:'customer', subcustomer:'customer',
+      invrec:'invRec', invreceipt:'invRec', invreceiptno:'invRec', invreceiptid:'invRec', invreceiptnumber:'invRec', invreceiptref:'invRec',
+      billtoref:'billToRef', billtorefnum:'billToRef', billtoreference:'billToRef', billto:'billToRef',
+      itemnm:'item', itemnumber:'item', item:'item', itemno:'item', itemnum:'item',
+      itemdesc:'desc', description:'desc', itemdescription:'desc',
+      lotnum:'lot', lotnumber:'lot', lot:'lot',
+      qty:'qty', quantity:'qty',
+      units:'units', unit:'units',
+      bayname:'bay', baylocation:'bay', bay:'bay',
+      datereceived:'dateReceived', received:'dateReceived', receiveddate:'dateReceived'
+    };
+    const idx={};
+    head.forEach((h,i)=>{ if(map[h] && idx[map[h]]===undefined) idx[map[h]]=i; });
+
+    // Special known layout from Tim's new receiving sheet:
+    // Location,LWH_ID,Customer_ID,Customer,InvRec,BillToRef,ItemNm,ItemDesc,LotNum,Qty,Units,BayName,DateReceived
+    const known13 = head.join('|').startsWith('location|lwhid|customerid|customer|invrec|billtoref|itemnm|itemdesc|lotnum|qty|units|bayname|datereceived');
+    if(known13){
+      Object.assign(idx,{location:0,lwhid:1,custId:2,customer:3,invRec:4,billToRef:5,item:6,desc:7,lot:8,qty:9,units:10,bay:11,dateReceived:12});
+    }
+
     const hasHeader=Object.keys(idx).length>=2;
     const data=hasHeader?lines:[rawHead,...lines];
+
+    function val(r,key,fallback){
+      const i = idx[key];
+      return (i!==undefined ? r[i] : r[fallback]) || '';
+    }
+
     return data.map(r=>({
-      location:r[idx.location??0]||'',
-      lwhid:r[idx.lwhid??1]||'',
-      custId:r[idx.custId??2]||'',
-      customer:r[idx.customer??3]||'',
-      invRec:r[idx.invRec??4]||'',
-      billToRef:r[idx.billToRef??5]||'',
-      item:r[idx.item??6]||'',
-      desc:r[idx.desc??7]||'',
-      lot:r[idx.lot??8]||'',
-      qty:r[idx.qty??9]||'',
-      units:r[idx.units??10]||'',
-      bay:r[idx.bay??11]||'',
-      dateReceived:r[idx.dateReceived??12]||''
+      location:val(r,'location',0),
+      lwhid:val(r,'lwhid',1),
+      custId:val(r,'custId',2),
+      customer:val(r,'customer',3),
+      invRec:val(r,'invRec',4),
+      billToRef:val(r,'billToRef',5),
+      item:val(r,'item',6),
+      desc:val(r,'desc',7),
+      lot:val(r,'lot',8),
+      qty:val(r,'qty',9),
+      units:val(r,'units',10),
+      bay:val(r,'bay',11),
+      dateReceived:val(r,'dateReceived',12)
     })).filter(r=>Object.values(r).some(Boolean));
   }
 
