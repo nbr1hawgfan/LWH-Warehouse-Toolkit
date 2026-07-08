@@ -107,8 +107,50 @@
   function loadCached(){ rows=LWHStorage.get('inventoryRows',[]); setCurrentUrl(LWHStorage.get('inventoryUrl',DEFAULT_URL)||DEFAULT_URL); status(rows.length?`Using ${rows.length} cached row(s).`:'Inventory not loaded yet.'); }
   function resetSource(){ LWHStorage.set('inventoryUrl',DEFAULT_URL); const input=el('setInventoryUrl'); if(input) input.value=DEFAULT_URL; setCurrentUrl(DEFAULT_URL); status('Inventory source reset to the published CSV link. Click Load / Refresh Data.'); }
   function search(q){ q=String(q||'').toLowerCase().trim(); if(!q) return rows.slice(0,50); const terms=q.split(/\s+/); return rows.filter(r=>{const hay=Object.values(r).join(' ').toLowerCase(); return terms.every(t=>hay.includes(t));}).slice(0,100); }
-  function render(list){ inventoryResults.innerHTML=''; lookupPrintOutput.innerHTML=''; if(!list.length){inventoryResults.innerHTML='<div class="card">No matching inventory found.</div>'; return;} const wrap=document.createElement('div'); wrap.className='result-list'; list.forEach((r,i)=>{const c=document.createElement('div'); c.className='result-card'; c.innerHTML=`<div><b>${safe(r.lwhid)}</b> <span>${safe(r.customer)}</span></div><div>${safe(r.location)} · Bay <b>${safe(r.bay)}</b> · Qty ${safe(r.qty)}${r.invRec?' · InvRec '+safe(r.invRec):''}</div><div>${safe(r.item)} — ${safe(r.desc)} · Lot ${safe(r.lot)}</div><div class="actions"><button type="button" data-print-pal="${i}">Print Pallet Label</button><button type="button" data-fill-pal="${i}" class="ghost">Fill Pallet Form</button><button type="button" data-rack="${i}" class="ghost">Rack Label</button></div>`; wrap.append(c);}); inventoryResults.append(wrap); wrap.onclick=e=>{const b=e.target.closest('button'); if(!b)return; const r=list[+Object.values(b.dataset)[0]]; if(b.dataset.printPal!==undefined){fillPallet(r); LWHUI.show('pallet'); LWHLabels.generatePallet(); LWHStorage.set('lookupCount',(+LWHStorage.get('lookupCount',0))+1);} if(b.dataset.fillPal!==undefined){fillPallet(r); LWHUI.show('pallet');} if(b.dataset.rack!==undefined){rackList.value=r.bay||r.lwhid; LWHUI.show('rack'); LWHLabels.generateRack();}}; }
-  function fillPallet(r){ if(window.palLocation) palLocation.value=r.location||''; palLwhid.value=r.lwhid||''; palCustId.value=r.custId||''; palCustomer.value=r.customer||''; palBay.value=r.bay||''; palItem.value=r.item||''; palLot.value=r.lot||''; palQty.value=r.qty||''; palDate.value=r.dateReceived||''; palDesc.value=r.desc||''; document.querySelector('[data-pallet-mode="simple"]').click(); }
+  function getRows(){return rows.slice();}
+  function printRows(list,target){
+    if(!list || !list.length){LWHUI.toast('No rows to print'); return;}
+    LWHLabels.generatePalletRows(list,target||lookupPrintOutput);
+    LWHStorage.set('lookupCount',(+LWHStorage.get('lookupCount',0))+1);
+  }
+  function render(list){
+    inventoryResults.innerHTML=''; lookupPrintOutput.innerHTML='';
+    if(!list.length){inventoryResults.innerHTML='<div class="card">No matching inventory found.</div>'; return;}
+    const top=document.createElement('div'); top.className='card';
+    const invRecs=[...new Set(list.map(r=>String(r.invRec||'').trim()).filter(Boolean))];
+    top.innerHTML=`<b>${list.length}</b> matching row(s)${invRecs.length===1?` · InvRec <b>${safe(invRecs[0])}</b>`:''}<div class="actions"><button type="button" id="lookupPrintAll">Print All Found Pallet Labels</button>${invRecs.length===1?`<button type="button" id="lookupOpenReceiving" class="ghost">Open Receiving Print</button>`:''}</div>`;
+    inventoryResults.append(top);
+    const wrap=document.createElement('div'); wrap.className='result-list';
+    list.forEach((r,i)=>{const c=document.createElement('div'); c.className='result-card'; c.innerHTML=`<div><b>${safe(r.lwhid)}</b> <span>${safe(r.customer)}</span></div><div>${safe(r.location)} · Bay <b>${safe(r.bay)}</b> · Qty ${safe(r.qty)}${r.invRec?' · InvRec '+safe(r.invRec):''}</div><div>${safe(r.item)} — ${safe(r.desc)} · Lot ${safe(r.lot)}</div><div class="actions"><button type="button" data-print-pal="${i}">Print Pallet Label</button><button type="button" data-fill-pal="${i}" class="ghost">Fill Pallet Form</button><button type="button" data-rack="${i}" class="ghost">Rack Label</button></div>`; wrap.append(c);});
+    inventoryResults.append(wrap);
+    const printAll=document.getElementById('lookupPrintAll'); if(printAll) printAll.onclick=()=>printRows(list,lookupPrintOutput);
+    const openRec=document.getElementById('lookupOpenReceiving'); if(openRec) openRec.onclick=()=>{recInvRec.value=invRecs[0]; LWHUI.show('receiving'); findReceiving();};
+    wrap.onclick=e=>{const b=e.target.closest('button'); if(!b)return; const idx=+(b.dataset.printPal??b.dataset.fillPal??b.dataset.rack); const r=list[idx]; if(!r)return; if(b.dataset.printPal!==undefined){printRows([r],lookupPrintOutput);} if(b.dataset.fillPal!==undefined){fillPallet(r); LWHUI.show('pallet');} if(b.dataset.rack!==undefined){rackList.value=r.bay||r.lwhid; LWHUI.show('rack'); LWHLabels.generateRack();}};
+  }
+  function findReceiving(){
+    const q=String((document.getElementById('recInvRec')||{}).value||'').trim();
+    const out=document.getElementById('receivingResults'); const statusEl=document.getElementById('recStatus'); const printOut=document.getElementById('receivingPrintOutput');
+    if(printOut) printOut.innerHTML='';
+    if(!q){ if(statusEl) statusEl.textContent='Enter an InvRec first.'; return []; }
+    const list=rows.filter(r=>String(r.invRec||'').trim().toLowerCase()===q.toLowerCase());
+    if(statusEl) statusEl.textContent=`Found ${list.length} pallet(s) for InvRec ${q}.`;
+    if(out){
+      if(!list.length){out.innerHTML='<div class="card">No pallets found for that InvRec.</div>';} else {
+        const cust=[...new Set(list.map(r=>r.customer).filter(Boolean))].join(', ');
+        const bays=[...new Set(list.map(r=>r.bay).filter(Boolean))].slice(0,8).join(', ');
+        out.innerHTML=`<div class="card"><h3>InvRec ${safe(q)}</h3><p><b>${list.length}</b> pallet(s) ${cust?`· ${safe(cust)}`:''}</p><p class="hint">Bays: ${safe(bays || 'n/a')}</p><div class="actions"><button type="button" id="recPrintAll2">Print All ${list.length}</button><button type="button" id="recFillBulk" class="ghost">Send to Pallet Bulk</button></div></div><div class="result-list">${list.slice(0,100).map((r,i)=>`<div class="result-card"><div><b>${safe(r.lwhid)}</b> <span>${safe(r.customer)}</span></div><div>${safe(r.location)} · Bay <b>${safe(r.bay)}</b> · Qty ${safe(r.qty)}</div><div>${safe(r.item)} — ${safe(r.desc)} · Lot ${safe(r.lot)}</div></div>`).join('')}</div>`;
+        const b=document.getElementById('recPrintAll2'); if(b)b.onclick=()=>printRows(list,printOut||lookupPrintOutput);
+        const bulk=document.getElementById('recFillBulk'); if(bulk) bulk.onclick=()=>{palletBulkText.value=toTSV(list); document.querySelector('[data-pallet-mode="bulk"]').click(); LWHUI.show('pallet'); LWHUI.toast('Rows sent to Pallet Bulk Paste');};
+      }
+    }
+    return list;
+  }
+  function toTSV(list){
+    const h=['Location','LWH_ID','Customer_ID','Customer','InvRec','BillToRef','ItemNm','ItemDesc','LotNum','Qty','Units','BayName','DateReceived'];
+    const keys=['location','lwhid','custId','customer','invRec','billToRef','item','desc','lot','qty','units','bay','dateReceived'];
+    return [h.join('\t'),...list.map(r=>keys.map(k=>String(r[k]??'').replace(/\t/g,' ')).join('\t'))].join('\n');
+  }
+function fillPallet(r){ if(window.palLocation) palLocation.value=r.location||''; palLwhid.value=r.lwhid||''; palCustId.value=r.custId||''; palCustomer.value=r.customer||''; palBay.value=r.bay||''; palItem.value=r.item||''; palLot.value=r.lot||''; palQty.value=r.qty||''; palDate.value=r.dateReceived||''; palDesc.value=r.desc||''; document.querySelector('[data-pallet-mode="simple"]').click(); }
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  window.LWHInventory={DEFAULT_URL,parseDelimited,loadFromUrl,loadCached,search,render,fillPallet,normalizeUrl,resetSource,getInventoryUrl};
+  window.LWHInventory={DEFAULT_URL,parseDelimited,loadFromUrl,loadCached,search,render,fillPallet,normalizeUrl,resetSource,getInventoryUrl,getRows,printRows,findReceiving,toTSV};
 })();
