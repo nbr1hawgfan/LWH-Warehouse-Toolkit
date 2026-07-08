@@ -1,4 +1,41 @@
 let deferredInstallPrompt=null;
+// Fort Smith, AR — used unless someone overrides it in Settings.
+const DEFAULT_WEATHER_LOC={lat:35.3859,lon:-94.3985};
+function parseWeatherLoc(v){
+  const parts=String(v||'').split(',').map(s=>parseFloat(s.trim()));
+  if(parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1])) return {lat:parts[0],lon:parts[1]};
+  return DEFAULT_WEATHER_LOC;
+}
+function getGreeting(){
+  const h=new Date().getHours();
+  if(h<12) return 'Good Morning';
+  if(h<17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+function weatherCodeText(code){
+  const map={0:'Clear',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',56:'Freezing Drizzle',57:'Freezing Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',66:'Freezing Rain',67:'Freezing Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Light Showers',81:'Showers',82:'Heavy Showers',85:'Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Thunderstorm, Hail',99:'Thunderstorm, Hail'};
+  return map[code]||'Weather';
+}
+async function refreshHero(){
+  if(window.heroGreeting) heroGreeting.textContent=getGreeting();
+  if(!window.heroWeather) return;
+  const loc=parseWeatherLoc(LWHStorage.get('weatherLoc',''));
+  const cached=LWHStorage.get('weatherCache',null);
+  const fresh=cached && cached.lat===loc.lat && cached.lon===loc.lon && (Date.now()-cached.at)<30*60*1000;
+  if(fresh){ heroWeather.textContent=cached.text; return; }
+  try{
+    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const temp=Math.round(data.current.temperature_2m);
+    const text=`${temp}°F · ${weatherCodeText(data.current.weather_code)}`;
+    heroWeather.textContent=text;
+    LWHStorage.set('weatherCache',{lat:loc.lat,lon:loc.lon,text,at:Date.now()});
+  }catch(e){
+    heroWeather.textContent=cached?cached.text:'Weather unavailable right now.';
+    console.error('Weather fetch failed',e);
+  }
+}
 // Small helpers so the header/nav/hover colors always follow whatever brand
 // color is picked in Settings, instead of a second color being hardcoded.
 function hexToRgb(hex){hex=String(hex||'').trim().replace('#',''); if(hex.length===3)hex=hex.split('').map(c=>c+c).join(''); const n=parseInt(hex,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
@@ -11,6 +48,7 @@ function applySettings(){
   document.documentElement.style.setProperty('--brand-dark',shadeColor(color,-0.28));
   document.documentElement.style.setProperty('--brand-tint',shadeColor(color,0.88));
   setColor.value=color;
+  if(window.setWeatherLoc) setWeatherLoc.value=LWHStorage.get('weatherLoc','');
   const logo=LWHStorage.get('companyLogo',''); if(logo){brandLogoBox.hidden=false; brandLogoBox.style.backgroundImage=`url(${logo})`;} else {brandLogoBox.hidden=true;}
   let invUrl=LWHStorage.get('inventoryUrl',''); if(invUrl.includes('1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4')){invUrl=LWHInventory.DEFAULT_URL; LWHStorage.set('inventoryUrl',invUrl);} setInventoryUrl.value=invUrl||LWHInventory.DEFAULT_URL; if(window.invCurrentUrl) invCurrentUrl.textContent=setInventoryUrl.value;
   if(window.setCustomerLookupUrl){ const custUrl=LWHStorage.get('customerLookupUrl','')||LWHInventory.CUSTOMER_DEFAULT_URL; setCustomerLookupUrl.value=custUrl; if(window.custCurrentUrl) custCurrentUrl.textContent=custUrl; }
@@ -21,6 +59,8 @@ function applySettings(){
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;installBtn.hidden=false});
 window.addEventListener('load',()=>{
   applySettings();
+  refreshHero();
+  setInterval(refreshHero,30*60*1000);
   LWHInventory.loadCached();
   // Auto-load both CSV sources so the team never has to remember to hit
   // Load / Refresh Data before searching. These are independent try/catch
@@ -44,7 +84,8 @@ window.addEventListener('load',()=>{
   },300);
   if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js').then(()=>pwaStatus.textContent='Service worker registered. App is installable from HTTPS/GitHub Pages.').catch(err=>pwaStatus.textContent='Service worker error: '+err.message)}else{pwaStatus.textContent='Service workers not supported in this browser.'}
 });
-document.addEventListener('click',e=>{const v=e.target.closest('[data-view]'); if(v){LWHUI.show(v.dataset.view); return}});
+document.addEventListener('click',e=>{const v=e.target.closest('[data-view]'); if(v){LWHUI.show(v.dataset.view); document.querySelector('.nav').classList.remove('open'); return}});
+if(window.navToggle){navToggle.onclick=()=>document.querySelector('.nav').classList.toggle('open');}
 installBtn.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;installBtn.hidden=true};
 rackGenerate.onclick=()=>{LWHLabels.generateRack();applySettings()}; rackClear.onclick=()=>{rackList.value='';rackOutput.innerHTML=''}; rackBatchBtn.onclick=()=>{rackList.value=LWHLabels.generateBatch(rackBatchStart.value,rackBatchEnd.value,+rackBatchPad.value)};
 signGenerate.onclick=()=>{LWHLabels.generateSigns();applySettings()}; signClear.onclick=()=>{signList.value='';signOutput.innerHTML=''};
@@ -56,18 +97,23 @@ if(window.invScanBtn){invScanBtn.onclick=()=>LWHScanner.start(value=>{invSearch.
 if(window.custScanBtn){custScanBtn.onclick=()=>LWHScanner.start(value=>{custSearch.value=value; custSearchBtn.click();});}
 invSearchBtn.onclick=()=>{const res=LWHInventory.search(invSearch.value); LWHInventory.render(res); LWHStorage.set('lookupCount',(+LWHStorage.get('lookupCount',0))+1); applySettings();};
 invSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();invSearchBtn.click();}};
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+// Live search: results populate as soon as someone types, pastes, or a camera
+// scan fills the box — no need to hit Search first. The button still works
+// for a manual re-trigger (e.g. right after Load / Refresh Data).
+invSearch.addEventListener('input',debounce(()=>invSearchBtn.click(),250));
 if(window.custSearchBtn){custSearchBtn.onclick=()=>{const res=LWHInventory.customerSearch(custSearch.value); LWHInventory.renderCustomerResults(res); LWHStorage.set('lookupCount',(+LWHStorage.get('lookupCount',0))+1); applySettings();};}
-if(window.custSearch){custSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();custSearchBtn.click();}};}
+if(window.custSearch){custSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();custSearchBtn.click();}}; custSearch.addEventListener('input',debounce(()=>custSearchBtn.click(),250));}
 invLoadBtn.onclick=async()=>{try{await LWHInventory.loadFromUrl();LWHUI.toast('Inventory loaded')}catch(e){invStatus.textContent='Inventory load failed: '+e.message; console.error(e);}};
 invPasteBtn.onclick=()=>{const rows=LWHInventory.parseDelimited(invPaste.value);LWHStorage.set('inventoryRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted row(s)`)};
 if(window.custLoadBtn){custLoadBtn.onclick=async()=>{try{await LWHInventory.loadCustomerFromUrl();LWHUI.toast('Customer lookup loaded')}catch(e){custLookupStatus.textContent='Customer lookup load failed: '+e.message; console.error(e);}};}
 if(window.custPasteBtn){custPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(custPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted customer row(s)`)};}
 if(window.recLoadBtn){recLoadBtn.onclick=invLoadBtn.onclick;}
 if(window.recFindBtn){recFindBtn.onclick=()=>LWHInventory.findReceiving();}
-if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();recFindBtn.click();}};}
+if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();recFindBtn.click();}}; recInvRec.addEventListener('input',debounce(()=>recFindBtn.click(),250));}
 if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findReceiving(); if(list && list.length) LWHInventory.printRows(list,receivingPrintOutput);};}
 if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseDelimited(recPaste.value);LWHStorage.set('inventoryRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} receiving row(s)`);};}
-saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#0f4a45');LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();LWHUI.toast('Branding saved')})};
+saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#0f4a45');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
 saveCalibration.onclick=()=>{LWHStorage.set('calX',calX.value||0);LWHStorage.set('calY',calY.value||0);LWHStorage.set('calScale',calScale.value||100);LWHUI.toast('Calibration saved')};
 saveInventoryUrl.onclick=()=>{const url=LWHInventory.normalizeUrl(setInventoryUrl.value||LWHInventory.DEFAULT_URL,LWHInventory.DEFAULT_URL); LWHStorage.set('inventoryUrl',url); setInventoryUrl.value=url; if(window.invCurrentUrl) invCurrentUrl.textContent=url; LWHUI.toast('Inventory source saved')};

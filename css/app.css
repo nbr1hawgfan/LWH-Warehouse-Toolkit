@@ -115,6 +115,8 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 
 .toast{position:fixed;right:18px;bottom:18px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:var(--radius-sm);box-shadow:var(--shadow);z-index:20}
 
+#navToggle{display:none}
+
 @media(max-width:900px){
   .app-shell{grid-template-columns:1fr;padding:14px}
   .nav{position:static;display:grid;grid-template-columns:1fr 1fr}
@@ -123,6 +125,23 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
   .grid-2,.grid-3{grid-template-columns:1fr}
   .app-header{align-items:flex-start;flex-direction:column}
   .stats{grid-template-columns:1fr}
+}
+
+@media(max-width:640px){
+  #navToggle{display:inline-flex;align-items:center;justify-content:center;padding:8px}
+  .app-header{flex-direction:row;align-items:center;padding:10px 14px}
+  .app-header h1{font-size:19px}
+  .eyebrow{display:none}
+  .version{display:none}
+  .brand-logo{width:38px;height:38px}
+  .header-actions button{padding:8px 10px;min-height:40px;font-size:13px}
+  .app-shell{padding:10px;gap:12px}
+  .nav{display:none;grid-template-columns:1fr;gap:2px;margin-bottom:0}
+  .nav.open{display:grid;margin-bottom:6px}
+  .nav-btn{padding:13px 12px;font-size:15px}
+  .module-grid{grid-template-columns:1fr}
+  .card,.panel{padding:15px}
+  .hero h2{font-size:19px}
 }
 
 
@@ -154,6 +173,7 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pallet-sub{font-size:.135in;font-weight:800;margin-top:.01in;white-space:nowrap;overflow:hidden;text-overflow:clip}
 .pallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:.025in .13in;margin-top:.065in;font-size:.145in;line-height:1.08;padding-bottom:.88in}
 .pallet-grid b{font-size:.102in}
+.pallet-grid b{text-transform:uppercase;letter-spacing:.03em}
 .pallet-grid .wide{grid-column:1 / -1}
 .pallet-codes{position:absolute;left:.16in;right:.16in;bottom:.07in;display:flex;justify-content:space-between;align-items:flex-end;margin-top:0;max-height:.86in;overflow:hidden;gap:.12in}
 .pallet-codes.three-codes{align-items:flex-end}

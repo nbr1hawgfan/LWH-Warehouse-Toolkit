@@ -1,4 +1,16 @@
 function page(cls,html){const d=document.createElement('div');d.className='label-page '+cls;d.innerHTML=html;const x=+LWHStorage.get('calX',0),y=+LWHStorage.get('calY',0),sc=+LWHStorage.get('calScale',100);d.style.transform=`translate(${x}px,${y}px) scale(${sc/100})`;d.style.transformOrigin='top left';return d}
+// Sets/clears an explicit @page size for the *next* print job. Without this,
+// the browser has no idea a given label is 6in-wide-by-4in-tall (landscape)
+// vs. some other shape, and falls back to whatever page size/orientation was
+// last used — usually portrait Letter — forcing a manual fix in the print
+// dialog every time. Scoped narrowly (only pallet labels set this today);
+// LWHUI.show() clears it whenever the active screen changes so it never
+// leaks into a different label type's print job.
+function setPrintPageSize(widthIn,heightIn){
+  let style=document.getElementById('dynamicPageSize');
+  if(!style){style=document.createElement('style');style.id='dynamicPageSize';document.head.appendChild(style);}
+  style.textContent=(widthIn&&heightIn)?`@media print{@page{size:${widthIn}in ${heightIn}in;margin:0}}`:'';
+}
 function finishBarcodes(root){root.querySelectorAll('svg[data-barcode]').forEach(svg=>LWHBarcode.make(svg,svg.dataset.barcode,{height:+svg.dataset.height||80,width:+svg.dataset.width||2}));root.querySelectorAll('.qrbox[data-qr]').forEach(q=>LWHQR.make(q,q.dataset.qr,+q.dataset.size||110));}
 
 function autoFitText(el,minPx=30){
@@ -69,9 +81,10 @@ function generatePalletRows(rows,target){
   const copies=+palCopies.value||1;
   (rows||[]).map(normalizePalletRow).filter(r=>Object.values(r).some(Boolean)).forEach(r=>{for(let i=0;i<copies;i++){out.append(page('pallet-label',palletLabelHtml(r)))}});
   finishBarcodes(out);
+  setPrintPageSize(6,4); // force landscape 6x4 so it prints as shaped, no manual dialog fix needed
   LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);
   LWHUI.toast(`Generated ${out.children.length} pallet label(s)`);
 }
 function generatePallet(){const rows=document.querySelector('[data-pallet-mode].active').dataset.palletMode==='bulk'?palletDataFromBulk():palletDataFromSimple();generatePalletRows(rows,palletOutput)}
 function generateContact(){const out=contactOutput;out.innerHTML='';LWHUI.readFile(conLogo,logo=>{const c={name:conName.value,title:conTitle.value,company:conCompany.value,phone:conPhone.value,email:conEmail.value,website:conWebsite.value,address:conAddress.value};for(let i=0;i<(+conCopies.value||1);i++){out.append(page(`contact-card ${conLayout.value==='qronly'?'qronly':''}`,`<div class="qrbox" data-qr="${safeAttr(LWHQR.vcard(c))}" data-size="122"></div>${conLayout.value==='qronly'?'':`<div class="contact-info">${logo?`<img class="contact-logo" src="${logo}">`:''}<div class="name">${safeAttr(c.name)}</div><div>${safeAttr(c.title)}</div><div><b>${safeAttr(c.company)}</b></div><div>${safeAttr(c.phone)}</div><div>${safeAttr(c.email)}</div></div>`}`))}finishBarcodes(out);LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);LWHUI.toast(`Generated ${out.children.length} contact card(s)`)})}
-window.LWHLabels={generateRack,generateSigns,generatePallet,generatePalletRows,palletLabelHtml,generateContact,generateBatch,palletDataFromBulk};
+window.LWHLabels={generateRack,generateSigns,generatePallet,generatePalletRows,palletLabelHtml,generateContact,generateBatch,palletDataFromBulk,setPrintPageSize};
