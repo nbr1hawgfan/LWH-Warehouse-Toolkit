@@ -24,7 +24,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.1.8</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.1.9</div></div></div>
     <div class="header-actions"><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -107,7 +107,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Primary color<input id="setColor" type="color" value="#7a0019" /></label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Inventory Source</h2><p class="hint">For GitHub Pages, your Google Sheet must be published/shared so CSV export can be read. You can also paste data in the Lookup screen.</p><label>CSV / Google Sheet export URL<input id="setInventoryUrl" /></label><div class="actions"><button id="saveInventoryUrl" type="button">Save Source</button><button id="testInventoryUrl" type="button" class="ghost">Test Load</button><button id="resetInventoryUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.1.8</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Inventory Lookup, Receiving Print, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.1.9</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Inventory Lookup, Receiving Print, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">
