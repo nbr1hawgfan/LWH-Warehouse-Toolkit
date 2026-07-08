@@ -1,7 +1,16 @@
 let deferredInstallPrompt=null;
+// Small helpers so the header/nav/hover colors always follow whatever brand
+// color is picked in Settings, instead of a second color being hardcoded.
+function hexToRgb(hex){hex=String(hex||'').trim().replace('#',''); if(hex.length===3)hex=hex.split('').map(c=>c+c).join(''); const n=parseInt(hex,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
+function rgbToHex(r,g,b){return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function shadeColor(hex,percent){const {r,g,b}=hexToRgb(hex); const t=percent<0?0:255; const p=Math.abs(percent); return rgbToHex(r+(t-r)*p,g+(t-g)*p,b+(t-b)*p);}
 function applySettings(){
   const company=LWHStorage.get('companyName','Logistics Warehouse'); document.getElementById('companyTitle').textContent=company+' Toolkit'; setCompany.value=company;
-  const color=LWHStorage.get('primaryColor','#7a0019'); document.documentElement.style.setProperty('--maroon',color); setColor.value=color;
+  const color=LWHStorage.get('primaryColor','#0f4a45');
+  document.documentElement.style.setProperty('--brand',color);
+  document.documentElement.style.setProperty('--brand-dark',shadeColor(color,-0.28));
+  document.documentElement.style.setProperty('--brand-tint',shadeColor(color,0.88));
+  setColor.value=color;
   const logo=LWHStorage.get('companyLogo',''); if(logo){brandLogoBox.hidden=false; brandLogoBox.style.backgroundImage=`url(${logo})`;} else {brandLogoBox.hidden=true;}
   let invUrl=LWHStorage.get('inventoryUrl',''); if(invUrl.includes('1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4')){invUrl=LWHInventory.DEFAULT_URL; LWHStorage.set('inventoryUrl',invUrl);} setInventoryUrl.value=invUrl||LWHInventory.DEFAULT_URL; if(window.invCurrentUrl) invCurrentUrl.textContent=setInventoryUrl.value;
   if(window.setCustomerLookupUrl){ const custUrl=LWHStorage.get('customerLookupUrl','')||LWHInventory.CUSTOMER_DEFAULT_URL; setCustomerLookupUrl.value=custUrl; if(window.custCurrentUrl) custCurrentUrl.textContent=custUrl; }
@@ -13,13 +22,23 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredIns
 window.addEventListener('load',()=>{
   applySettings();
   LWHInventory.loadCached();
-  // Auto-load master CSV so users do not have to remember the Load button.
+  // Auto-load both CSV sources so the team never has to remember to hit
+  // Load / Refresh Data before searching. These are independent try/catch
+  // blocks so a failure in one source (e.g. Receiving) doesn't stop the
+  // other (Master Lookup) from loading.
+  setTimeout(async()=>{
+    try{
+      await LWHInventory.loadCustomerFromUrl();
+    }catch(e){
+      if(window.custLookupStatus) custLookupStatus.textContent='Master Lookup auto-load failed: '+e.message+' — open Settings to check the source, or use Load / Refresh Data.';
+      console.error(e);
+    }
+  },300);
   setTimeout(async()=>{
     try{
       await LWHInventory.loadFromUrl();
-      if(window.custLookupStatus) custLookupStatus.textContent = custLookupStatus.textContent || 'Customer lookup ready.';
     }catch(e){
-      if(window.invStatus) invStatus.textContent='Auto-load failed: '+e.message;
+      if(window.invStatus) invStatus.textContent='Receiving auto-load failed: '+e.message+' — open Settings to check the source, or use Load / Refresh Data.';
       console.error(e);
     }
   },300);
@@ -48,7 +67,7 @@ if(window.recFindBtn){recFindBtn.onclick=()=>LWHInventory.findReceiving();}
 if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();recFindBtn.click();}};}
 if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findReceiving(); if(list && list.length) LWHInventory.printRows(list,receivingPrintOutput);};}
 if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseDelimited(recPaste.value);LWHStorage.set('inventoryRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} receiving row(s)`);};}
-saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#7a0019');LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();LWHUI.toast('Branding saved')})};
+saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#0f4a45');LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
 saveCalibration.onclick=()=>{LWHStorage.set('calX',calX.value||0);LWHStorage.set('calY',calY.value||0);LWHStorage.set('calScale',calScale.value||100);LWHUI.toast('Calibration saved')};
 saveInventoryUrl.onclick=()=>{const url=LWHInventory.normalizeUrl(setInventoryUrl.value||LWHInventory.DEFAULT_URL,LWHInventory.DEFAULT_URL); LWHStorage.set('inventoryUrl',url); setInventoryUrl.value=url; if(window.invCurrentUrl) invCurrentUrl.textContent=url; LWHUI.toast('Inventory source saved')};
