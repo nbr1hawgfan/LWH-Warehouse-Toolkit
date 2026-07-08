@@ -1,52 +1,32 @@
-# LWH Warehouse Toolkit v1.1.9
+# LWH Warehouse Toolkit v1.2.1
 
-Patch release focused on stabilizing camera scanning, pallet labels, and the newer inventory/receiving sheet layout.
+Internal PWA for Logistics Warehouse labels, signs, visitor badges, inventory lookup, receiving label printing, camera scanning, and customer lookup.
 
-## Replace these files
+## v1.2.1 additions
 
-- `index.html`
-- `service-worker.js`
-- `css/app.css`
-- `js/inventory.js`
-- `js/labels.js`
-- `js/scanner.js`
-- `README.md`
+- New **Customer Lookup** module.
+- Separate Customer Lookup CSV source.
+- Searches all customer fields, including generic/hidden report fields.
+- Shows all customer lookup columns in result cards.
+- Shows which field matched the search.
+- Lets users copy a full result for phone calls.
+- Lets users print pallet labels from customer lookup results.
+- Supports friendly display labels for Unique2, Unique3, Unique5, Unique6, Unique7, and Unique8.
 
-## New / fixed
+## Customer Lookup source layout
 
-- Camera scanner rebuilt using the working camera pattern from the LWH Search app: video preview, canvas frame capture, native BarcodeDetector where available, and ZXing fallback.
-- Pallet label layout tightened so bottom barcodes/QR codes do not cut off as easily.
-- Inventory parser supports the new receiving sheet columns:
-  - Location
-  - LWH_ID
-  - Customer_ID
-  - Customer
-  - InvRec
-  - BillToRef
-  - ItemNm
-  - ItemDesc
-  - LotNum
-  - Qty
-  - Units
-  - BayName
-  - DateReceived
-- Bulk paste now handles this 13-column format even if pasted without the header row.
-- Default inventory CSV source updated to the new published CSV link.
+Expected published CSV headers:
 
-## After upload
+```text
+ControlNumber, INV_Receipt, SubCustNm, ItemNm, LotNum, Qty, Location, Comments, Vendor, Unique2, Unique3, Unique5, Unique6, Unique7, Unique8, Warehouse, BayName, Still_In_Inventory, CurrentBay
+```
 
-1. Upload/replace the listed files.
-2. Wait for GitHub Pages to finish publishing.
-3. Hard refresh with Ctrl+Shift+R.
-4. If the PWA still shows old behavior, clear site data once or uninstall/reinstall the PWA.
+Default Customer Lookup CSV:
 
+```text
+https://docs.google.com/spreadsheets/d/e/2PACX-1vR88eoG2Hhmq_JCsS_jZMnBiTWlcmehB4i0A5Z6BXZ2oykJ0KqGB6IhrZc0Tr5l5ZOYxtuy8OffpPL-/pub?output=csv
+```
 
-## v1.1.9
-- Added Receiving / InvRec Print module.
-- Supports full 13-column receiving sheet: Location, LWH_ID, Customer_ID, Customer, InvRec, BillToRef, ItemNm, ItemDesc, LotNum, Qty, Units, BayName, DateReceived.
-- Inventory lookup now has Print All Found.
-- Pallet labels enlarged again for forklift readability while retaining Customer ID QR.
+## Deployment
 
-## v1.1.9
-- Fixed Receiving / InvRec Print mapping so InvRec uses column E from the new 13-column receiving sheet.
-- Added explicit known-layout detection for: Location, LWH_ID, Customer_ID, Customer, InvRec, BillToRef, ItemNm, ItemDesc, LotNum, Qty, Units, BayName, DateReceived.
+Upload all files/folders in this ZIP to the GitHub Pages repo root, replacing existing files. Then hard refresh the site. If the PWA still shows the old version, clear site data once or unregister the service worker.
