@@ -24,7 +24,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.1.7</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.1.8</div></div></div>
     <div class="header-actions"><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -35,6 +35,7 @@
       <button class="nav-btn" data-view="rack">4x6 Rack Labels</button>
       <button class="nav-btn" data-view="signs">8.5x11 Signs</button>
       <button class="nav-btn" data-view="pallet">Pallet Labels</button>
+      <button class="nav-btn" data-view="receiving">Receiving Print</button>
       <button class="nav-btn" data-view="contact">Contact QR</button>
       <button class="nav-btn" data-view="visitor">Visitor Badges</button>
       <button class="nav-btn" data-view="settings">Settings</button>
@@ -49,6 +50,7 @@
         <button class="module-card" data-view="rack"><b>📍 Rack Labels</b><span>4x6 bay tags with 1D barcode and QR.</span></button>
         <button class="module-card" data-view="signs"><b>🏢 Bay Signs</b><span>8.5x11 warehouse signage with barcode.</span></button>
         <button class="module-card" data-view="pallet"><b>📦 Pallet Labels</b><span>Simple entry, bulk paste, and print from lookup.</span></button>
+        <button class="module-card" data-view="receiving"><b>🚚 Receiving Print</b><span>Enter an InvRec and print every pallet label from that load.</span></button>
         <button class="module-card" data-view="visitor"><b>🎟 Visitor Badges</b><span>Visitor, vendor, contractor badges with optional photo.</span></button>
         <button class="module-card" data-view="settings"><b>⚙ Settings</b><span>Logo, defaults, calibration, and source data.</span></button>
       </div>
@@ -61,7 +63,7 @@
           <p class="hint">Uses your Google Sheet/CSV source while IT works on read-only DB access.</p>
           <label>Search<input id="invSearch" placeholder="Scan/enter LWH ID, bay, customer, item, lot..." autocomplete="off" /></label>
           <div class="grid-3"><button type="button" id="invSearchBtn">Search</button><button type="button" id="invScanBtn" class="ghost">Camera Scan</button><button type="button" id="invLoadBtn" class="ghost">Load / Refresh Data</button></div>
-          <details><summary>Paste inventory data instead</summary><p class="hint">Paste from Google Sheets or Excel with columns: Location, LWH_ID, Customer_ID, Customer, ItemNm, ItemDesc, LotNum, Qty, BayName.</p><textarea id="invPaste" rows="8"></textarea><button type="button" id="invPasteBtn">Use Pasted Data</button></details>
+          <details><summary>Paste inventory data instead</summary><p class="hint">Paste from Google Sheets or Excel. Supports: Location, LWH_ID, Customer_ID, Customer, InvRec, BillToRef, ItemNm, ItemDesc, LotNum, Qty, Units, BayName, DateReceived.</p><textarea id="invPaste" rows="8"></textarea><button type="button" id="invPasteBtn">Use Pasted Data</button></details>
           <div id="invStatus" class="hint">Inventory not loaded yet.</div><div class="hint small">Currently loading from:<br><code id="invCurrentUrl"></code></div>
         </form>
         <div><div id="inventoryResults" class="results no-print"></div><div id="lookupPrintOutput" class="print-area"></div></div>
@@ -81,7 +83,23 @@
 
     <section id="signs" class="view"><div class="tool-layout"><form class="panel no-print" id="signForm"><h2>8.5x11 Bay / Aisle Signs</h2><label>Sign list<textarea id="signList" rows="8" placeholder="MR201&#10;MR202&#10;Aisle MR"></textarea></label><div class="grid-2"><label>Orientation<select id="signOrientation"><option value="landscape" selected>Landscape</option><option value="portrait">Portrait</option></select></label><label>Subtitle<input id="signSubtitle" placeholder="Scan to assign or move pallet" /></label><label><input id="signShowQR" type="checkbox" checked /> Include QR Code</label><label><input id="signShowBarcode" type="checkbox" checked /> Include 1D Barcode</label></div><div class="actions"><button type="button" id="signGenerate">Generate Signs</button><button type="button" id="signClear" class="ghost">Clear</button></div></form><div id="signOutput" class="print-area"></div></div></section>
 
-    <section id="pallet" class="view"><div class="tool-layout"><form class="panel no-print" id="palletForm"><h2>Pallet Labels</h2><div class="segmented"><button type="button" class="seg active" data-pallet-mode="simple">Simple Entry</button><button type="button" class="seg" data-pallet-mode="bulk">Bulk Paste</button></div><div id="palletSimple"><div class="grid-2"><label>Location<input id="palLocation" /></label><label>LWH ID / Control #<input id="palLwhid" /></label><label>Customer ID<input id="palCustId" /></label><label>Customer<input id="palCustomer" /></label><label>Bay<input id="palBay" /></label><label>Item #<input id="palItem" /></label><label>Lot #<input id="palLot" /></label><label>Qty<input id="palQty" /></label><label>Date Received<input id="palDate" /></label></div><label>Description<input id="palDesc" /></label></div><div id="palletBulk" hidden><p class="hint">Paste from Excel or Google Sheets. Header row is okay.</p><textarea id="palletBulkText" rows="8" placeholder="Location&#9;LWH_ID&#9;Customer_ID&#9;Customer&#9;ItemNm&#9;ItemDesc&#9;LotNum&#9;Qty&#9;BayName"></textarea></div><div class="grid-2"><label><input id="palBarcode" type="checkbox" checked /> Include LWH barcode</label><label><input id="palQR" type="checkbox" checked /> Include full-detail QR</label><label><input id="palCustQR" type="checkbox" checked /> Include Customer ID QR</label><label>Copies<input id="palCopies" type="number" min="1" value="1" /></label></div><div class="actions"><button type="button" id="palGenerate">Generate Pallet Label</button><button type="button" id="palSample" class="ghost">Sample</button></div></form><div id="palletOutput" class="print-area"></div></div></section>
+    <section id="pallet" class="view"><div class="tool-layout"><form class="panel no-print" id="palletForm"><h2>Pallet Labels</h2><div class="segmented"><button type="button" class="seg active" data-pallet-mode="simple">Simple Entry</button><button type="button" class="seg" data-pallet-mode="bulk">Bulk Paste</button></div><div id="palletSimple"><div class="grid-2"><label>Location<input id="palLocation" /></label><label>LWH ID / Control #<input id="palLwhid" /></label><label>Customer ID<input id="palCustId" /></label><label>Customer<input id="palCustomer" /></label><label>Bay<input id="palBay" /></label><label>Item #<input id="palItem" /></label><label>Lot #<input id="palLot" /></label><label>Qty<input id="palQty" /></label><label>Date Received<input id="palDate" /></label></div><label>Description<input id="palDesc" /></label></div><div id="palletBulk" hidden><p class="hint">Paste from Excel or Google Sheets. Header row is okay.</p><textarea id="palletBulkText" rows="8" placeholder="Location&#9;LWH_ID&#9;Customer_ID&#9;Customer&#9;InvRec&#9;BillToRef&#9;ItemNm&#9;ItemDesc&#9;LotNum&#9;Qty&#9;Units&#9;BayName&#9;DateReceived"></textarea></div><div class="grid-2"><label><input id="palBarcode" type="checkbox" checked /> Include LWH barcode</label><label><input id="palQR" type="checkbox" checked /> Include full-detail QR</label><label><input id="palCustQR" type="checkbox" checked /> Include Customer ID QR</label><label>Copies<input id="palCopies" type="number" min="1" value="1" /></label></div><div class="actions"><button type="button" id="palGenerate">Generate Pallet Label</button><button type="button" id="palSample" class="ghost">Sample</button></div></form><div id="palletOutput" class="print-area"></div></div></section>
+
+
+
+    <section id="receiving" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="receivingForm">
+          <h2>Receiving / InvRec Print</h2>
+          <p class="hint">Load the Google Sheet/CSV, enter an InvRec, review matching pallets, then bulk print pallet labels.</p>
+          <label>InvRec<input id="recInvRec" placeholder="1174067" autocomplete="off" /></label>
+          <div class="grid-3"><button type="button" id="recFindBtn">Find InvRec</button><button type="button" id="recLoadBtn" class="ghost">Load / Refresh Data</button><button type="button" id="recPrintBtn" class="ghost">Print All Found</button></div>
+          <details><summary>Paste receiving data instead</summary><p class="hint">Paste the full sheet columns: Location, LWH_ID, Customer_ID, Customer, InvRec, BillToRef, ItemNm, ItemDesc, LotNum, Qty, Units, BayName, DateReceived.</p><textarea id="recPaste" rows="8"></textarea><button type="button" id="recPasteBtn">Use Pasted Data</button></details>
+          <div id="recStatus" class="hint">Enter an InvRec to begin.</div>
+        </form>
+        <div><div id="receivingResults" class="results no-print"></div><div id="receivingPrintOutput" class="print-area"></div></div>
+      </div>
+    </section>
 
     <section id="contact" class="view"><div class="tool-layout"><form class="panel no-print" id="contactForm"><h2>Contact QR Cards</h2><div class="grid-2"><label>Name<input id="conName" /></label><label>Title<input id="conTitle" /></label><label>Company<input id="conCompany" value="Logistics Warehouse" /></label><label>Phone<input id="conPhone" /></label><label>Email<input id="conEmail" /></label><label>Website<input id="conWebsite" /></label></div><label>Address<input id="conAddress" /></label><label>Logo image optional<input id="conLogo" type="file" accept="image/*" /></label><div class="grid-2"><label>Layout<select id="conLayout"><option value="full">QR + Text</option><option value="qronly">QR Only</option></select></label><label>Copies<input id="conCopies" type="number" min="1" value="1" /></label></div><div class="actions"><button type="button" id="conGenerate">Generate Contact Card</button><button type="button" id="conSample" class="ghost">Sample</button></div></form><div id="contactOutput" class="print-area"></div></div></section>
 
@@ -89,7 +107,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Primary color<input id="setColor" type="color" value="#7a0019" /></label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Inventory Source</h2><p class="hint">For GitHub Pages, your Google Sheet must be published/shared so CSV export can be read. You can also paste data in the Lookup screen.</p><label>CSV / Google Sheet export URL<input id="setInventoryUrl" /></label><div class="actions"><button id="saveInventoryUrl" type="button">Save Source</button><button id="testInventoryUrl" type="button" class="ghost">Test Load</button><button id="resetInventoryUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.1.6</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Inventory Lookup, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.1.8</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Inventory Lookup, Receiving Print, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">
