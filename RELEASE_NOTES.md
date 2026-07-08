@@ -1,9 +1,11 @@
-# Release Notes - v1.2.2
+# LWH Warehouse Toolkit v1.2.3
 
-This release makes the expanded customer inventory CSV the primary lookup source. The app now tries to load the CSV automatically when opened, reducing confusion for users who forgot to click Load. Pallet labels also show the Customer ID under the Customer ID QR so it stands out more clearly.
+This release simplifies the app for the warehouse team.
 
-# Release Notes — v1.2.2
+## Biggest change
+There is now one visible lookup: **Master Lookup**.
 
-This release adds a dedicated Customer Lookup module for customer calls and generic flat-file fields. It is separate from normal inventory lookup so employees can search one value without knowing whether it lives in Comments, Vendor, Unique2, Unique3, Unique5, Unique6, Unique7, Unique8, Lot, Item, INV Receipt, or ControlNumber.
+Employees no longer need to choose between Inventory Lookup and Customer Lookup. The Master Lookup searches the customer/master CSV across all normal and customer-specific fields.
 
-The result card shows every customer lookup field and identifies which field matched the search.
+## Why
+Simple wins on the floor. One lookup means less training, fewer wrong clicks, and fewer calls saying the app is not working.
