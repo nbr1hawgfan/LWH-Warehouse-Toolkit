@@ -1,4 +1,4 @@
-# LWH Warehouse Toolkit v1.1.8
+# LWH Warehouse Toolkit v1.1.9
 
 Patch release focused on stabilizing camera scanning, pallet labels, and the newer inventory/receiving sheet layout.
 
@@ -41,8 +41,12 @@ Patch release focused on stabilizing camera scanning, pallet labels, and the new
 4. If the PWA still shows old behavior, clear site data once or uninstall/reinstall the PWA.
 
 
-## v1.1.8
+## v1.1.9
 - Added Receiving / InvRec Print module.
 - Supports full 13-column receiving sheet: Location, LWH_ID, Customer_ID, Customer, InvRec, BillToRef, ItemNm, ItemDesc, LotNum, Qty, Units, BayName, DateReceived.
 - Inventory lookup now has Print All Found.
 - Pallet labels enlarged again for forklift readability while retaining Customer ID QR.
+
+## v1.1.9
+- Fixed Receiving / InvRec Print mapping so InvRec uses column E from the new 13-column receiving sheet.
+- Added explicit known-layout detection for: Location, LWH_ID, Customer_ID, Customer, InvRec, BillToRef, ItemNm, ItemDesc, LotNum, Qty, Units, BayName, DateReceived.
