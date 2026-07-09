@@ -582,6 +582,13 @@
     }
     jcDate.addEventListener('input',()=>{ jcResultJulian.textContent=toJulian(jcDate.value)||'—'; });
     jcCode.addEventListener('input',()=>{ const d=fromJulian(jcCode.value); jcResultCalendar.textContent=d?d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'—'; });
+
+    const dow=el('dcDow'), dowResult=el('dcDowResult');
+    if(dow) dow.addEventListener('input',()=>{
+      if(!dow.value){ dowResult.textContent='—'; return; }
+      const d=new Date(dow.value+'T00:00:00');
+      dowResult.textContent=d.toLocaleDateString(undefined,{weekday:'long'});
+    });
   }
 
   window.LWHUtilities={stopScannerCamera};

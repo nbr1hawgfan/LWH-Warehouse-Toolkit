@@ -146,6 +146,63 @@ function initManagers(){
   renderManagersList();
 }
 
+let renderQuickLinksList=()=>{};
+// Seeded once on first run only — if quickLinks already exists in storage
+// (even as an empty array from someone removing everything), it's left
+// alone so edits/removals aren't silently undone on a later load.
+const QUICK_LINKS_DEFAULT=[
+  {name:'Forklift Inspection',url:'https://script.google.com/macros/s/AKfycbyqgmk0BG_YoJIQcjCdVyMsR878-J1k0EQODinxxvQSx8CYzW2xZHIRLDbbua9TGup9/exec'},
+  {name:'PTO Requests',url:'https://script.google.com/macros/s/AKfycbwXblseav0VCgynTXxL6BYTLniZ4xJAiYholbDgnFPXBqL46_sxP1Rc49MWMga52QsV/exec'}
+];
+function renderQuickLinksHome(){
+  const wrap=document.getElementById('quickLinksHome'), grid=document.getElementById('quickLinksGrid');
+  if(!wrap||!grid) return;
+  const links=LWHStorage.get('quickLinks',[]).filter(l=>l.name&&l.url);
+  if(!links.length){ wrap.hidden=true; return; }
+  wrap.hidden=false;
+  grid.innerHTML=links.map(l=>`<a class="module-card" href="${String(l.url).replace(/"/g,'&quot;')}" target="_blank" rel="noopener"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg></div><b>${String(l.name).replace(/</g,'&lt;')}</b><span>Opens in a new tab</span></a>`).join('');
+}
+function initQuickLinks(){
+  const list=document.getElementById('qlList'); if(!list) return;
+  if(LWHStorage.get('quickLinks',null)===null){ LWHStorage.set('quickLinks',QUICK_LINKS_DEFAULT.slice()); }
+  renderQuickLinksList=function render(){
+    const links=LWHStorage.get('quickLinks',[]);
+    list.innerHTML=links.length?links.map((l,i)=>`<div class="grid-2" style="align-items:center;margin-bottom:6px"><input data-idx="${i}" data-field="name" value="${String(l.name||'').replace(/"/g,'&quot;')}" placeholder="Name (e.g. Forklift Inspection)" /><input data-idx="${i}" data-field="url" value="${String(l.url||'').replace(/"/g,'&quot;')}" placeholder="https://..." /></div><div class="actions" style="margin-bottom:12px"><button type="button" class="ghost" data-remove="${i}">Remove</button></div>`).join(''):'<p class="hint">No quick links yet.</p>';
+  };
+  list.addEventListener('input',e=>{
+    const t=e.target; if(t.dataset.idx===undefined) return;
+    const links=LWHStorage.get('quickLinks',[]);
+    if(!links[t.dataset.idx]) return;
+    links[t.dataset.idx][t.dataset.field]=t.value;
+    LWHStorage.set('quickLinks',links);
+    renderQuickLinksHome();
+  });
+  list.addEventListener('click',e=>{
+    const b=e.target.closest('[data-remove]'); if(!b) return;
+    const links=LWHStorage.get('quickLinks',[]);
+    links.splice(+b.dataset.remove,1);
+    LWHStorage.set('quickLinks',links);
+    renderQuickLinksList();
+    renderQuickLinksHome();
+  });
+  const addBtn=document.getElementById('qlAddBtn');
+  if(addBtn) addBtn.onclick=()=>{
+    const links=LWHStorage.get('quickLinks',[]);
+    links.push({name:'',url:''});
+    LWHStorage.set('quickLinks',links);
+    renderQuickLinksList();
+  };
+  const resetBtn=document.getElementById('qlResetBtn');
+  if(resetBtn) resetBtn.onclick=()=>{
+    LWHStorage.set('quickLinks',QUICK_LINKS_DEFAULT.slice());
+    renderQuickLinksList();
+    renderQuickLinksHome();
+    LWHUI.toast('Reset to default links');
+  };
+  renderQuickLinksList();
+  renderQuickLinksHome();
+}
+
 window.addEventListener('load',()=>{
   applySettings();
   refreshHero();
@@ -153,6 +210,7 @@ window.addEventListener('load',()=>{
   setInterval(tickClock,1000);
   setInterval(refreshHero,30*60*1000);
   initManagers();
+  initQuickLinks();
   setTimeout(()=>{ loadManagersFromUrl(); },500);
   LWHInventory.loadCached();
   // Auto-load the one master-sheet source so the team never has to remember

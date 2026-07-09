@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.13.1
+- **Quick Links: Forklift Inspection and PTO Requests are now baked in as defaults** — every fresh install shows both on the Home screen automatically, no pasting links required. Seeded once on first run only, so anyone who edits or removes them later won't have that undone on a future load. Added a "Reset to Defaults" button in Settings too.
+
+## v1.13.0
+- **Date Calc:** added Day of the Week — enter any date, get the weekday back. Works for any date, past or future (verified against Jan 15, 1971 → Friday).
+- **New: Quick Links** — Settings gets a new card to add named shortcuts (e.g. Forklift Inspection, PTO Request) with a URL each; they show up as tappable cards on the Home screen, opening in a new tab. Note: these are links, not embeds — Google Apps Script web apps generally block being embedded in another app's iframe via their own security headers, so true in-app embedding isn't realistic. This is the practical equivalent: one tap from Home to jump straight to any other tool.
+
 ## v1.12.0
 - **New: Date Calc** — Warehouse Tools tab with three parts: days between two dates, add/subtract days from a date, and a bidirectional **Julian (day-of-year) date converter** for reading date codes off overseas/manufactured product packaging. YYDDD (5-digit, e.g. 24001 = Jan 1, 2024) is unambiguous; shorter 4/3-digit codes are also accepted, picking the closest matching year when the format is ambiguous. Verified against real dates including a leap-year edge case (Dec 31, 2024 → 24366) in both directions.
 
