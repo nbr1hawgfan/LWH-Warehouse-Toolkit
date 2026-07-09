@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.13.3
+- **Customer ID QR moved off the bottom corner** — now sits in its own box directly beside the field grid (near Bay/Lot/InvRec), and made noticeably larger (was ~.72in in a shared corner, now ~.95in with its own dedicated space). Should scan much easier on rounded/curved units where the far corner was hard to reach. Item number stays full-width and prominent below the grid, unaffected. Barcode at the bottom now has the full row to itself and can run wider since it's no longer sharing space with the QR.
+
 ## v1.13.2
 - **"Unique8" is now labeled "Item Description"** in Master Lookup results and on the printed pallet label, matching how the field is actually being used. Pure display-layer change — the sheet's actual column header doesn't need to change, and nothing about searching or parsing was touched. Both places now pull the same customizable label, so if it's ever renamed again in Settings → Customer Field Labels, the printed label updates right along with Master Lookup automatically.
 

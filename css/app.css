@@ -182,25 +182,26 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pallet-title{font-size:.34in;font-weight:900;max-width:3.55in;white-space:nowrap;overflow:hidden;text-overflow:clip}
 .pallet-lwh{font-size:.38in;font-weight:900;white-space:nowrap}
 .pallet-custid{text-align:center;font-size:.30in;font-weight:900;margin:.03in 0 .02in;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:.025in .13in;margin-top:.035in;font-size:.145in;line-height:1.08;padding-bottom:.88in}
+.pallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:.025in .13in;font-size:.145in;line-height:1.08}
 .pallet-grid b{font-size:.102in}
 .pallet-grid b{text-transform:uppercase;letter-spacing:.03em}
 .pallet-grid .wide{grid-column:1 / -1}
+.pallet-info-row{display:flex;gap:.14in;align-items:flex-start;margin-top:.035in}
+.pallet-info-row .pallet-grid{flex:1;min-width:0}
+.pallet-qr-side{width:1.05in;flex-shrink:0;text-align:center}
+.pallet-qr-side .qr-heading{font-size:.08in;font-weight:900;line-height:1;margin-bottom:.03in}
+.pallet-qr-side .qrbox{width:.95in;height:.95in;margin:0 auto}
+.pallet-qr-side .cust-qr-value{font-size:.09in;font-weight:900;line-height:1.1;margin-top:.03in;word-break:break-all}
 .pallet-codes{position:absolute;left:.16in;right:.16in;bottom:.07in;display:flex;justify-content:space-between;align-items:flex-end;margin-top:0;max-height:.86in;overflow:hidden;gap:.12in}
 .pallet-codes.three-codes{align-items:flex-end}
-.pallet-codes .lwh-code{flex:1;min-width:2.25in;max-width:4.2in}
-.pallet-item-big{font-size:.40in;font-weight:900;color:#000;text-align:center;margin:.03in 0 0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pallet-codes .lwh-code{flex:1;max-width:100%}
+.pallet-item-big{font-size:.40in;font-weight:900;color:#000;text-align:center;margin:.05in 0 .22in;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .pallet-lwh{cursor:pointer}
 .pallet-label{color:#000}
 .pallet-grid>div{font-weight:700}
 .pallet-codes .barcode-text{font-size:13px;margin-top:-7px}
 .pallet-codes svg{max-width:100%;height:auto}
 .pallet-codes .qrbox canvas,.pallet-codes .qrbox img{max-width:.72in!important;max-height:.72in!important}
-.qr-labeled{text-align:center;font-size:.065in;font-weight:900;line-height:1.0}
-.qr-labeled .qrbox{margin:0 auto}
-.cust-id-qr .qr-heading{font-size:.075in;font-weight:900;line-height:1;margin-bottom:.01in}
-.cust-id-qr .cust-qr-value{font-size:.095in;font-weight:900;line-height:1.05;max-width:1.15in;overflow:hidden;text-overflow:clip;white-space:nowrap;margin-top:.01in}
-.cust-id-qr{min-width:.95in}
 .contact-card{width:3.375in;height:2.125in;padding:.12in;border:1px solid #000;display:flex;gap:.12in;align-items:center}
 .contact-card.qronly{justify-content:center}
 .contact-info{font-size:.13in;line-height:1.2}
