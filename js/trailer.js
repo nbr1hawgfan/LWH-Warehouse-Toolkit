@@ -23,6 +23,42 @@
   function el(id){ return document.getElementById(id); }
   function safe(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+  // Signature pad: Pointer Events cover mouse, touch, and stylus with one code
+  // path across modern browsers. Canvas internal resolution is fixed; drawing
+  // coordinates are scaled against the canvas's on-screen size so it stays
+  // accurate whether it's rendered full-width on a phone or a tablet.
+  function setupSignaturePad(canvas){
+    if(!canvas) return null;
+    canvas.width=600; canvas.height=150;
+    const ctx=canvas.getContext('2d');
+    ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#111';
+    let drawing=false, hasInk=false, last=null;
+    function pos(e){
+      const rect=canvas.getBoundingClientRect();
+      return {x:(e.clientX-rect.left)*(canvas.width/rect.width), y:(e.clientY-rect.top)*(canvas.height/rect.height)};
+    }
+    function start(e){ drawing=true; last=pos(e); e.preventDefault(); }
+    function move(e){
+      if(!drawing) return;
+      const p=pos(e);
+      ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+      last=p; hasInk=true;
+      e.preventDefault();
+    }
+    function end(){ drawing=false; }
+    canvas.addEventListener('pointerdown',start);
+    canvas.addEventListener('pointermove',move);
+    canvas.addEventListener('pointerup',end);
+    canvas.addEventListener('pointerleave',end);
+    canvas.addEventListener('pointercancel',end);
+    return {
+      clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); hasInk=false; },
+      hasSignature(){ return hasInk; },
+      dataUrl(){ return canvas.toDataURL('image/png'); }
+    };
+  }
+  let loaderPad=null, managerPad=null;
+
   function buildQuestionRow(q,idx,prefix){
     return `<div class="grid-2" style="align-items:center;margin-bottom:4px"><span style="font-weight:400">${safe(q)}</span><select id="${prefix}_${idx}"><option value="">— Not checked —</option><option value="yes">Yes</option><option value="no">No</option></select></div>`;
   }
@@ -90,8 +126,8 @@
       </div>
 
       <p class="tc-ack">We acknowledge that this load is leaving in good condition and that all customer request and instructions have been met.</p>
-      <div class="tc-sig">Loader Signature: <span class="tc-sigline"></span></div>
-      <div class="tc-sig">Manager/Supervisor Signature: <span class="tc-sigline"></span></div>
+      <div class="tc-sig">Loader Signature: ${(loaderPad&&loaderPad.hasSignature())?`<img class="tc-sig-img" src="${loaderPad.dataUrl()}" />`:'<span class="tc-sigline"></span>'}</div>
+      <div class="tc-sig">Manager/Supervisor Signature: ${(managerPad&&managerPad.hasSignature())?`<img class="tc-sig-img" src="${managerPad.dataUrl()}" />`:'<span class="tc-sigline"></span>'}</div>
     </div>`;
   }
 
@@ -106,12 +142,18 @@
     ['tcDoor','tcDate','tcTime','tcCarrier','tcTrailer','tcSeal','tcDriverName','tcDriverLicense','tcNotes'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
     GMP_QUESTIONS.forEach((_,i)=>{ const s=el('tcGmp_'+i); if(s) s.value=''; });
     PRESHIP_QUESTIONS.forEach((_,i)=>{ const s=el('tcPreShip_'+i); if(s) s.value=''; });
+    if(loaderPad) loaderPad.clear();
+    if(managerPad) managerPad.clear();
     const out=el('trailerPrintOutput'); if(out) out.innerHTML='';
   }
 
   window.addEventListener('load',()=>{
     if(!el('trailerForm')) return;
     renderLists();
+    loaderPad=setupSignaturePad(el('tcSigLoader'));
+    managerPad=setupSignaturePad(el('tcSigManager'));
+    const loaderClearBtn=el('tcSigLoaderClear'); if(loaderClearBtn) loaderClearBtn.onclick=()=>loaderPad&&loaderPad.clear();
+    const managerClearBtn=el('tcSigManagerClear'); if(managerClearBtn) managerClearBtn.onclick=()=>managerPad&&managerPad.clear();
     const genBtn=el('tcGenerate'); if(genBtn) genBtn.onclick=generate;
     const clearBtn=el('tcClear'); if(clearBtn) clearBtn.onclick=clearForm;
     // Default Date/Time to right now, purely for convenience — still fully editable.

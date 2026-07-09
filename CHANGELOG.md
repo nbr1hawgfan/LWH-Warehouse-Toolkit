@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.7.1
+- **Trailer Checklist:** compressed spacing throughout so it fits on one printed page instead of spilling onto a second.
+- **Trailer Checklist:** added digital signature pads (Loader and Manager/Supervisor) — draw with finger, stylus, or mouse; captured signature embeds directly into the printed checklist. Leave blank to sign by hand after printing, same as before.
+- **New: Scan Code tool** in Warehouse Tools — a standalone barcode/QR reader (paired with Generate Code), reusing the same scanner already proven in Master Lookup and Pallet Labels. Scan, then Copy / Add to Notes / Email the result.
+
 ## v1.7.0
 - **New: Trailer Pre-Loading Checklist** — a printable digital version of the paper GMP/pre-shipment checklist, matching the reference form: Door #, Date, Time, Carrier Name, Trailer Number, Seal Number, plus Driver Name and Driver's License # added per request. Both Yes/No checklists (General Trailer GMP and Pre-Shipment), Notes/Comments, the rejection warning, acknowledgment statement, and blank signature lines for Loader and Manager/Supervisor to sign by hand after printing.
 

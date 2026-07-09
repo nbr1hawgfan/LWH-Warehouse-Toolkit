@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -287,6 +287,29 @@
     render();
   }
 
+  // ---------- Scan Code (dedicated barcode/QR reader, separate from the generator) ----------
+  function initScanCode(){
+    const btn=el('scReadBtn'), resultCard=el('scResultCard'), resultText=el('scResultText');
+    const copyBtn=el('scCopyBtn'), notesBtn=el('scNotesBtn'), emailBtn=el('scEmailBtn');
+    if(!btn) return;
+    let lastValue='';
+    btn.onclick=()=>{
+      if(!window.LWHScanner){ alert('Scanner not available.'); return; }
+      LWHScanner.start(value=>{
+        lastValue=value;
+        resultText.textContent=value;
+        resultCard.hidden=false;
+      });
+    };
+    if(copyBtn) copyBtn.onclick=()=>{ if(!lastValue) return; navigator.clipboard?.writeText(lastValue).then(()=>LWHUI.toast('Copied: '+lastValue)).catch(()=>{}); };
+    if(notesBtn) notesBtn.onclick=()=>{
+      if(!lastValue) return;
+      const text=el('notepadText');
+      if(text){ text.value=text.value?(text.value+'\n'+lastValue):lastValue; LWHStorage.set('notepadText',text.value); LWHUI.toast('Added to notes'); }
+    };
+    if(emailBtn) emailBtn.onclick=()=>{ if(!lastValue) return; location.href=`mailto:?subject=${encodeURIComponent('Scanned Code')}&body=${encodeURIComponent(lastValue)}`; };
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); });
 })();

@@ -232,22 +232,24 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
    Page size for this is set dynamically via LWHLabels.setPrintPageSize(8.5,11)
    when generated, so it doesn't affect the small-label @page sizing above.
    ========================================================================= */
-.checklist-page{width:8.5in;min-height:11in;padding:.5in;background:#fff;color:#000;box-sizing:border-box;font-family:Arial,sans-serif}
-.tc-doortag{text-align:right;font-weight:700;font-size:14px;min-height:18px}
-.tc-title{text-align:center;text-decoration:underline;font-size:22px;margin:6px 0 14px}
-.tc-headrow{display:flex;justify-content:space-between;gap:20px;font-size:13px}
-.tc-headrow>div{line-height:1.7}
+.checklist-page{width:8.5in;min-height:11in;padding:.45in .5in;background:#fff;color:#000;box-sizing:border-box;font-family:Arial,sans-serif}
+.tc-doortag{text-align:right;font-weight:700;font-size:13px;min-height:16px}
+.tc-title{text-align:center;text-decoration:underline;font-size:20px;margin:2px 0 8px}
+.tc-headrow{display:flex;justify-content:space-between;gap:20px;font-size:12.5px}
+.tc-headrow>div{line-height:1.45}
 .tc-headright{text-align:right}
-.tc-section{text-align:center;font-size:16px;margin:18px 0 6px}
-.tc-instructions{text-align:center;font-size:12px;margin:0 0 10px}
-.tc-subsection{text-align:center;font-size:13px;font-weight:700;margin:10px 0 6px;text-transform:uppercase}
-.tc-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:6px}
-.tc-table th,.tc-table td{border:1px solid #000;padding:4px 8px}
+.tc-section{text-align:center;font-size:15px;margin:10px 0 4px}
+.tc-instructions{text-align:center;font-size:11.5px;margin:0 0 6px}
+.tc-subsection{text-align:center;font-size:12.5px;font-weight:700;margin:6px 0 3px;text-transform:uppercase}
+.tc-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:4px}
+.tc-table th,.tc-table td{border:1px solid #000;padding:2.5px 8px}
 .tc-table th{width:50px;text-align:center;background:#e5e5e5}
 .tc-table td.tc-x{width:50px;text-align:center;font-weight:900}
-.tc-notes{font-size:12px;margin-top:10px;border-bottom:1px solid #000;padding-bottom:14px}
-.tc-warning{text-align:center;font-weight:700;font-size:13px;margin:10px 0}
-.tc-box{border:2px solid #000;padding:10px;margin-top:12px}
-.tc-ack{font-weight:700;font-size:12px;margin-top:18px}
-.tc-sig{margin-top:28px;font-size:13px}
+.tc-notes{font-size:11.5px;margin-top:6px;border-bottom:1px solid #000;padding-bottom:8px}
+.tc-warning{text-align:center;font-weight:700;font-size:12.5px;margin:6px 0}
+.tc-box{border:2px solid #000;padding:7px;margin-top:8px}
+.tc-ack{font-weight:700;font-size:11.5px;margin-top:12px}
+.tc-sig{margin-top:16px;font-size:12.5px}
 .tc-sigline{display:inline-block;width:320px;border-bottom:1px solid #000;margin-left:6px}
+.tc-sig-img{height:46px;vertical-align:middle;margin-left:6px}
+.sig-pad{width:100%;height:140px;border:1.5px dashed var(--line);border-radius:var(--radius-sm);background:#fff;touch-action:none;cursor:crosshair;display:block}

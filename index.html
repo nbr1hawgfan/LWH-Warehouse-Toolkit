@@ -28,7 +28,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.7.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.7.1</div></div></div>
     <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -60,7 +60,7 @@
         <button class="module-card" data-view="trailer"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg></div><b>Trailer Checklist</b><span>Pre-loading GMP and pre-shipment checklist, ready to print.</span></button>
         <button class="module-card" data-view="visitor"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg></div><b>Visitor Badges</b><span>Visitor, vendor, contractor badges with optional photo.</span></button>
         <button class="module-card" data-view="settings"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.4-2-3.4-2.3.8a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.3-.8-2 3.4 2 1.4a7.6 7.6 0 0 0 0 3l-2 1.4 2 3.4 2.3-.8a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.8 2-3.4z"/></svg></div><b>Settings</b><span>Logo, colors, calibration, and source data.</span></button>
-        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad with scan-to-notes, document scanner, and a QR/barcode generator.</span></button>
+        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, and a QR/barcode generator + reader.</span></button>
       </div>
     </section>
 
@@ -136,6 +136,15 @@
 
           <label>Notes / Comments<textarea id="tcNotes" rows="2"></textarea></label>
 
+          <h3>Signatures</h3>
+          <p class="hint">Draw with a finger, stylus, or mouse — or leave blank and sign by hand after printing.</p>
+          <label>Loader Signature</label>
+          <canvas id="tcSigLoader" class="sig-pad"></canvas>
+          <div class="actions"><button type="button" id="tcSigLoaderClear" class="ghost">Clear Loader Signature</button></div>
+          <label>Manager/Supervisor Signature</label>
+          <canvas id="tcSigManager" class="sig-pad"></canvas>
+          <div class="actions"><button type="button" id="tcSigManagerClear" class="ghost">Clear Manager Signature</button></div>
+
           <div class="actions"><button type="button" id="tcGenerate">Generate Checklist</button><button type="button" id="tcClear" class="ghost">Clear Form</button><button type="button" onclick="window.print()" class="ghost">Print</button></div>
         </form>
         <div><div id="trailerPrintOutput" class="print-area"></div></div>
@@ -155,6 +164,7 @@
           <button type="button" class="seg" data-util="notepad">Notepad</button>
           <button type="button" class="seg" data-util="scanner">Doc Scanner</button>
           <button type="button" class="seg" data-util="generate">Generate Code</button>
+          <button type="button" class="seg" data-util="scancode">Scan Code</button>
         </div>
       </div>
 
@@ -245,11 +255,21 @@
           <div id="genTextLabel" style="font-weight:900;font-size:1.3em;margin-top:10px;word-break:break-all"></div>
         </div>
       </div>
+
+      <div id="utilScancode" class="card util-panel no-print" hidden>
+        <p class="hint">Scan any barcode or QR code — same scanner already used in Master Lookup and Pallet Labels — and do something with the result.</p>
+        <div class="actions"><button type="button" id="scReadBtn">Start Scanning</button></div>
+        <div class="card" style="margin-top:14px;text-align:center;background:var(--bg)" id="scResultCard" hidden>
+          <div class="hint">Last Scanned</div>
+          <div id="scResultText" style="font-size:1.6em;font-weight:900;color:var(--brand);word-break:break-all"></div>
+          <div class="actions" style="justify-content:center;margin-top:10px"><button type="button" id="scCopyBtn" class="ghost">Copy</button><button type="button" id="scNotesBtn" class="ghost">Add to Notes</button><button type="button" id="scEmailBtn" class="ghost">Email</button></div>
+        </div>
+      </div>
     </section>
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Primary color<input id="setColor" type="color" value="#0f4a45" /></label><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one sheet now. Auto-loads fresh every time the app opens.</p><label>CSV / Google Sheet export URL<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.7.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Warehouse Tools, Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.7.1</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Warehouse Tools, Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">
