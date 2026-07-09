@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.10.2
+- **Pallet label:** Customer ID is now its own large, fully-centered line right under the header (was small text tucked next to the location). Location itself is unaffected — it's already shown in the field grid below, so nothing was lost by pulling it out of that line. Made small compensating trims to header/grid spacing to help keep everything on one label.
+
 ## v1.10.1
 - **Fixed Trailer Checklist print cutoff.** Found the real cause: the tables weren't using a fixed layout, so long question text could occasionally force the table wider than the page, spilling off the right edge. Added `table-layout:fixed` so columns stay within bounds regardless of text length. Also tightened page padding and trimmed remaining vertical spacing further to guarantee one page even in the tightest cases.
 - Note: if pages still print with a bigger left margin than expected, check the browser's print dialog for a "Margins" setting — some browsers apply their own default margin on top of the page's CSS unless it's explicitly set to "None."

@@ -178,11 +178,11 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .sign-subtitle{font-size:.38in;font-weight:700;margin-bottom:.25in}
 .sign-codes{display:flex;justify-content:center;align-items:center;gap:.7in}
 .pallet-label{width:6in;height:4in;padding:.13in .16in;border:2px solid #000;position:relative}
-.pallet-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:.04in}
+.pallet-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:.02in}
 .pallet-title{font-size:.34in;font-weight:900;max-width:3.55in;white-space:nowrap;overflow:hidden;text-overflow:clip}
 .pallet-lwh{font-size:.38in;font-weight:900;white-space:nowrap}
-.pallet-sub{font-size:.135in;font-weight:800;margin-top:.01in;white-space:nowrap;overflow:hidden;text-overflow:clip}
-.pallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:.025in .13in;margin-top:.065in;font-size:.145in;line-height:1.08;padding-bottom:.88in}
+.pallet-custid{text-align:center;font-size:.30in;font-weight:900;margin:.03in 0 .02in;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:.025in .13in;margin-top:.035in;font-size:.145in;line-height:1.08;padding-bottom:.88in}
 .pallet-grid b{font-size:.102in}
 .pallet-grid b{text-transform:uppercase;letter-spacing:.03em}
 .pallet-grid .wide{grid-column:1 / -1}
