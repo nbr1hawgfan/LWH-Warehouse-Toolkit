@@ -6,13 +6,20 @@
     return { lwhid:r.controlNumber||'', customer:r.subCustNm||'', item:r.itemNm||'', lot:r.lotNum||'', qty:r.qty||'', location:r.location||r.warehouse||'', bay:r.currentBay||r.bayName||'' };
   }
 
+  // Splits a field's input on commas into lowercase, trimmed tokens — lets a
+  // driver enter several item numbers (or bays) at once and get everything
+  // combined into one pick list, instead of one search/print per item.
+  function tokens(v){ return String(v||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean); }
+  function matchesAny(value,toks){ if(!toks.length) return true; const v=String(value||'').toLowerCase(); return toks.some(t=>v.includes(t)); }
+
   function doSearch(){
-    const custQ=(el('plCustomer').value||'').trim().toLowerCase();
-    const itemQ=(el('plItem').value||'').trim().toLowerCase();
-    const lotQ=(el('plLot').value||'').trim().toLowerCase();
+    const custToks=tokens(el('plCustomer').value);
+    const itemToks=tokens(el('plItem').value);
+    const lotToks=tokens(el('plLot').value);
+    const bayToks=tokens((el('plBay')||{}).value);
     const status=el('plStatus'), out=el('picklistResults'), printOut=el('picklistPrintOutput');
     if(printOut) printOut.innerHTML='';
-    if(!custQ && !itemQ && !lotQ){
+    if(!custToks.length && !itemToks.length && !lotToks.length && !bayToks.length){
       status.textContent='Enter at least one filter to search.';
       if(out) out.innerHTML='';
       return [];
@@ -20,9 +27,10 @@
     if(!window.LWHInventory || !LWHInventory.getAllRows){ status.textContent='Inventory data not available yet.'; return []; }
     const rows=LWHInventory.getAllRows();
     const matches=rows.filter(r=>{
-      if(custQ && !String(r.subCustNm||'').toLowerCase().includes(custQ)) return false;
-      if(itemQ && !String(r.itemNm||'').toLowerCase().includes(itemQ)) return false;
-      if(lotQ && !String(r.lotNum||'').toLowerCase().includes(lotQ)) return false;
+      if(!matchesAny(r.subCustNm,custToks)) return false;
+      if(!matchesAny(r.itemNm,itemToks)) return false;
+      if(!matchesAny(r.lotNum,lotToks)) return false;
+      if(!matchesAny(r.currentBay||r.bayName,bayToks)) return false;
       return true;
     });
     render(matches.map(toPickRow));
@@ -68,7 +76,7 @@
   }
 
   function clearForm(){
-    ['plCustomer','plItem','plLot'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
+    ['plCustomer','plItem','plLot','plBay'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
     const out=el('picklistResults'); if(out) out.innerHTML='';
     const printOut=el('picklistPrintOutput'); if(printOut) printOut.innerHTML='';
     const status=el('plStatus'); if(status) status.textContent='Enter at least one filter to search.';
@@ -80,7 +88,7 @@
     if(!el('picklistForm')) return;
     const searchBtn=el('plSearchBtn'); if(searchBtn) searchBtn.onclick=doSearch;
     const clearBtn=el('plClearBtn'); if(clearBtn) clearBtn.onclick=clearForm;
-    ['plCustomer','plItem','plLot'].forEach(id=>{
+    ['plCustomer','plItem','plLot','plBay'].forEach(id=>{
       const f=el(id); if(!f) return;
       f.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doSearch(); } });
       f.addEventListener('input',debounce(doSearch,300));
