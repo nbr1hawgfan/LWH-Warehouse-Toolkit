@@ -250,18 +250,41 @@
       LWHUI.toast('Sharing not supported on this browser — downloaded instead');
     }
   }
+  // Combines every captured page into one real, multi-page PDF — each photo
+  // scaled to fit a letter-size page, centered, preserving its aspect ratio.
+  // Good for handing off something like a signed Bill of Lading as one file
+  // instead of a pile of separate photos.
+  function downloadAsPdf(){
+    if(!scanPagesData.length){ LWHUI.toast('No pages captured yet'); return; }
+    if(!window.jspdf){ alert('The PDF library failed to load — check your internet connection. Share All Pages still works as an alternative.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'in',format:'letter'});
+    const pageW=8.5, pageH=11, margin=0.4;
+    const maxW=pageW-margin*2, maxH=pageH-margin*2;
+    scanPagesData.forEach((p,i)=>{
+      if(i>0) doc.addPage();
+      const imgData=p.canvas.toDataURL('image/jpeg',0.9);
+      const ratio=p.canvas.width/p.canvas.height;
+      let w=maxW, h=w/ratio;
+      if(h>maxH){ h=maxH; w=h*ratio; }
+      doc.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
+    });
+    doc.save('scanned-document.pdf');
+    LWHUI.toast('PDF downloaded');
+  }
   function initScanner(){
     const openBtn=el('scanCaptureBtn'); if(!openBtn) return;
     openBtn.onclick=openScannerCamera;
     el('scanCloseBtn').onclick=stopScannerCamera;
     el('scanSnapBtn').onclick=capturePage;
     el('scanShareAll').onclick=shareAllPages;
+    const pdfBtn=el('scanDownloadPdf'); if(pdfBtn) pdfBtn.onclick=downloadAsPdf;
     el('scanClearAll').onclick=()=>{ scanPagesData.length=0; renderScanPages(); };
   }
 
   // ---------- Ad-hoc QR/Barcode generator ----------
   function initGenerate(){
-    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel');
+    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel'), shareBtn=el('genShareBtn');
     if(!text) return;
     let mode='qr';
     function render(){
@@ -285,6 +308,48 @@
       render();
     });
     render();
+
+    // Converts whichever code is currently shown (QR canvas, or 1D barcode SVG)
+    // into a PNG so it can go through the same native share sheet already
+    // used elsewhere in the app — codes are visual, not text, so the normal
+    // clipboard/mailto tricks don't apply here.
+    function currentOutputAsBlob(){
+      if(mode==='qr'){
+        const canvas=qrBox.querySelector('canvas');
+        if(canvas) return new Promise(res=>canvas.toBlob(res,'image/png'));
+        const img=qrBox.querySelector('img');
+        if(img) return fetch(img.src).then(r=>r.blob());
+        return Promise.resolve(null);
+      }
+      if(!barcodeSvg.querySelector('rect,path,g')) return Promise.resolve(null);
+      const svgData=new XMLSerializer().serializeToString(barcodeSvg);
+      const svgUrl=URL.createObjectURL(new Blob([svgData],{type:'image/svg+xml;charset=utf-8'}));
+      return new Promise((resolve)=>{
+        const img=new Image();
+        img.onload=()=>{
+          const canvas=document.createElement('canvas');
+          canvas.width=barcodeSvg.clientWidth||400; canvas.height=barcodeSvg.clientHeight||150;
+          const ctx=canvas.getContext('2d');
+          ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,0,0,canvas.width,canvas.height);
+          URL.revokeObjectURL(svgUrl);
+          canvas.toBlob(blob=>resolve(blob),'image/png');
+        };
+        img.onerror=()=>resolve(null);
+        img.src=svgUrl;
+      });
+    }
+    if(shareBtn) shareBtn.onclick=async()=>{
+      const blob=await currentOutputAsBlob();
+      if(!blob){ alert('Type something first to generate a code.'); return; }
+      const file=new File([blob],(mode==='qr'?'qr-code.png':'barcode.png'),{type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file],title:text.value||'Code'}); }catch(e){ /* user cancelled */ }
+      } else {
+        const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; document.body.append(a); a.click(); a.remove();
+        LWHUI.toast('Sharing not supported here — downloaded instead');
+      }
+    };
   }
 
   // ---------- Scan Code (dedicated barcode/QR reader, separate from the generator) ----------

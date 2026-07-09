@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.9.1
+- **Generate Code:** added a Share button — converts the on-screen QR or barcode into a PNG and sends it through the phone's native share sheet (same pattern already used elsewhere in the app), with a download fallback if sharing isn't supported.
+- **Doc Scanner:** added "Download as PDF" — combines every captured page into one real, multi-page PDF file (each photo fit to its own letter-size page), good for handing off something like a signed Bill of Lading as a single document instead of loose photos. "Share All Pages" (individual images via the native share sheet) is still there too, for whoever prefers that instead.
+
 ## v1.9.0
 - **New: Trailer Cube** — Warehouse Tools tab estimating how many units of a given size fit in a 53' dry van. Tries the unit both ways (as-is and rotated 90°) and picks whichever fits more per layer, multiplies by stacking height, and separately checks the trailer's weight limit — reporting whichever one (cube or weight) is actually the limiting factor, since heavier product often hits the weight cap well before it hits the cube cap.
 - Save common or odd-sized units as named profiles (e.g. "Standard Pallet," "Customer A Crate") so dimensions don't need retyping every time.
