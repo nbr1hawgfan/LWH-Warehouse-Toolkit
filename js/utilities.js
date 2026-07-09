@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -163,13 +163,21 @@
 
   // ---------- Notepad ----------
   function initNotepad(){
-    const text=el('notepadText'), copyBtn=el('notepadCopy'), emailBtn=el('notepadEmail'), clearBtn=el('notepadClear');
+    const text=el('notepadText'), copyBtn=el('notepadCopy'), emailBtn=el('notepadEmail'), clearBtn=el('notepadClear'), scanBtn=el('notepadScanBtn');
     if(!text) return;
     text.value=LWHStorage.get('notepadText','');
     text.addEventListener('input',()=>LWHStorage.set('notepadText',text.value));
     if(copyBtn) copyBtn.onclick=()=>{ navigator.clipboard?.writeText(text.value).then(()=>LWHUI.toast('Copied to clipboard')).catch(()=>alert(text.value)); };
     if(emailBtn) emailBtn.onclick=()=>{ const body=encodeURIComponent(text.value||''); location.href=`mailto:?subject=${encodeURIComponent('Warehouse Notes')}&body=${body}`; };
     if(clearBtn) clearBtn.onclick=()=>{ if(confirm('Clear notepad? This cannot be undone.')){ text.value=''; LWHStorage.set('notepadText',''); } };
+    if(scanBtn) scanBtn.onclick=()=>{
+      if(!window.LWHScanner){ alert('Scanner not available.'); return; }
+      LWHScanner.start(value=>{
+        text.value=text.value?(text.value+'\n'+value):value;
+        LWHStorage.set('notepadText',text.value);
+        LWHUI.toast('Added to notes: '+value);
+      });
+    };
   }
 
   // ---------- Basic document scanner ----------
@@ -251,6 +259,34 @@
     el('scanClearAll').onclick=()=>{ scanPagesData.length=0; renderScanPages(); };
   }
 
+  // ---------- Ad-hoc QR/Barcode generator ----------
+  function initGenerate(){
+    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel');
+    if(!text) return;
+    let mode='qr';
+    function render(){
+      const v=text.value.trim();
+      label.textContent=v;
+      if(mode==='qr'){
+        qrBox.style.display=''; barcodeSvg.style.display='none';
+        qrBox.innerHTML='';
+        if(v && window.LWHQR) LWHQR.make(qrBox,v,220);
+      } else {
+        qrBox.style.display='none'; barcodeSvg.style.display='inline-block';
+        barcodeSvg.innerHTML='';
+        if(v && window.LWHBarcode){ try{ LWHBarcode.make(barcodeSvg,v,{height:100,width:3}); }catch(e){ barcodeSvg.outerHTML='<div class="hint">Could not generate a barcode for that text.</div>'; } }
+      }
+    }
+    text.addEventListener('input',render);
+    if(tabs) tabs.addEventListener('click',e=>{
+      const b=e.target.closest('[data-gentype]'); if(!b) return;
+      tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
+      mode=b.dataset.gentype;
+      render();
+    });
+    render();
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); });
 })();

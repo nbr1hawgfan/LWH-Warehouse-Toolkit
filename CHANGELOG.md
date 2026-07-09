@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.7.0
+- **New: Trailer Pre-Loading Checklist** — a printable digital version of the paper GMP/pre-shipment checklist, matching the reference form: Door #, Date, Time, Carrier Name, Trailer Number, Seal Number, plus Driver Name and Driver's License # added per request. Both Yes/No checklists (General Trailer GMP and Pre-Shipment), Notes/Comments, the rejection warning, acknowledgment statement, and blank signature lines for Loader and Manager/Supervisor to sign by hand after printing.
+
+## v1.6.0
+- **Ad-hoc QR/Barcode Generator** — new Warehouse Tools tab: type or paste anything, get a QR code or 1D barcode instantly, printable directly (unlike the other Warehouse Tools panels, which are screen-only).
+- **Scan to Notes** — new button in the Notepad tab. Reuses the same barcode/QR scanner already proven in Master Lookup and Pallet Labels; scans straight into your notes, which can then be copied or emailed same as before.
+
 ## v1.5.3
 - Hardened the Storage Space Estimator: if any expected field is missing it now logs a clear console error instead of silently doing nothing, and calculations also listen for the `change` event as a fallback to `input`.
 - Bumped the service worker cache version to force a clean re-fetch of all app files — if the estimator boxes were showing 0 despite valid inputs, this was very likely a stale cached JS file from before that feature existed. If it happens again after this update, fully close the app/tab (not just refresh) or clear site data for the page once, since PWA service workers can hold onto an old version until every tab is closed.
