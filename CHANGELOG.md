@@ -1,16 +1,5 @@
 # Changelog
 
-## v1.10.2
-- **Pallet label:** Customer ID is now its own large, fully-centered line right under the header (was small text tucked next to the location). Location itself is unaffected — it's already shown in the field grid below, so nothing was lost by pulling it out of that line. Made small compensating trims to header/grid spacing to help keep everything on one label.
-
-## v1.10.1
-- **Fixed Trailer Checklist print cutoff.** Found the real cause: the tables weren't using a fixed layout, so long question text could occasionally force the table wider than the page, spilling off the right edge. Added `table-layout:fixed` so columns stay within bounds regardless of text length. Also tightened page padding and trimmed remaining vertical spacing further to guarantee one page even in the tightest cases.
-- Note: if pages still print with a bigger left margin than expected, check the browser's print dialog for a "Margins" setting — some browsers apply their own default margin on top of the page's CSS unless it's explicitly set to "None."
-- **Pick List:** added a Bay filter field. **All four filters (Customer, Item #, Lot #, Bay) now accept comma-separated multiple values**, OR'd within that field — e.g. entering several item numbers picks everything for all of them in one combined, one-shot printed list instead of one search/print per item.
-
-## v1.10.0
-- **New: Pick List Generator** — new top-level screen (lives next to Master Lookup/Trailer Checklist since it reads the same master sheet). Filter by any combination of Customer, Item #, and Lot #; results show quantity and bay location per match. "Generate Pick List" prints a landscape table report — one row per matching pallet/location, each with a small scannable QR code or 1D barcode (your choice) for the LWH ID, so a forklift driver can scan straight off the printed sheet. Long result sets paginate cleanly across multiple pages with the header row repeating on each.
-
 ## v1.9.1
 - **Generate Code:** added a Share button — converts the on-screen QR or barcode into a PNG and sends it through the phone's native share sheet (same pattern already used elsewhere in the app), with a download fallback if sharing isn't supported.
 - **Doc Scanner:** added "Download as PDF" — combines every captured page into one real, multi-page PDF file (each photo fit to its own letter-size page), good for handing off something like a signed Bill of Lading as a single document instead of loose photos. "Share All Pages" (individual images via the native share sheet) is still there too, for whoever prefers that instead.
