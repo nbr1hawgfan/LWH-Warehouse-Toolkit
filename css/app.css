@@ -177,7 +177,9 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pallet-grid .wide{grid-column:1 / -1}
 .pallet-codes{position:absolute;left:.16in;right:.16in;bottom:.07in;display:flex;justify-content:space-between;align-items:flex-end;margin-top:0;max-height:.86in;overflow:hidden;gap:.12in}
 .pallet-codes.three-codes{align-items:flex-end}
-.pallet-codes .lwh-code{flex:1;min-width:2.25in;max-width:2.75in}
+.pallet-codes .lwh-code{flex:1;min-width:2.25in;max-width:4.2in}
+.pallet-item-big{font-size:.34in;font-weight:900;color:#000;text-align:center;margin:.03in 0 0;cursor:pointer}
+.pallet-lwh{cursor:pointer}
 .pallet-codes .barcode-text{font-size:13px;margin-top:-7px}
 .pallet-codes svg{max-width:100%;height:auto}
 .pallet-codes .qrbox canvas,.pallet-codes .qrbox img{max-width:.72in!important;max-height:.72in!important}

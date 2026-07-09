@@ -42,6 +42,19 @@ function autoFitText(el,minPx=30){
   }
 }
 function autoFitRackTitles(root){root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,24));requestAnimationFrame(()=>root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,24)));}
+function autoFitPalletItems(root){root.querySelectorAll('.pallet-item-big').forEach(el=>autoFitText(el,18));requestAnimationFrame(()=>root.querySelectorAll('.pallet-item-big').forEach(el=>autoFitText(el,18)));}
+// Tap the big LWH ID or Item number on screen to copy it — handy for pasting
+// into an email or another system. Bound once per output container (guarded
+// by a flag) since generatePalletRows re-runs against the same container
+// every time labels are regenerated.
+function bindCopyToClipboard(out){
+  if(out._copyBound) return; out._copyBound=true;
+  out.addEventListener('click',e=>{
+    const t=e.target.closest('.pallet-lwh,.pallet-item-big'); if(!t) return;
+    const text=(t.textContent||'').trim(); if(!text) return;
+    navigator.clipboard?.writeText(text).then(()=>LWHUI.toast('Copied: '+text)).catch(()=>{});
+  });
+}
 function safeAttr(v){return LWHUI.safe(String(v??''));}
 
 function generateRack(){const out=document.getElementById('rackOutput');out.innerHTML='';const vals=LWHUI.lines(rackList.value);const copies=+rackCopies.value||1;vals.forEach(v=>{for(let i=0;i<copies;i++){out.append(page(`rack-label rack-${rackSpacing.value}`,`<div class="rack-title">${safeAttr(v)}</div><div class="rack-code-row"><div class="barcode-wrap"><svg data-barcode="${safeAttr(v)}" data-height="${rackBarcodeHeight.value}" data-width="${rackBarcodeWidth.value}"></svg><div class="barcode-text">${safeAttr(v)}</div></div><div class="qrbox" data-qr="${safeAttr(v)}" data-size="126"></div></div>`))}});autoFitRackTitles(out);finishBarcodes(out);LWHStorage.set('rackList',rackList.value);LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);LWHUI.toast(`Generated ${out.children.length} rack label(s)`)}
@@ -71,16 +84,17 @@ function normalizePalletRow(r){return{location:r.location||r.Location||'',lwhid:
 function palletLabelHtml(r){
   r=normalizePalletRow(r);
   const code=r.lwhid||r.bay||r.item||'PALLET';
-  const qr=JSON.stringify(r);
   const custQr=(r.custId||'').trim();
   const line2=[r.location,r.custId].filter(Boolean).join(' · ');
-  return `<div class="pallet-head"><div><div class="pallet-title">${safeAttr(r.customer||'PALLET LABEL')}</div><div class="pallet-sub">${safeAttr(line2)}</div></div><div class="pallet-lwh">${safeAttr(r.lwhid||'')}</div></div><div class="pallet-grid"><div><b>Location</b><br>${safeAttr(r.location)}</div><div><b>Bay</b><br>${safeAttr(r.bay)}</div><div><b>Item</b><br>${safeAttr(r.item)}</div><div><b>Lot</b><br>${safeAttr(r.lot)}</div><div><b>Qty</b><br>${safeAttr(r.qty)}</div>${r.invRec?`<div><b>InvRec</b><br>${safeAttr(r.invRec)}</div>`:''}${r.billToRef?`<div><b>BillToRef</b><br>${safeAttr(r.billToRef)}</div>`:''}${r.vendor?`<div><b>Vendor</b><br>${safeAttr(r.vendor)}</div>`:''}${r.unique8?`<div><b>Unique 8</b><br>${safeAttr(r.unique8)}</div>`:''}${r.date?`<div><b>Date Received</b><br>${safeAttr(r.date)}</div>`:''}${r.desc?`<div class="wide"><b>Description</b><br>${safeAttr(r.desc)}</div>`:''}</div><div class="pallet-codes ${custQr&&palCustQR.checked?'three-codes':''}">${palBarcode.checked?`<div class="barcode-wrap lwh-code"><svg data-barcode="${safeAttr(code)}" data-height="50" data-width="1.65"></svg><div class="barcode-text">LWH ${safeAttr(code)}</div></div>`:''}${palQR.checked?`<div class="qr-labeled"><div class="qrbox" data-qr='${safeAttr(qr)}' data-size="72"></div><div>DETAILS</div></div>`:''}${custQr&&palCustQR.checked?`<div class="qr-labeled cust-id-qr"><div class="qr-heading">CUSTOMER ID</div><div class="qrbox" data-qr="${safeAttr(custQr)}" data-size="72"></div><div class="cust-qr-value">${safeAttr(custQr)}</div></div>`:''}</div>`;
+  return `<div class="pallet-head"><div><div class="pallet-title">${safeAttr(r.customer||'PALLET LABEL')}</div><div class="pallet-sub">${safeAttr(line2)}</div></div><div class="pallet-lwh">${safeAttr(r.lwhid||'')}</div></div><div class="pallet-grid"><div><b>Location</b><br>${safeAttr(r.location)}</div><div><b>Bay</b><br>${safeAttr(r.bay)}</div><div><b>Item</b><br>${safeAttr(r.item)}</div><div><b>Lot</b><br>${safeAttr(r.lot)}</div><div><b>Qty</b><br>${safeAttr(r.qty)}</div>${r.invRec?`<div><b>InvRec</b><br>${safeAttr(r.invRec)}</div>`:''}${r.billToRef?`<div><b>BillToRef</b><br>${safeAttr(r.billToRef)}</div>`:''}${r.vendor?`<div><b>Vendor</b><br>${safeAttr(r.vendor)}</div>`:''}${r.unique8?`<div><b>Unique 8</b><br>${safeAttr(r.unique8)}</div>`:''}${r.date?`<div><b>Date Received</b><br>${safeAttr(r.date)}</div>`:''}${r.desc?`<div class="wide"><b>Description</b><br>${safeAttr(r.desc)}</div>`:''}${r.item?`<div class="pallet-item-big wide">${safeAttr(r.item)}</div>`:''}</div><div class="pallet-codes">${palBarcode.checked?`<div class="barcode-wrap lwh-code"><svg data-barcode="${safeAttr(code)}" data-height="55" data-width="2.3"></svg><div class="barcode-text">LWH ${safeAttr(code)}</div></div>`:''}${custQr&&palCustQR.checked?`<div class="qr-labeled cust-id-qr"><div class="qr-heading">CUSTOMER ID</div><div class="qrbox" data-qr="${safeAttr(custQr)}" data-size="72"></div><div class="cust-qr-value">${safeAttr(custQr)}</div></div>`:''}</div>`;
 }
 function generatePalletRows(rows,target){
   const out=target||palletOutput; out.innerHTML='';
   const copies=+palCopies.value||1;
   (rows||[]).map(normalizePalletRow).filter(r=>Object.values(r).some(Boolean)).forEach(r=>{for(let i=0;i<copies;i++){out.append(page('pallet-label',palletLabelHtml(r)))}});
   finishBarcodes(out);
+  autoFitPalletItems(out);
+  bindCopyToClipboard(out);
   setPrintPageSize(6,4); // force landscape 6x4 so it prints as shaped, no manual dialog fix needed
   LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);
   LWHUI.toast(`Generated ${out.children.length} pallet label(s)`);
