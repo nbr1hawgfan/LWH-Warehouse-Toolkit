@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.5.0
+- **New: Warehouse Tools** — a self-contained toolkit for the floor, no leaving the app: four-function calculator, unit converter (kg↔lb, in/ft/cm/m, all fields linked live), pallet footprint calculator (one-tap standard 40×48), a persistent notepad (copy to clipboard or email), and a basic document scanner (capture pages, optional contrast/grayscale enhance, share via the phone's native share sheet or download).
+- **Pallet label fixes:** Item number now a fixed large size (was silently shrinking due to a bug where a second auto-fit pass used its own already-shrunk size as the new ceiling — fixed generally, also benefits rack labels). All label field values now explicit bold black instead of relying on inherited styling; added a meta tag to stop iOS from auto-linking numbers blue.
+- **Real bug fix:** clearing the Master Lookup or Receiving InvRec search box left stale results on screen instead of clearing them. Fixed, and added explicit Clear buttons to both screens.
+- Live clock added to the home screen.
+
 ## v1.4.0
 - **One data source.** Receiving/InvRec Print now reads from the same master sheet as Master Lookup (matches InvRec against `INV_Receipt`), instead of a separate Receiving CSV that had to be kept in sync manually. Removed the Receiving Print Source setting and the legacy Inventory Lookup screen (unreachable dead code left over from an earlier version).
 - Pallet label: removed the Details QR (forklift drivers reported it wasn't reliably scannable), widened the 1D barcode into the freed space, added a large high-contrast Item number for faster floor spotting, added Vendor and Unique 8 fields, made Date Received/Description conditional so they don't leave blank gaps on master-sheet data.

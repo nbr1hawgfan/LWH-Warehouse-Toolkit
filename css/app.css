@@ -82,9 +82,18 @@ textarea{resize:vertical}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .hint{color:var(--muted);font-size:13px}
 .hint.small code{word-break:break-all}
-.segmented{display:flex;background:var(--bg);border-radius:var(--radius-sm);padding:4px;margin-bottom:12px}
-.seg{flex:1;background:transparent;color:var(--ink);min-height:38px}
+.segmented{display:flex;flex-wrap:wrap;background:var(--bg);border-radius:var(--radius-sm);padding:4px;margin-bottom:12px;gap:4px}
+.seg{flex:1 1 auto;min-width:110px;background:transparent;color:var(--ink);min-height:38px}
 .seg.active{background:#fff;color:var(--brand);box-shadow:var(--shadow-sm)}
+
+.calc-display{background:var(--ink);color:#fff;border-radius:var(--radius-sm);padding:18px;text-align:right;font-size:2.2em;font-weight:700;margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc-btn{min-height:56px;font-size:1.3em;font-weight:700}
+.calc-btn.brand{background:var(--brand);color:#fff}
+
+.scan-page{display:flex;flex-direction:column;gap:8px}
+.scan-thumb{width:100%;border-radius:8px;border:1px solid var(--line)}
+#scanVideo{width:100%;border-radius:12px;background:#000;max-height:60vh}
 .panel details{margin-top:10px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px;background:var(--bg)}
 summary{font-weight:700;cursor:pointer;color:var(--ink)}
 
@@ -178,8 +187,10 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pallet-codes{position:absolute;left:.16in;right:.16in;bottom:.07in;display:flex;justify-content:space-between;align-items:flex-end;margin-top:0;max-height:.86in;overflow:hidden;gap:.12in}
 .pallet-codes.three-codes{align-items:flex-end}
 .pallet-codes .lwh-code{flex:1;min-width:2.25in;max-width:4.2in}
-.pallet-item-big{font-size:.34in;font-weight:900;color:#000;text-align:center;margin:.03in 0 0;cursor:pointer}
+.pallet-item-big{font-size:.40in;font-weight:900;color:#000;text-align:center;margin:.03in 0 0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .pallet-lwh{cursor:pointer}
+.pallet-label{color:#000}
+.pallet-grid>div{font-weight:700}
 .pallet-codes .barcode-text{font-size:13px;margin-top:-7px}
 .pallet-codes svg{max-width:100%;height:auto}
 .pallet-codes .qrbox canvas,.pallet-codes .qrbox img{max-width:.72in!important;max-height:.72in!important}

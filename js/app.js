@@ -12,6 +12,9 @@ function getGreeting(){
   if(h<17) return 'Good Afternoon';
   return 'Good Evening';
 }
+function tickClock(){
+  if(window.heroClock) heroClock.textContent=new Date().toLocaleTimeString([], {weekday:'short', hour:'numeric', minute:'2-digit', second:'2-digit'});
+}
 function weatherCodeText(code){
   const map={0:'Clear',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',56:'Freezing Drizzle',57:'Freezing Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',66:'Freezing Rain',67:'Freezing Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Light Showers',81:'Showers',82:'Heavy Showers',85:'Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Thunderstorm, Hail',99:'Thunderstorm, Hail'};
   return map[code]||'Weather';
@@ -59,6 +62,8 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredIns
 window.addEventListener('load',()=>{
   applySettings();
   refreshHero();
+  tickClock();
+  setInterval(tickClock,1000);
   setInterval(refreshHero,30*60*1000);
   LWHInventory.loadCached();
   // Auto-load the one master-sheet source so the team never has to remember
@@ -93,12 +98,20 @@ function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 // scan fills the box — no need to hit Search first. The button still works
 // for a manual re-trigger (e.g. right after Load / Refresh Data).
 if(window.custSearchBtn){custSearchBtn.onclick=()=>{const res=LWHInventory.customerSearch(custSearch.value); LWHInventory.renderCustomerResults(res); LWHStorage.set('lookupCount',(+LWHStorage.get('lookupCount',0))+1); applySettings();};}
-if(window.custSearch){custSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();custSearchBtn.click();}}; custSearch.addEventListener('input',debounce(()=>custSearchBtn.click(),250));}
+if(window.custSearch){custSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();custSearchBtn.click();}}; custSearch.addEventListener('input',debounce(()=>{
+  if(!custSearch.value.trim()){ LWHInventory.renderCustomerResults([]); return; } // clearing the box clears results too, no stale data left behind
+  custSearchBtn.click();
+},250));}
+if(window.custClearBtn){custClearBtn.onclick=()=>{custSearch.value=''; LWHInventory.renderCustomerResults([]); custSearch.focus();};}
 if(window.custLoadBtn){custLoadBtn.onclick=async()=>{try{await LWHInventory.loadCustomerFromUrl();LWHUI.toast('Master Lookup data loaded')}catch(e){custLookupStatus.textContent='Load failed: '+e.message; console.error(e);}};}
 if(window.custPasteBtn){custPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(custPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted row(s)`)};}
 if(window.recLoadBtn){recLoadBtn.onclick=()=>custLoadBtn.click();}
 if(window.recFindBtn){recFindBtn.onclick=()=>LWHInventory.findReceiving();}
-if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();recFindBtn.click();}}; recInvRec.addEventListener('input',debounce(()=>recFindBtn.click(),250));}
+if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();recFindBtn.click();}}; recInvRec.addEventListener('input',debounce(()=>{
+  if(!recInvRec.value.trim()){ if(window.receivingResults) receivingResults.innerHTML=''; if(window.receivingPrintOutput) receivingPrintOutput.innerHTML=''; if(window.recStatus) recStatus.textContent='Enter an InvRec to begin.'; return; }
+  recFindBtn.click();
+},250));}
+if(window.recClearBtn){recClearBtn.onclick=()=>{recInvRec.value=''; if(window.receivingResults) receivingResults.innerHTML=''; if(window.receivingPrintOutput) receivingPrintOutput.innerHTML=''; if(window.recStatus) recStatus.textContent='Enter an InvRec to begin.'; recInvRec.focus();};}
 if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findReceiving(); if(list && list.length) LWHInventory.printRows(list,receivingPrintOutput);};}
 if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(recPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} row(s)`);};}
 saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#0f4a45');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};

@@ -1,6 +1,9 @@
-# LWH Warehouse Toolkit v1.4.0
+# LWH Warehouse Toolkit v1.5.0
 
 Internal Logistics Warehouse PWA for lookup, labels, receiving print, signs, contact QR cards, and visitor badges.
+
+## v1.5.0 focus
+- New **Warehouse Tools** section: calculator, unit converter, pallet footprint, notepad, basic document scanner.
 
 ## v1.4.0 focus
 - **One data source.** Receiving/InvRec Print now reads from the same master sheet as Master Lookup, matching InvRec against the `INV_Receipt` column. No more keeping two CSVs in sync — see `docs/GOOGLE_SHEET_SETUP.md`.

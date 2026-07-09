@@ -41,8 +41,7 @@ function autoFitText(el,minPx=30){
     size-=2; el.style.fontSize=size+'px'; guard++;
   }
 }
-function autoFitRackTitles(root){root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,24));requestAnimationFrame(()=>root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,24)));}
-function autoFitPalletItems(root){root.querySelectorAll('.pallet-item-big').forEach(el=>autoFitText(el,18));requestAnimationFrame(()=>root.querySelectorAll('.pallet-item-big').forEach(el=>autoFitText(el,18)));}
+function autoFitRackTitles(root){root.querySelectorAll('.rack-title').forEach(el=>{if(!el.dataset.maxFont)el.dataset.maxFont=parseFloat(getComputedStyle(el).fontSize);autoFitText(el,24);});requestAnimationFrame(()=>root.querySelectorAll('.rack-title').forEach(el=>autoFitText(el,24)));}
 // Tap the big LWH ID or Item number on screen to copy it — handy for pasting
 // into an email or another system. Bound once per output container (guarded
 // by a flag) since generatePalletRows re-runs against the same container
@@ -93,7 +92,6 @@ function generatePalletRows(rows,target){
   const copies=+palCopies.value||1;
   (rows||[]).map(normalizePalletRow).filter(r=>Object.values(r).some(Boolean)).forEach(r=>{for(let i=0;i<copies;i++){out.append(page('pallet-label',palletLabelHtml(r)))}});
   finishBarcodes(out);
-  autoFitPalletItems(out);
   bindCopyToClipboard(out);
   setPrintPageSize(6,4); // force landscape 6x4 so it prints as shaped, no manual dialog fix needed
   LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);
