@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.9.0
+- **New: Trailer Cube** — Warehouse Tools tab estimating how many units of a given size fit in a 53' dry van. Tries the unit both ways (as-is and rotated 90°) and picks whichever fits more per layer, multiplies by stacking height, and separately checks the trailer's weight limit — reporting whichever one (cube or weight) is actually the limiting factor, since heavier product often hits the weight cap well before it hits the cube cap.
+- Save common or odd-sized units as named profiles (e.g. "Standard Pallet," "Customer A Crate") so dimensions don't need retyping every time.
+- "Generate Printable Summary" produces a clean one-page printout — unit size, trailer specs, and the estimated fit — meant to be handed to a forklift driver.
+- Trailer interior dimensions and weight limit default to standard 53' dry van figures but are fully editable if your fleet's actual clearances differ.
+
 ## v1.8.0
 - **New: Quick Message** — Warehouse Tools tab for flagging something to a manager fast (e.g. "can't load Dock 5, hole in floor" + a photo). Settings gets a new Managers list (name + email); Quick Message picks a manager from that list, takes a message and an optional photo, then sends. No photo → opens the email app addressed straight to the manager. With a photo → opens the phone's native share sheet instead (since mailto: can't attach files), with the manager's name/email included in the shared text as a reference.
 - Honest limitation, not a bug: this is not real-time in-app messaging — there's no backend, no message history, nothing syncs between devices. It's a fast way to start a properly-addressed email/share, nothing more. True chat would need an actual backend, which is a separate project.

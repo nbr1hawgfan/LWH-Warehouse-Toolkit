@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -357,6 +357,113 @@
     };
   }
 
+  // ---------- Trailer Cube estimator ----------
+  // Rectangular-packing estimate: picks whichever floor orientation (unit as-is,
+  // or rotated 90°) fits more units per layer, multiplies by how many layers
+  // stack within trailer height, and separately checks whether the trailer's
+  // weight limit caps the count below what cube alone would allow — reporting
+  // whichever constraint is actually the limiting factor.
+  function initTrailerCube(){
+    const profileSel=el('tcubeProfile'), profileName=el('tcubeProfileName'), saveBtn=el('tcubeSaveProfile'), delBtn=el('tcubeDeleteProfile');
+    const len=el('tcubeLen'), wid=el('tcubeWid'), ht=el('tcubeHt'), weight=el('tcubeWeight');
+    const trLen=el('tcubeTrLen'), trWid=el('tcubeTrWid'), trHt=el('tcubeTrHt'), trWeight=el('tcubeTrWeight');
+    const result=el('tcubeResult'), detail=el('tcubeDetail');
+    if(!len) return;
+
+    function loadProfiles(){ return LWHStorage.get('trailerCubeProfiles',[]); }
+    function saveProfiles(list){ LWHStorage.set('trailerCubeProfiles',list); }
+    function refreshProfileSelect(){
+      const profiles=loadProfiles();
+      const current=profileSel.value;
+      profileSel.innerHTML='<option value="">— Custom (not saved) —</option>'+profiles.map((p,i)=>`<option value="${i}">${String(p.name||'Unnamed').replace(/</g,'&lt;')}</option>`).join('');
+      if(current) profileSel.value=current;
+    }
+    refreshProfileSelect();
+
+    profileSel.addEventListener('change',()=>{
+      const idx=profileSel.value; if(idx==='') return;
+      const p=loadProfiles()[idx]; if(!p) return;
+      len.value=p.len||''; wid.value=p.wid||''; ht.value=p.ht||''; weight.value=p.weight||'';
+      profileName.value=p.name||'';
+      calc();
+    });
+
+    saveBtn.onclick=()=>{
+      const name=(profileName.value||'').trim();
+      if(!name){ alert('Give this profile a name first.'); return; }
+      const profiles=loadProfiles();
+      const existingIdx=profiles.findIndex(p=>String(p.name||'').toLowerCase()===name.toLowerCase());
+      const entry={name,len:len.value,wid:wid.value,ht:ht.value,weight:weight.value};
+      if(existingIdx>-1) profiles[existingIdx]=entry; else profiles.push(entry);
+      saveProfiles(profiles);
+      refreshProfileSelect();
+      profileSel.value=profiles.findIndex(p=>p.name===name);
+      LWHUI.toast('Profile saved: '+name);
+    };
+    delBtn.onclick=()=>{
+      const idx=profileSel.value;
+      if(idx===''){ alert('Select a saved profile to delete first.'); return; }
+      const profiles=loadProfiles();
+      const removed=profiles.splice(+idx,1);
+      saveProfiles(profiles);
+      refreshProfileSelect();
+      LWHUI.toast('Profile deleted'+(removed[0]?': '+removed[0].name:''));
+    };
+
+    function calc(){
+      const uL=parseFloat(len.value)||0, uW=parseFloat(wid.value)||0, uH=parseFloat(ht.value)||0, uWt=parseFloat(weight.value)||0;
+      const tL=parseFloat(trLen.value)||630, tW=parseFloat(trWid.value)||98, tH=parseFloat(trHt.value)||110, tWt=parseFloat(trWeight.value)||44000;
+      if(!uL||!uW){ result.textContent='0'; detail.textContent='Enter unit length and width.'; return; }
+      const perLayerA=Math.floor(tW/uW)*Math.floor(tL/uL);
+      const perLayerB=Math.floor(tW/uL)*Math.floor(tL/uW);
+      const rotated=perLayerB>perLayerA;
+      const across=rotated?Math.floor(tW/uL):Math.floor(tW/uW);
+      const along=rotated?Math.floor(tL/uW):Math.floor(tL/uL);
+      const perLayer=Math.max(perLayerA,perLayerB);
+      const layers=uH>0?Math.max(1,Math.floor(tH/uH)):1;
+      const cubeUnits=perLayer*layers;
+      let weightUnits=null, weightLimited=false;
+      if(uWt>0 && tWt>0){ weightUnits=Math.floor(tWt/uWt); weightLimited=weightUnits<cubeUnits; }
+      const finalUnits=weightUnits!==null?Math.min(cubeUnits,weightUnits):cubeUnits;
+      result.textContent=finalUnits.toLocaleString();
+      let text=`${across} across × ${along} deep${rotated?' (unit rotated 90°)':''}, ${layers} layer(s) high = ${cubeUnits.toLocaleString()} by cube`;
+      if(weightUnits!==null) text+=` · ${weightUnits.toLocaleString()} by weight (${tWt.toLocaleString()} lb ÷ ${uWt.toLocaleString()} lb/unit)${weightLimited?' — weight is the limiting factor':' — cube is the limiting factor'}`;
+      detail.textContent=text;
+    }
+    [len,wid,ht,weight,trLen,trWid,trHt,trWeight].forEach(f=>f.addEventListener('input',calc));
+    calc();
+
+    const genBtn=el('tcubeGenerate');
+    if(genBtn) genBtn.onclick=()=>{
+      const out=el('tcubePrintOutput'); if(!out) return;
+      const name=(profileName.value||'').trim()||'Custom Unit';
+      out.innerHTML=`<div class="checklist-page">
+        <h1 class="tc-title">Trailer Load Estimate</h1>
+        <p style="text-align:center;font-size:13px">${new Date().toLocaleDateString()}</p>
+        <div class="tc-headrow" style="margin-top:14px">
+          <div>
+            <div><b>Unit / Customer:</b> ${name}</div>
+            <div><b>Unit Dimensions:</b> ${len.value||'?'}in L × ${wid.value||'?'}in W × ${ht.value||'n/a'}in H</div>
+            <div><b>Weight per Unit:</b> ${weight.value?weight.value+' lb':'n/a'}</div>
+          </div>
+          <div class="tc-headright">
+            <div><b>Trailer:</b> 53' Dry Van</div>
+            <div><b>Interior:</b> ${trLen.value} × ${trWid.value} × ${trHt.value} in</div>
+            <div><b>Weight Limit:</b> ${trWeight.value} lb</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:36px">
+          <div style="font-size:13px">Estimated Units That Should Fit</div>
+          <div style="font-size:3em;font-weight:900">${result.textContent}</div>
+          <div style="font-size:13px;margin-top:6px">${detail.textContent}</div>
+        </div>
+        <p style="text-align:center;font-size:11px;margin-top:50px;color:#555">This is a rectangular-packing estimate based on standard trailer clearances — actual fit can vary with load bars, dunnage, and real trailer variance. Confirm against the actual load.</p>
+      </div>`;
+      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+      LWHUI.toast('Summary generated — ready to print');
+    };
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); });
 })();
