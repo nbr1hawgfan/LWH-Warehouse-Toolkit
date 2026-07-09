@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.13.2
+- **"Unique8" is now labeled "Item Description"** in Master Lookup results and on the printed pallet label, matching how the field is actually being used. Pure display-layer change — the sheet's actual column header doesn't need to change, and nothing about searching or parsing was touched. Both places now pull the same customizable label, so if it's ever renamed again in Settings → Customer Field Labels, the printed label updates right along with Master Lookup automatically.
+
 ## v1.13.1
 - **Quick Links: Forklift Inspection and PTO Requests are now baked in as defaults** — every fresh install shows both on the Home screen automatically, no pasting links required. Seeded once on first run only, so anyone who edits or removes them later won't have that undone on a future load. Added a "Reset to Defaults" button in Settings too.
 
