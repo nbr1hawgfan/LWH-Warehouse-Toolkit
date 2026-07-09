@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.11.2
+- **Managers CSV link is now baked in as the default** — every install auto-loads your real manager list on open with no sharing or manual setup needed, same as Master Lookup's default sheet. Settings still shows the link and allows overriding it per-device if ever needed, plus a "Reset to Default" button.
+
 ## v1.11.1
 - **Fixed Managers CSV parsing:** the sheet's actual export came back tab-separated rather than comma-separated. Parser now auto-detects either delimiter, same safety trick already used for the Master Lookup sheet. Verified against your real 12-manager list — all parse correctly now.
 
