@@ -59,12 +59,52 @@ function applySettings(){
   statPrints.textContent=LWHStorage.get('printJobs',0); statLookups.textContent=LWHStorage.get('lookupCount',0); statVisitors.textContent=(LWHStorage.get('visitorLog',[])||[]).length;
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;installBtn.hidden=false});
+let renderManagersList=()=>{};
+// Deliberately self-contained and independent of inventory.js's master-sheet
+// parser — this is a plain two-column CSV (Name, Email), nothing like the
+// 19-column master schema, and it should stay that way so touching one never
+// risks the other.
+function splitManagerCsv(text){
+  text=(text||'').replace(/^\uFEFF/,'').trim();
+  if(!text) return [];
+  const delim=text.indexOf('\t')>-1?'\t':',';
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  let rows=lines;
+  if(lines.length && (/name/i.test(lines[0]) && /email/i.test(lines[0]))) rows=lines.slice(1);
+  return rows.map(line=>{
+    const parts=line.split(delim);
+    return {name:(parts[0]||'').trim(),email:(parts[1]||'').trim()};
+  }).filter(m=>m.name||m.email);
+}
+async function loadManagersFromUrl(){
+  const input=document.getElementById('mgrSourceUrl');
+  const statusEl=document.getElementById('mgrSourceStatus');
+  const url=(input&&input.value||LWHStorage.get('managersSourceUrl','')||'').trim();
+  if(!url){ if(statusEl) statusEl.textContent='Paste a Google Sheet CSV link above first.'; return; }
+  LWHStorage.set('managersSourceUrl',url);
+  if(statusEl) statusEl.textContent='Loading...';
+  try{
+    const res=await fetch(url+(url.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store',mode:'cors'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    if(/<html|<!doctype html|ServiceLogin|accounts\.google/i.test(text.slice(0,300))) throw new Error('Got a webpage instead of CSV — check the sheet is published as CSV (File → Share → Publish to web).');
+    const managers=splitManagerCsv(text);
+    LWHStorage.set('managers',managers);
+    if(statusEl) statusEl.textContent=`Loaded ${managers.length} manager(s) from the sheet.`;
+    renderManagersList();
+    if(window.refreshQuickMessageManagers) refreshQuickMessageManagers();
+    LWHUI.toast(`Loaded ${managers.length} manager(s)`);
+  }catch(e){
+    if(statusEl) statusEl.textContent='Load failed: '+e.message;
+    LWHUI.toast('Manager sheet load failed');
+  }
+}
 function initManagers(){
   const list=document.getElementById('mgrList'); if(!list) return;
-  function render(){
+  renderManagersList=function render(){
     const managers=LWHStorage.get('managers',[]);
-    list.innerHTML=managers.length?managers.map((m,i)=>`<div class="grid-2" style="align-items:center;margin-bottom:6px"><input data-idx="${i}" data-field="name" value="${String(m.name||'').replace(/"/g,'&quot;')}" placeholder="Name" /><input data-idx="${i}" data-field="email" type="email" value="${String(m.email||'').replace(/"/g,'&quot;')}" placeholder="email@company.com" /></div><div class="actions" style="margin-bottom:12px"><button type="button" class="ghost" data-remove="${i}">Remove</button></div>`).join(''):'<p class="hint">No managers added yet.</p>';
-  }
+    list.innerHTML=managers.length?managers.map((m,i)=>`<div class="grid-2" style="align-items:center;margin-bottom:6px"><input data-idx="${i}" data-field="name" value="${String(m.name||'').replace(/"/g,'&quot;')}" placeholder="Name" /><input data-idx="${i}" data-field="email" type="email" value="${String(m.email||'').replace(/"/g,'&quot;')}" placeholder="email@company.com" /></div><div class="actions" style="margin-bottom:12px"><button type="button" class="ghost" data-remove="${i}">Remove</button></div>`).join(''):'<p class="hint">No managers yet.</p>';
+  };
   list.addEventListener('input',e=>{
     const t=e.target; if(t.dataset.idx===undefined) return;
     const managers=LWHStorage.get('managers',[]);
@@ -78,7 +118,7 @@ function initManagers(){
     const managers=LWHStorage.get('managers',[]);
     managers.splice(+b.dataset.remove,1);
     LWHStorage.set('managers',managers);
-    render();
+    renderManagersList();
     if(window.refreshQuickMessageManagers) refreshQuickMessageManagers();
   });
   const addBtn=document.getElementById('mgrAddBtn');
@@ -86,9 +126,13 @@ function initManagers(){
     const managers=LWHStorage.get('managers',[]);
     managers.push({name:'',email:''});
     LWHStorage.set('managers',managers);
-    render();
+    renderManagersList();
   };
-  render();
+  const sourceInput=document.getElementById('mgrSourceUrl');
+  if(sourceInput) sourceInput.value=LWHStorage.get('managersSourceUrl','');
+  const loadBtn=document.getElementById('mgrLoadBtn');
+  if(loadBtn) loadBtn.onclick=loadManagersFromUrl;
+  renderManagersList();
 }
 
 window.addEventListener('load',()=>{
@@ -98,6 +142,7 @@ window.addEventListener('load',()=>{
   setInterval(tickClock,1000);
   setInterval(refreshHero,30*60*1000);
   initManagers();
+  setTimeout(()=>{ if(LWHStorage.get('managersSourceUrl','')) loadManagersFromUrl(); },500);
   LWHInventory.loadCached();
   // Auto-load the one master-sheet source so the team never has to remember
   // to hit Load / Refresh Data before searching or printing receiving.
