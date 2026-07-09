@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.10.0
+- **New: Pick List Generator** — new top-level screen (lives next to Master Lookup/Trailer Checklist since it reads the same master sheet). Filter by any combination of Customer, Item #, and Lot #; results show quantity and bay location per match. "Generate Pick List" prints a landscape table report — one row per matching pallet/location, each with a small scannable QR code or 1D barcode (your choice) for the LWH ID, so a forklift driver can scan straight off the printed sheet. Long result sets paginate cleanly across multiple pages with the header row repeating on each.
+
 ## v1.9.1
 - **Generate Code:** added a Share button — converts the on-screen QR or barcode into a PNG and sends it through the phone's native share sheet (same pattern already used elsewhere in the app), with a download fallback if sharing isn't supported.
 - **Doc Scanner:** added "Download as PDF" — combines every captured page into one real, multi-page PDF file (each photo fit to its own letter-size page), good for handing off something like a signed Bill of Lading as a single document instead of loose photos. "Share All Pages" (individual images via the native share sheet) is still there too, for whoever prefers that instead.
