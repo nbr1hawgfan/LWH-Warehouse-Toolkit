@@ -59,12 +59,45 @@ function applySettings(){
   statPrints.textContent=LWHStorage.get('printJobs',0); statLookups.textContent=LWHStorage.get('lookupCount',0); statVisitors.textContent=(LWHStorage.get('visitorLog',[])||[]).length;
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;installBtn.hidden=false});
+function initManagers(){
+  const list=document.getElementById('mgrList'); if(!list) return;
+  function render(){
+    const managers=LWHStorage.get('managers',[]);
+    list.innerHTML=managers.length?managers.map((m,i)=>`<div class="grid-2" style="align-items:center;margin-bottom:6px"><input data-idx="${i}" data-field="name" value="${String(m.name||'').replace(/"/g,'&quot;')}" placeholder="Name" /><input data-idx="${i}" data-field="email" type="email" value="${String(m.email||'').replace(/"/g,'&quot;')}" placeholder="email@company.com" /></div><div class="actions" style="margin-bottom:12px"><button type="button" class="ghost" data-remove="${i}">Remove</button></div>`).join(''):'<p class="hint">No managers added yet.</p>';
+  }
+  list.addEventListener('input',e=>{
+    const t=e.target; if(t.dataset.idx===undefined) return;
+    const managers=LWHStorage.get('managers',[]);
+    if(!managers[t.dataset.idx]) return;
+    managers[t.dataset.idx][t.dataset.field]=t.value;
+    LWHStorage.set('managers',managers);
+    if(window.refreshQuickMessageManagers) refreshQuickMessageManagers();
+  });
+  list.addEventListener('click',e=>{
+    const b=e.target.closest('[data-remove]'); if(!b) return;
+    const managers=LWHStorage.get('managers',[]);
+    managers.splice(+b.dataset.remove,1);
+    LWHStorage.set('managers',managers);
+    render();
+    if(window.refreshQuickMessageManagers) refreshQuickMessageManagers();
+  });
+  const addBtn=document.getElementById('mgrAddBtn');
+  if(addBtn) addBtn.onclick=()=>{
+    const managers=LWHStorage.get('managers',[]);
+    managers.push({name:'',email:''});
+    LWHStorage.set('managers',managers);
+    render();
+  };
+  render();
+}
+
 window.addEventListener('load',()=>{
   applySettings();
   refreshHero();
   tickClock();
   setInterval(tickClock,1000);
   setInterval(refreshHero,30*60*1000);
+  initManagers();
   LWHInventory.loadCached();
   // Auto-load the one master-sheet source so the team never has to remember
   // to hit Load / Refresh Data before searching or printing receiving.

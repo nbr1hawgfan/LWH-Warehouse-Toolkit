@@ -94,6 +94,7 @@ textarea{resize:vertical}
 .scan-page{display:flex;flex-direction:column;gap:8px}
 .scan-thumb{width:100%;border-radius:8px;border:1px solid var(--line)}
 #scanVideo{width:100%;border-radius:12px;background:#000;max-height:60vh}
+#tcLicenseVideo{width:100%;border-radius:12px;background:#000;max-height:60vh}
 #genQrBox{display:inline-block}
 .panel details{margin-top:10px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px;background:var(--bg)}
 summary{font-weight:700;cursor:pointer;color:var(--ink)}

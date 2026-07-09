@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -310,6 +310,53 @@
     if(emailBtn) emailBtn.onclick=()=>{ if(!lastValue) return; location.href=`mailto:?subject=${encodeURIComponent('Scanned Code')}&body=${encodeURIComponent(lastValue)}`; };
   }
 
+  // ---------- Quick Message (mailto for text-only; Web Share when a photo is attached) ----------
+  let qmPhotoFile=null;
+  function refreshQuickMessageManagers(){
+    const sel=el('qmManager'); if(!sel) return;
+    const managers=LWHStorage.get('managers',[]);
+    const current=sel.value;
+    sel.innerHTML=managers.length
+      ? managers.map(m=>`<option value="${String(m.email||'').replace(/"/g,'&quot;')}">${String(m.name||m.email||'Unnamed').replace(/</g,'&lt;')}</option>`).join('')
+      : '<option value="">No managers added yet — add in Settings</option>';
+    if(current) sel.value=current;
+  }
+  window.refreshQuickMessageManagers=refreshQuickMessageManagers; // Settings calls this after adding/editing/removing a manager
+
+  function initMessage(){
+    const sel=el('qmManager'), msg=el('qmMessage'), photoInput=el('qmPhoto'), previewWrap=el('qmPhotoPreviewWrap'), preview=el('qmPhotoPreview'), removeBtn=el('qmPhotoRemove'), sendBtn=el('qmSendBtn');
+    if(!sel) return;
+    refreshQuickMessageManagers();
+    if(photoInput) photoInput.addEventListener('change',()=>{
+      const f=photoInput.files&&photoInput.files[0];
+      if(!f){ qmPhotoFile=null; previewWrap.hidden=true; return; }
+      qmPhotoFile=f;
+      const reader=new FileReader();
+      reader.onload=()=>{ preview.src=reader.result; previewWrap.hidden=false; };
+      reader.readAsDataURL(f);
+    });
+    if(removeBtn) removeBtn.onclick=()=>{ qmPhotoFile=null; if(photoInput) photoInput.value=''; previewWrap.hidden=true; };
+    if(sendBtn) sendBtn.onclick=async()=>{
+      const managers=LWHStorage.get('managers',[]);
+      const chosen=managers.find(m=>m.email===sel.value) || {name:'',email:sel.value};
+      if(!chosen.email){ alert('Add a manager with an email in Settings first.'); return; }
+      const text=(msg.value||'').trim();
+      if(!text){ alert('Type a quick message first.'); return; }
+      if(qmPhotoFile){
+        if(navigator.canShare && navigator.canShare({files:[qmPhotoFile]})){
+          try{ await navigator.share({files:[qmPhotoFile],title:'Warehouse Alert',text:`To: ${chosen.name||chosen.email} <${chosen.email}>\n\n${text}`}); }
+          catch(e){ /* user cancelled — not an error */ }
+        } else {
+          // No file-sharing support here — download the photo and open mailto so it can be attached manually.
+          const a=document.createElement('a'); a.href=URL.createObjectURL(qmPhotoFile); a.download='warehouse-photo.jpg'; document.body.append(a); a.click(); a.remove();
+          location.href=`mailto:${encodeURIComponent(chosen.email)}?subject=${encodeURIComponent('Warehouse Alert')}&body=${encodeURIComponent(text+'\n\n(Photo downloaded separately to your device — please attach it to this email.)')}`;
+        }
+      } else {
+        location.href=`mailto:${encodeURIComponent(chosen.email)}?subject=${encodeURIComponent('Warehouse Alert')}&body=${encodeURIComponent(text)}`;
+      }
+    };
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); });
 })();

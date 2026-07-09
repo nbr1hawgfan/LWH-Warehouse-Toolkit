@@ -57,16 +57,55 @@
       dataUrl(){ return canvas.toDataURL('image/png'); }
     };
   }
-  let loaderPad=null, managerPad=null;
+  let loaderPad=null, driverPad=null;
 
-  function buildQuestionRow(q,idx,prefix){
-    return `<div class="grid-2" style="align-items:center;margin-bottom:4px"><span style="font-weight:400">${safe(q)}</span><select id="${prefix}_${idx}"><option value="">— Not checked —</option><option value="yes">Yes</option><option value="no">No</option></select></div>`;
+  // ---------- Driver's license photo (optional second printed page) ----------
+  let licenseStream=null, licenseCanvas=null;
+  async function openLicenseCamera(){
+    try{
+      licenseStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const video=el('tcLicenseVideo'); video.srcObject=licenseStream;
+      try{ await video.play(); }catch(e){}
+      el('tcLicenseCameraWrap').hidden=false; el('tcLicenseOpenBtn').hidden=true; el('tcLicenseCloseBtn').hidden=false;
+      el('tcLicensePreviewWrap').hidden=true;
+    }catch(e){ alert('Could not open the camera: '+e.message); }
+  }
+  function closeLicenseCamera(){
+    if(licenseStream){ licenseStream.getTracks().forEach(t=>t.stop()); licenseStream=null; }
+    const wrap=el('tcLicenseCameraWrap'); if(wrap) wrap.hidden=true;
+    const openBtn=el('tcLicenseOpenBtn'); if(openBtn) openBtn.hidden=false;
+    const closeBtn=el('tcLicenseCloseBtn'); if(closeBtn) closeBtn.hidden=true;
+  }
+  function captureLicensePhoto(){
+    const video=el('tcLicenseVideo'); if(!video||!video.videoWidth) return;
+    licenseCanvas=document.createElement('canvas');
+    licenseCanvas.width=video.videoWidth; licenseCanvas.height=video.videoHeight;
+    licenseCanvas.getContext('2d').drawImage(video,0,0);
+    el('tcLicensePreview').src=licenseCanvas.toDataURL('image/jpeg',0.92);
+    el('tcLicensePreviewWrap').hidden=false;
+    closeLicenseCamera();
+  }
+  function clearLicensePhoto(){
+    licenseCanvas=null;
+    const preview=el('tcLicensePreviewWrap'); if(preview) preview.hidden=true;
+    closeLicenseCamera();
+  }
+
+  // Pre-checked defaults: GMP defaults to No (matches how these almost always
+  // come back), Pre-Shipment defaults to Yes — saves a tap per row. Either can
+  // still be changed or reset to blank if something's actually an exception.
+  function buildQuestionRow(q,idx,prefix,defaultVal){
+    const opts=['','yes','no'].map(v=>{
+      const lbl=v===''?'— Not checked —':(v==='yes'?'Yes':'No');
+      return `<option value="${v}"${v===defaultVal?' selected':''}>${lbl}</option>`;
+    }).join('');
+    return `<div class="grid-2" style="align-items:center;margin-bottom:4px"><span style="font-weight:400">${safe(q)}</span><select id="${prefix}_${idx}">${opts}</select></div>`;
   }
 
   function renderLists(){
     const gmp=el('tcGmpList'), preship=el('tcPreShipList');
-    if(gmp) gmp.innerHTML=GMP_QUESTIONS.map((q,i)=>buildQuestionRow(q,i,'tcGmp')).join('');
-    if(preship) preship.innerHTML=PRESHIP_QUESTIONS.map((q,i)=>buildQuestionRow(q,i,'tcPreShip')).join('');
+    if(gmp) gmp.innerHTML=GMP_QUESTIONS.map((q,i)=>buildQuestionRow(q,i,'tcGmp','no')).join('');
+    if(preship) preship.innerHTML=PRESHIP_QUESTIONS.map((q,i)=>buildQuestionRow(q,i,'tcPreShip','yes')).join('');
   }
 
   function answerFor(prefix,idx){ const s=el(prefix+'_'+idx); return s?s.value:''; }
@@ -96,7 +135,7 @@
       carrier=el('tcCarrier').value, trailer=el('tcTrailer').value, seal=el('tcSeal').value,
       driverName=el('tcDriverName').value, driverLicense=el('tcDriverLicense').value, notes=el('tcNotes').value;
 
-    return `<div class="checklist-page">
+    const mainPage=`<div class="checklist-page">
       <div class="tc-doortag">${door?('Door '+safe(door)):''}</div>
       <h1 class="tc-title">Trailer Pre-Loading Checklist</h1>
       <div class="tc-headrow">
@@ -127,35 +166,49 @@
 
       <p class="tc-ack">We acknowledge that this load is leaving in good condition and that all customer request and instructions have been met.</p>
       <div class="tc-sig">Loader Signature: ${(loaderPad&&loaderPad.hasSignature())?`<img class="tc-sig-img" src="${loaderPad.dataUrl()}" />`:'<span class="tc-sigline"></span>'}</div>
-      <div class="tc-sig">Manager/Supervisor Signature: ${(managerPad&&managerPad.hasSignature())?`<img class="tc-sig-img" src="${managerPad.dataUrl()}" />`:'<span class="tc-sigline"></span>'}</div>
+      <div class="tc-sig">Driver/Carrier Signature: ${(driverPad&&driverPad.hasSignature())?`<img class="tc-sig-img" src="${driverPad.dataUrl()}" />`:'<span class="tc-sigline"></span>'}</div>
     </div>`;
+
+    const licensePage=licenseCanvas?`<div class="checklist-page" style="page-break-before:always">
+      <h1 class="tc-title">Driver's License</h1>
+      <p style="text-align:center;font-size:13px"><b>Driver:</b> ${safe(driverName)} &nbsp;&nbsp; <b>License #:</b> ${safe(driverLicense)}</p>
+      <div style="text-align:center;margin-top:24px"><img src="${licenseCanvas.toDataURL('image/jpeg',0.92)}" style="max-width:100%;max-height:8.5in;border:1px solid #000" /></div>
+    </div>`:'';
+
+    return mainPage+licensePage;
   }
 
   function generate(){
     const out=el('trailerPrintOutput'); if(!out) return;
     out.innerHTML=checklistHtml();
-    if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11); // full 8.5x11 page, not a small label
-    LWHUI.toast('Checklist generated');
+    if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11); // full 8.5x11 page(s), not a small label
+    LWHUI.toast('Checklist generated'+(licenseCanvas?' (2 pages — license photo included)':''));
   }
 
   function clearForm(){
     ['tcDoor','tcDate','tcTime','tcCarrier','tcTrailer','tcSeal','tcDriverName','tcDriverLicense','tcNotes'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
-    GMP_QUESTIONS.forEach((_,i)=>{ const s=el('tcGmp_'+i); if(s) s.value=''; });
-    PRESHIP_QUESTIONS.forEach((_,i)=>{ const s=el('tcPreShip_'+i); if(s) s.value=''; });
+    renderLists(); // resets GMP/Pre-Shipment selects back to their No/Yes defaults, not blank
     if(loaderPad) loaderPad.clear();
-    if(managerPad) managerPad.clear();
+    if(driverPad) driverPad.clear();
+    clearLicensePhoto();
     const out=el('trailerPrintOutput'); if(out) out.innerHTML='';
   }
+
+  window.LWHTrailer={stopLicenseCamera:closeLicenseCamera};
 
   window.addEventListener('load',()=>{
     if(!el('trailerForm')) return;
     renderLists();
     loaderPad=setupSignaturePad(el('tcSigLoader'));
-    managerPad=setupSignaturePad(el('tcSigManager'));
+    driverPad=setupSignaturePad(el('tcSigDriver'));
     const loaderClearBtn=el('tcSigLoaderClear'); if(loaderClearBtn) loaderClearBtn.onclick=()=>loaderPad&&loaderPad.clear();
-    const managerClearBtn=el('tcSigManagerClear'); if(managerClearBtn) managerClearBtn.onclick=()=>managerPad&&managerPad.clear();
+    const driverClearBtn=el('tcSigDriverClear'); if(driverClearBtn) driverClearBtn.onclick=()=>driverPad&&driverPad.clear();
     const genBtn=el('tcGenerate'); if(genBtn) genBtn.onclick=generate;
     const clearBtn=el('tcClear'); if(clearBtn) clearBtn.onclick=clearForm;
+    const licOpen=el('tcLicenseOpenBtn'); if(licOpen) licOpen.onclick=openLicenseCamera;
+    const licClose=el('tcLicenseCloseBtn'); if(licClose) licClose.onclick=closeLicenseCamera;
+    const licSnap=el('tcLicenseSnapBtn'); if(licSnap) licSnap.onclick=captureLicensePhoto;
+    const licRetake=el('tcLicenseRetakeBtn'); if(licRetake) licRetake.onclick=clearLicensePhoto;
     // Default Date/Time to right now, purely for convenience — still fully editable.
     const d=el('tcDate'); if(d && !d.value) d.value=new Date().toISOString().slice(0,10);
     const t=el('tcTime'); if(t && !t.value){ const now=new Date(); t.value=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'); }
