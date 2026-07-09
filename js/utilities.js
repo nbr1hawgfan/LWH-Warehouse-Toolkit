@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -529,6 +529,61 @@
     };
   }
 
+  // ---------- Date Calc: days between, add/subtract, and Julian (day-of-year) conversion ----------
+  function initDateCalc(){
+    const start=el('dcStart'), end=el('dcEnd'), daysBetween=el('dcDaysBetween');
+    const addStart=el('dcAddStart'), addDays=el('dcAddDays'), addResult=el('dcAddResult');
+    const jcDate=el('jcDate'), jcCode=el('jcCode'), jcResultJulian=el('jcResultJulian'), jcResultCalendar=el('jcResultCalendar');
+    if(!start) return;
+
+    function calcBetween(){
+      if(!start.value||!end.value){ daysBetween.textContent='0'; return; }
+      const d1=new Date(start.value+'T00:00:00'), d2=new Date(end.value+'T00:00:00');
+      daysBetween.textContent=Math.round((d2-d1)/86400000).toLocaleString();
+    }
+    start.addEventListener('input',calcBetween); end.addEventListener('input',calcBetween);
+
+    function calcAdd(){
+      if(!addStart.value){ addResult.textContent='—'; return; }
+      const n=parseInt(addDays.value)||0;
+      const d=new Date(addStart.value+'T00:00:00');
+      d.setDate(d.getDate()+n);
+      addResult.textContent=d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+    }
+    addStart.addEventListener('input',calcAdd); addDays.addEventListener('input',calcAdd);
+
+    function dayOfYear(d){ return Math.floor((d-new Date(d.getFullYear(),0,1))/86400000)+1; }
+    function toJulian(dateVal){
+      if(!dateVal) return '';
+      const d=new Date(dateVal+'T00:00:00');
+      return String(d.getFullYear()%100).padStart(2,'0')+String(dayOfYear(d)).padStart(3,'0');
+    }
+    // Assumes the 2000s for year reconstruction — reasonable for any near-term
+    // product date code. 4-digit codes (single year digit) are inherently
+    // ambiguous across decades; picks whichever matching year is closest to
+    // right now, which is right the overwhelming majority of the time for
+    // real product dating.
+    function fromJulian(code){
+      code=String(code||'').trim();
+      if(!/^\d{3,5}$/.test(code)) return null;
+      let yy,doy;
+      if(code.length===5){ yy=parseInt(code.slice(0,2),10); doy=parseInt(code.slice(2),10); }
+      else if(code.length===4){
+        const yDigit=parseInt(code.slice(0,1),10); doy=parseInt(code.slice(1),10);
+        const nowYY=new Date().getFullYear()%100;
+        let best=null,bestDiff=Infinity;
+        for(let y=0;y<100;y++){ if(y%10===yDigit){ const diff=Math.abs(y-nowYY); if(diff<bestDiff){bestDiff=diff;best=y;} } }
+        yy=best;
+      } else { yy=new Date().getFullYear()%100; doy=parseInt(code,10); }
+      if(doy<1||doy>366) return null;
+      const d=new Date(2000+yy,0,1);
+      d.setDate(d.getDate()+doy-1);
+      return d;
+    }
+    jcDate.addEventListener('input',()=>{ jcResultJulian.textContent=toJulian(jcDate.value)||'—'; });
+    jcCode.addEventListener('input',()=>{ const d=fromJulian(jcCode.value); jcResultCalendar.textContent=d?d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'—'; });
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); });
 })();

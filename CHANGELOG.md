@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.12.0
+- **New: Date Calc** — Warehouse Tools tab with three parts: days between two dates, add/subtract days from a date, and a bidirectional **Julian (day-of-year) date converter** for reading date codes off overseas/manufactured product packaging. YYDDD (5-digit, e.g. 24001 = Jan 1, 2024) is unambiguous; shorter 4/3-digit codes are also accepted, picking the closest matching year when the format is ambiguous. Verified against real dates including a leap-year edge case (Dec 31, 2024 → 24366) in both directions.
+
 ## v1.11.2
 - **Managers CSV link is now baked in as the default** — every install auto-loads your real manager list on open with no sharing or manual setup needed, same as Master Lookup's default sheet. Settings still shows the link and allows overriding it per-device if ever needed, plus a "Reset to Default" button.
 

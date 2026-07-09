@@ -1,4 +1,8 @@
 let deferredInstallPrompt=null;
+// Default Managers CSV — same idea as Master Lookup's default sheet: bakes in
+// the real list so every install works out of the box with no manual setup.
+// Still overridable per-device via Settings if ever needed.
+const MANAGERS_DEFAULT_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSRqVtSZLZSa1kh9LyCEHwoZCdwWclMqm3QDaBvrnK67ZY_Q-qFdQWQgx98hPSso0AsEJB1zFtxu3ue/pub?output=csv';
 // Fort Smith, AR — used unless someone overrides it in Settings.
 const DEFAULT_WEATHER_LOC={lat:35.3859,lon:-94.3985};
 function parseWeatherLoc(v){
@@ -79,7 +83,7 @@ function splitManagerCsv(text){
 async function loadManagersFromUrl(){
   const input=document.getElementById('mgrSourceUrl');
   const statusEl=document.getElementById('mgrSourceStatus');
-  const url=(input&&input.value||LWHStorage.get('managersSourceUrl','')||'').trim();
+  const url=(input&&input.value||LWHStorage.get('managersSourceUrl','')||MANAGERS_DEFAULT_URL||'').trim();
   if(!url){ if(statusEl) statusEl.textContent='Paste a Google Sheet CSV link above first.'; return; }
   LWHStorage.set('managersSourceUrl',url);
   if(statusEl) statusEl.textContent='Loading...';
@@ -129,9 +133,16 @@ function initManagers(){
     renderManagersList();
   };
   const sourceInput=document.getElementById('mgrSourceUrl');
-  if(sourceInput) sourceInput.value=LWHStorage.get('managersSourceUrl','');
+  if(sourceInput) sourceInput.value=LWHStorage.get('managersSourceUrl','')||MANAGERS_DEFAULT_URL;
   const loadBtn=document.getElementById('mgrLoadBtn');
   if(loadBtn) loadBtn.onclick=loadManagersFromUrl;
+  const resetBtn=document.getElementById('mgrResetBtn');
+  if(resetBtn) resetBtn.onclick=()=>{
+    LWHStorage.set('managersSourceUrl',MANAGERS_DEFAULT_URL);
+    if(sourceInput) sourceInput.value=MANAGERS_DEFAULT_URL;
+    loadManagersFromUrl();
+    LWHUI.toast('Reset to default manager list');
+  };
   renderManagersList();
 }
 
@@ -142,7 +153,7 @@ window.addEventListener('load',()=>{
   setInterval(tickClock,1000);
   setInterval(refreshHero,30*60*1000);
   initManagers();
-  setTimeout(()=>{ if(LWHStorage.get('managersSourceUrl','')) loadManagersFromUrl(); },500);
+  setTimeout(()=>{ loadManagersFromUrl(); },500);
   LWHInventory.loadCached();
   // Auto-load the one master-sheet source so the team never has to remember
   // to hit Load / Refresh Data before searching or printing receiving.
