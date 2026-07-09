@@ -1,24 +1,306 @@
-# LWH Warehouse Toolkit Roadmap
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LWH Warehouse Toolkit</title>
+  <meta name="theme-color" content="#0f4a45" />
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icons/favicon.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./css/app.css" />
+  <link rel="stylesheet" href="./css/print.css" media="print" />
+  <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script defer src="./js/storage.js"></script>
+  <script defer src="./js/qr.js"></script>
+  <script defer src="./js/barcode.js"></script>
+  <script defer src="./js/ui.js"></script>
+  <script defer src="./js/labels.js"></script>
+  <script defer src="./js/visitors.js"></script>
+  <script defer src="./js/trailer.js"></script>
+  <script defer src="./js/inventory.js"></script>
+  <script defer src="./js/scanner.js"></script>
+  <script defer src="./js/utilities.js"></script>
+  <script defer src="./js/app.js"></script>
+</head>
+<body>
+  <header class="app-header no-print">
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.8.0</div></div></div>
+    <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
+  </header>
 
-## Near Term
-- Stabilize Receiving / InvRec bulk print
-- Improve label readability from forklift distance
-- Add printer profiles and calibration presets
-- Add stronger print queue and reprint history
+  <main class="app-shell">
+    <nav class="nav no-print" aria-label="Modules">
+      <button class="nav-btn active" data-view="home"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button>
+      <button class="nav-btn" data-view="customerLookup"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>Master Lookup</button>
+      <button class="nav-btn" data-view="rack"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>4x6 Rack Labels</button>
+      <button class="nav-btn" data-view="signs"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>8.5x11 Signs</button>
+      <button class="nav-btn" data-view="pallet"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Pallet Labels</button>
+      <button class="nav-btn" data-view="receiving"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>Receiving Print</button>
+      <button class="nav-btn" data-view="trailer"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg>Trailer Checklist</button>
+      <button class="nav-btn" data-view="contact"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c0-1.7 1.5-3 3-3s3 1.3 3 3M14 9h4M14 13h4"/></svg>Contact QR</button>
+      <button class="nav-btn" data-view="visitor"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg>Visitor Badges</button>
+      <button class="nav-btn" data-view="utilities"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg>Warehouse Tools</button>
+      <button class="nav-btn" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.4-2-3.4-2.3.8a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.3-.8-2 3.4 2 1.4a7.6 7.6 0 0 0 0 3l-2 1.4 2 3.4 2.3-.8a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.8 2-3.4z"/></svg>Settings</button>
+      <button class="nav-btn" data-view="about"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
+    </nav>
 
-## Next
-- Receiving source selector
-- Inventory lookup favorites
-- Dock door signs
-- Equipment / asset tags
-- Visitor log export
+    <section id="home" class="view active no-print">
+      <div class="hero card"><h2 id="heroGreeting">Good Morning</h2><p>One place for warehouse lookup, labels, signs, receiving print, and visitor badges.</p><p id="heroWeather" class="hint">Loading weather…</p><p id="heroClock" class="hint" style="font-size:1.3em;font-weight:700;color:var(--brand)">--:--</p><div class="stats"><div><b id="statPrints">0</b><span>Print jobs saved</span></div><div><b id="statLookups">0</b><span>Inventory lookups</span></div><div><b id="statVisitors">0</b><span>Visitor badges</span></div></div></div>
+      <h3>Quick Actions</h3>
+      <div class="module-grid">
+        <button class="module-card" data-view="customerLookup"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></div><b>Master Lookup</b><span>Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.</span></button>
+        <button class="module-card" data-view="rack"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><b>Rack Labels</b><span>4x6 bay tags with 1D barcode and QR.</span></button>
+        <button class="module-card" data-view="signs"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg></div><b>Bay Signs</b><span>8.5x11 warehouse signage with barcode.</span></button>
+        <button class="module-card" data-view="pallet"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></div><b>Pallet Labels</b><span>Simple entry, bulk paste, and print from lookup.</span></button>
+        <button class="module-card" data-view="receiving"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></div><b>Receiving Print</b><span>Enter an InvRec and print every pallet label from that load.</span></button>
+        <button class="module-card" data-view="trailer"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg></div><b>Trailer Checklist</b><span>Pre-loading GMP and pre-shipment checklist, ready to print.</span></button>
+        <button class="module-card" data-view="visitor"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg></div><b>Visitor Badges</b><span>Visitor, vendor, contractor badges with optional photo.</span></button>
+        <button class="module-card" data-view="settings"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.4-2-3.4-2.3.8a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.3-.8-2 3.4 2 1.4a7.6 7.6 0 0 0 0 3l-2 1.4 2 3.4 2.3-.8a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.8 2-3.4z"/></svg></div><b>Settings</b><span>Logo, colors, calibration, and source data.</span></button>
+        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, QR/barcode generator + reader, and Quick Message to a manager.</span></button>
+      </div>
+    </section>
 
-## Future
-- SQL Server read-only lookup integration
-- Warehouse map / bay contents view
-- Manager dashboard
-- Query library
 
-## Added in v1.2.2
 
-- Customer Lookup module with all-field search and friendly labels.
+    <section id="customerLookup" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="customerLookupForm">
+          <h2>Customer Lookup</h2>
+          <p class="hint">Searches the customer-specific flat-file source across every visible and hidden lookup field.</p>
+          <label>Search Anything<input id="custSearch" placeholder="LWH ID, INV Receipt, item, lot, vendor, comments, Unique2/3/5/6/7/8..." autocomplete="off" /></label>
+          <div class="grid-2"><button type="button" id="custSearchBtn">Search</button><button type="button" id="custScanBtn" class="ghost">Camera Scan</button><button type="button" id="custLoadBtn" class="ghost">Load / Refresh Data</button><button type="button" id="custClearBtn" class="ghost">Clear</button></div>
+          <details><summary>Paste customer lookup data instead</summary><p class="hint">Paste full columns: ControlNumber, INV_Receipt, SubCustNm, ItemNm, LotNum, Qty, Location, Comments, Vendor, Unique2, Unique3, Unique5, Unique6, Unique7, Unique8, Warehouse, BayName, Still_In_Inventory, CurrentBay.</p><textarea id="custPaste" rows="8"></textarea><button type="button" id="custPasteBtn">Use Pasted Data</button></details>
+          <div id="custLookupStatus" class="hint">Master lookup data not loaded yet.</div>
+        </form>
+        <div><div id="customerLookupResults" class="results no-print"></div><div id="customerLookupPrintOutput" class="print-area"></div></div>
+      </div>
+    </section>
+
+    <section id="rack" class="view">
+      <div class="tool-layout">
+        <form class="panel no-print" id="rackForm"><h2>4x6 Rack Labels</h2>
+          <label>Bulk bay/location list<textarea id="rackList" rows="8" placeholder="MR201&#10;MR202&#10;MR203"></textarea></label>
+          <div class="grid-2"><label>Spacing<select id="rackSpacing"><option value="tight">Tight</option><option value="normal" selected>Normal</option><option value="wide">Wide</option></select></label><label>Copies<input id="rackCopies" type="number" min="1" value="1" /></label><label>Barcode height<input id="rackBarcodeHeight" type="number" min="30" max="180" value="105" /></label><label>Barcode width<input id="rackBarcodeWidth" type="number" min="1" max="4" value="3" /></label></div>
+          <details><summary>Smart batch numbering</summary><div class="grid-3"><label>Start<input id="rackBatchStart" placeholder="MR201" /></label><label>End<input id="rackBatchEnd" placeholder="MR232" /></label><label>Pad<input id="rackBatchPad" type="number" min="0" value="3" /></label></div><button type="button" id="rackBatchBtn">Generate Batch</button></details>
+          <div class="actions"><button type="button" id="rackGenerate">Generate Labels</button><button type="button" id="rackClear" class="ghost">Clear</button><button type="button" onclick="window.print()" class="ghost">Print</button></div>
+        </form><div id="rackOutput" class="print-area"></div>
+      </div>
+    </section>
+
+    <section id="signs" class="view"><div class="tool-layout"><form class="panel no-print" id="signForm"><h2>8.5x11 Bay / Aisle Signs</h2><label>Sign list<textarea id="signList" rows="8" placeholder="MR201&#10;MR202&#10;Aisle MR"></textarea></label><div class="grid-2"><label>Orientation<select id="signOrientation"><option value="landscape" selected>Landscape</option><option value="portrait">Portrait</option></select></label><label>Subtitle<input id="signSubtitle" placeholder="Scan to assign or move pallet" /></label><label><input id="signShowQR" type="checkbox" checked /> Include QR Code</label><label><input id="signShowBarcode" type="checkbox" checked /> Include 1D Barcode</label></div><div class="actions"><button type="button" id="signGenerate">Generate Signs</button><button type="button" id="signClear" class="ghost">Clear</button><button type="button" onclick="window.print()" class="ghost">Print</button></div></form><div id="signOutput" class="print-area"></div></div></section>
+
+    <section id="pallet" class="view"><div class="tool-layout"><form class="panel no-print" id="palletForm"><h2>Pallet Labels</h2><div class="segmented"><button type="button" class="seg active" data-pallet-mode="simple">Simple Entry</button><button type="button" class="seg" data-pallet-mode="bulk">Bulk Paste</button></div><div id="palletSimple"><div class="grid-2"><label>Location<input id="palLocation" /></label><label>LWH ID / Control #<input id="palLwhid" /></label><label>Customer ID<input id="palCustId" /></label><label>Customer<input id="palCustomer" /></label><label>Bay<input id="palBay" /></label><label>Item #<input id="palItem" /></label><label>Lot #<input id="palLot" /></label><label>Qty<input id="palQty" /></label><label>Date Received<input id="palDate" /></label></div><label>Description<input id="palDesc" /></label></div><div id="palletBulk" hidden><p class="hint">Paste from Excel or Google Sheets. Header row is okay.</p><textarea id="palletBulkText" rows="8" placeholder="Location&#9;LWH_ID&#9;Customer_ID&#9;Customer&#9;InvRec&#9;BillToRef&#9;ItemNm&#9;ItemDesc&#9;LotNum&#9;Qty&#9;Units&#9;BayName&#9;DateReceived"></textarea></div><div class="grid-2"><label><input id="palBarcode" type="checkbox" checked /> Include LWH barcode</label><label><input id="palCustQR" type="checkbox" checked /> Include Customer ID QR</label><label>Copies<input id="palCopies" type="number" min="1" value="1" /></label></div><div class="actions"><button type="button" id="palGenerate">Generate Pallet Label</button><button type="button" id="palScanPrint" class="ghost">Scan to Print</button><button type="button" id="palSample" class="ghost">Sample</button><button type="button" onclick="window.print()" class="ghost">Print</button></div></form><div id="palletOutput" class="print-area"></div></div></section>
+
+
+
+    <section id="receiving" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="receivingForm">
+          <h2>Receiving / InvRec Print</h2>
+          <p class="hint">Finds every pallet for an InvRec from the same Master Lookup sheet, then bulk prints pallet labels.</p>
+          <label>InvRec<input id="recInvRec" placeholder="1174067" autocomplete="off" /></label>
+          <div class="grid-2"><button type="button" id="recFindBtn">Find InvRec</button><button type="button" id="recLoadBtn" class="ghost">Load / Refresh Data</button><button type="button" id="recPrintBtn" class="ghost">Print All Found</button><button type="button" id="recClearBtn" class="ghost">Clear</button></div>
+          <details><summary>Paste receiving data instead</summary><p class="hint">Paste full columns: ControlNumber, INV_Receipt, SubCustNm, ItemNm, LotNum, Qty, Location, Comments, Vendor, Unique2, Unique3, Unique5, Unique6, Unique7, Unique8, Warehouse, BayName, Still_In_Inventory, CurrentBay.</p><textarea id="recPaste" rows="8"></textarea><button type="button" id="recPasteBtn">Use Pasted Data</button></details>
+          <div id="recStatus" class="hint">Enter an InvRec to begin.</div>
+        </form>
+        <div><div id="receivingResults" class="results no-print"></div><div id="receivingPrintOutput" class="print-area"></div></div>
+      </div>
+    </section>
+
+    <section id="trailer" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="trailerForm">
+          <h2>Trailer Pre-Loading Checklist</h2>
+          <p class="hint">Fill this out, then Generate to get a print-ready checklist.</p>
+          <div class="grid-2">
+            <label>Door #<input id="tcDoor" placeholder="B" /></label>
+            <label>Date<input id="tcDate" type="date" /></label>
+            <label>Time<input id="tcTime" type="time" /></label>
+            <label>Carrier Name<input id="tcCarrier" /></label>
+            <label>Trailer Number<input id="tcTrailer" /></label>
+            <label>Seal Number<input id="tcSeal" /></label>
+            <label>Driver Name<input id="tcDriverName" /></label>
+            <label>Driver's License #<input id="tcDriverLicense" /></label>
+          </div>
+
+          <h3>Driver's License Photo (optional)</h3>
+          <p class="hint">Snap a photo of the license — prints as a second page along with the checklist.</p>
+          <div class="actions"><button type="button" id="tcLicenseOpenBtn" class="ghost">Open Camera</button><button type="button" id="tcLicenseCloseBtn" class="ghost" hidden>Close Camera</button></div>
+          <div id="tcLicenseCameraWrap" hidden style="margin-top:10px">
+            <video id="tcLicenseVideo" playsinline muted autoplay></video>
+            <div class="actions"><button type="button" id="tcLicenseSnapBtn">Capture Photo</button></div>
+          </div>
+          <div id="tcLicensePreviewWrap" hidden style="margin-top:10px;text-align:center">
+            <img id="tcLicensePreview" style="max-width:100%;border-radius:8px;border:1px solid var(--line)" />
+            <div class="actions" style="justify-content:center"><button type="button" id="tcLicenseRetakeBtn" class="ghost">Retake / Remove Photo</button></div>
+          </div>
+
+          <h3>General Trailer GMP</h3>
+          <p class="hint">If any box is checked Yes, notify the manager or supervisor.</p>
+          <div id="tcGmpList"></div>
+
+          <h3>Pre-Shipment Checklist</h3>
+          <div id="tcPreShipList"></div>
+
+          <label>Notes / Comments<textarea id="tcNotes" rows="2"></textarea></label>
+
+          <h3>Signatures</h3>
+          <p class="hint">Draw with a finger, stylus, or mouse — or leave blank and sign by hand after printing.</p>
+          <label>Loader Signature</label>
+          <canvas id="tcSigLoader" class="sig-pad"></canvas>
+          <div class="actions"><button type="button" id="tcSigLoaderClear" class="ghost">Clear Loader Signature</button></div>
+          <label>Driver/Carrier Signature</label>
+          <canvas id="tcSigDriver" class="sig-pad"></canvas>
+          <div class="actions"><button type="button" id="tcSigDriverClear" class="ghost">Clear Driver/Carrier Signature</button></div>
+
+          <div class="actions"><button type="button" id="tcGenerate">Generate Checklist</button><button type="button" id="tcClear" class="ghost">Clear Form</button><button type="button" onclick="window.print()" class="ghost">Print</button></div>
+        </form>
+        <div><div id="trailerPrintOutput" class="print-area"></div></div>
+      </div>
+    </section>
+
+    <section id="contact" class="view"><div class="tool-layout"><form class="panel no-print" id="contactForm"><h2>Contact QR Cards</h2><div class="grid-2"><label>Name<input id="conName" /></label><label>Title<input id="conTitle" /></label><label>Company<input id="conCompany" value="Logistics Warehouse" /></label><label>Phone<input id="conPhone" /></label><label>Email<input id="conEmail" /></label><label>Website<input id="conWebsite" /></label></div><label>Address<input id="conAddress" /></label><label>Logo image optional<input id="conLogo" type="file" accept="image/*" /></label><div class="grid-2"><label>Layout<select id="conLayout"><option value="full">QR + Text</option><option value="qronly">QR Only</option></select></label><label>Copies<input id="conCopies" type="number" min="1" value="1" /></label></div><div class="actions"><button type="button" id="conGenerate">Generate Contact Card</button><button type="button" id="conSample" class="ghost">Sample</button><button type="button" onclick="window.print()" class="ghost">Print</button></div></form><div id="contactOutput" class="print-area"></div></div></section>
+
+    <section id="visitor" class="view"><div class="tool-layout"><form class="panel no-print" id="visitorForm"><h2>Visitor Badges</h2><div class="grid-2"><label>Visitor Name<input id="visName" /></label><label>Company<input id="visCompany" /></label><label>Visiting / Host<input id="visHost" /></label><label>Purpose<input id="visPurpose" /></label><label>Badge Type<select id="visType"><option>Visitor</option><option>Contractor</option><option>Vendor</option><option>Auditor</option><option>Customer</option></select></label><label>Expires<input id="visExpires" type="time" /></label></div><label>Photo optional<input id="visPhoto" type="file" accept="image/*" /></label><div class="actions"><button type="button" id="visGenerate">Generate Badge</button><button type="button" id="visLogBtn" class="ghost">Show Visitor Log</button><button type="button" onclick="window.print()" class="ghost">Print</button></div></form><div><div id="visitorOutput" class="print-area"></div><div id="visitorLog" class="card no-print" hidden></div></div></div></section>
+
+    <section id="utilities" class="view">
+      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools</h2><p class="hint">Calculator, unit converter, pallet footprint, scratch notepad, document scanner, and a QR/barcode generator — no need to leave the app.</p>
+        <div class="segmented" id="utilTabs">
+          <button type="button" class="seg active" data-util="calc">Calculator</button>
+          <button type="button" class="seg" data-util="convert">Converter</button>
+          <button type="button" class="seg" data-util="pallet">Pallet Footprint</button>
+          <button type="button" class="seg" data-util="notepad">Notepad</button>
+          <button type="button" class="seg" data-util="scanner">Doc Scanner</button>
+          <button type="button" class="seg" data-util="generate">Generate Code</button>
+          <button type="button" class="seg" data-util="scancode">Scan Code</button>
+          <button type="button" class="seg" data-util="message">Quick Message</button>
+        </div>
+      </div>
+
+      <div id="utilCalc" class="card util-panel no-print">
+        <div class="calc-display" id="calcDisplay">0</div>
+        <div class="calc-grid">
+          <button type="button" class="calc-btn ghost" data-calc="C">C</button>
+          <button type="button" class="calc-btn ghost" data-calc="back">⌫</button>
+          <button type="button" class="calc-btn ghost" data-calc="%">%</button>
+          <button type="button" class="calc-btn ghost" data-calc="/">÷</button>
+          <button type="button" class="calc-btn" data-calc="7">7</button>
+          <button type="button" class="calc-btn" data-calc="8">8</button>
+          <button type="button" class="calc-btn" data-calc="9">9</button>
+          <button type="button" class="calc-btn ghost" data-calc="*">×</button>
+          <button type="button" class="calc-btn" data-calc="4">4</button>
+          <button type="button" class="calc-btn" data-calc="5">5</button>
+          <button type="button" class="calc-btn" data-calc="6">6</button>
+          <button type="button" class="calc-btn ghost" data-calc="-">−</button>
+          <button type="button" class="calc-btn" data-calc="1">1</button>
+          <button type="button" class="calc-btn" data-calc="2">2</button>
+          <button type="button" class="calc-btn" data-calc="3">3</button>
+          <button type="button" class="calc-btn ghost" data-calc="+">+</button>
+          <button type="button" class="calc-btn" data-calc="0" style="grid-column:span 2">0</button>
+          <button type="button" class="calc-btn" data-calc=".">.</button>
+          <button type="button" class="calc-btn brand" data-calc="=">=</button>
+        </div>
+      </div>
+
+      <div id="utilConvert" class="card util-panel no-print" hidden>
+        <h3>Weight</h3>
+        <p class="hint">Type into any field — the others update automatically.</p>
+        <div class="grid-3"><label>Kilograms<input id="cvKg" inputmode="decimal" placeholder="0" /></label><label>Pounds<input id="cvLb" inputmode="decimal" placeholder="0" /></label><label>Ounces<input id="cvOz" inputmode="decimal" placeholder="0" /></label></div>
+        <h3>Length</h3>
+        <p class="hint">Type into any field — the others update automatically.</p>
+        <div class="grid-2"><label>Inches<input id="cvIn" inputmode="decimal" placeholder="0" /></label><label>Feet<input id="cvFt" inputmode="decimal" placeholder="0" /></label><label>Centimeters<input id="cvCm" inputmode="decimal" placeholder="0" /></label><label>Meters<input id="cvM" inputmode="decimal" placeholder="0" /></label></div>
+        <h3>Volume</h3>
+        <p class="hint">Type into any field — the others update automatically.</p>
+        <div class="grid-2"><label>Gallons<input id="cvGal" inputmode="decimal" placeholder="0" /></label><label>Liters<input id="cvLiter" inputmode="decimal" placeholder="0" /></label><label>Quarts<input id="cvQt" inputmode="decimal" placeholder="0" /></label><label>Fluid Oz<input id="cvFloz" inputmode="decimal" placeholder="0" /></label></div>
+        <h3>Liquid Weight Estimator</h3>
+        <p class="hint">How much a liquid weighs depends on what it is — water is ~8.34 lb/gal, but that varies by product. Adjust Density if you know it.</p>
+        <div class="grid-3"><label>Gallons<input id="lwGal" inputmode="decimal" placeholder="0" /></label><label>Density (lb/gal)<input id="lwDensity" inputmode="decimal" value="8.34" /></label><label>Pounds<input id="lwLb" inputmode="decimal" placeholder="0" /></label></div>
+      </div>
+
+      <div id="utilPallet" class="card util-panel no-print" hidden>
+        <p class="hint">Enter pallet length and width in inches — used for the single footprint below and the storage estimator.</p>
+        <div class="grid-2"><label>Length (in)<input id="pfLen" inputmode="decimal" placeholder="48" /></label><label>Width (in)<input id="pfWid" inputmode="decimal" placeholder="40" /></label></div>
+        <div class="actions"><button type="button" id="pfStandard" class="ghost">Standard Pallet 40×48</button></div>
+        <div class="card" style="margin-top:12px;text-align:center;background:var(--bg)"><div class="hint">Single Pallet Footprint</div><div id="pfSqFt" style="font-size:2.2em;font-weight:900;color:var(--brand)">0</div><div class="hint" id="pfSqIn">0 sq in</div></div>
+
+        <h3 style="margin-top:20px">Storage Space Estimator</h3>
+        <p class="hint">How much floor space to quote a customer for a given pallet count — accounts for stacking height and a drive-aisle allowance.</p>
+        <div class="grid-3"><label>Number of Pallets<input id="seCount" inputmode="numeric" placeholder="1000" /></label><label>Stack Height<input id="seStack" inputmode="numeric" value="1" /></label><label>Aisle Allowance %<input id="seAisle" inputmode="decimal" value="30" /></label></div>
+        <div class="card" style="margin-top:12px;text-align:center;background:var(--bg)"><div class="hint">Estimated Space Needed</div><div id="seSqFt" style="font-size:2.2em;font-weight:900;color:var(--brand)">0 sq ft</div><div class="hint" id="seDetail">—</div></div>
+
+        <h3 style="margin-top:20px">Reverse: How Many Pallets Fit?</h3>
+        <p class="hint">Given available square footage, how many pallets that space could store — using the same pallet size, stack height, and aisle allowance above.</p>
+        <div class="grid-2"><label>Available Square Feet<input id="seAvailSqFt" inputmode="numeric" placeholder="10000" /></label></div>
+        <div class="card" style="margin-top:12px;text-align:center;background:var(--bg)"><div class="hint">Estimated Pallet Capacity</div><div id="seCapacity" style="font-size:2.2em;font-weight:900;color:var(--brand)">0 pallets</div><div class="hint" id="seCapacityDetail">—</div></div>
+      </div>
+
+      <div id="utilNotepad" class="card util-panel no-print" hidden>
+        <label>Notes<textarea id="notepadText" rows="12" placeholder="Quick notes... saved automatically on this device."></textarea></label>
+        <div class="actions"><button type="button" id="notepadScanBtn" class="ghost">Scan to Notes</button><button type="button" id="notepadCopy">Copy to Clipboard</button><button type="button" id="notepadEmail" class="ghost">Email This</button><button type="button" id="notepadClear" class="ghost">Clear</button></div>
+      </div>
+
+      <div id="utilScanner" class="card util-panel no-print" hidden>
+        <p class="hint">Snap photos of paperwork, enhance for readability, then share or download. Supports multiple pages.</p>
+        <div class="actions"><button type="button" id="scanCaptureBtn">Open Camera</button><button type="button" id="scanCloseBtn" class="ghost" hidden>Close Camera</button></div>
+        <div id="scanCameraWrap" hidden style="margin-top:12px">
+          <video id="scanVideo" playsinline muted autoplay></video>
+          <div class="actions"><button type="button" id="scanSnapBtn">Capture Page</button></div>
+        </div>
+        <div id="scanPages" class="cust-grid" style="margin-top:14px"></div>
+        <div class="actions" id="scanBulkActions" hidden><button type="button" id="scanShareAll">Share All Pages</button><button type="button" id="scanClearAll" class="ghost">Clear All</button></div>
+      </div>
+
+      <div id="utilGenerate" class="card util-panel" hidden>
+        <div class="no-print">
+          <label>Text or Number to Encode<input id="genText" placeholder="Type or paste anything..." autocomplete="off" /></label>
+          <div class="segmented" id="genTypeTabs">
+            <button type="button" class="seg active" data-gentype="qr">QR Code</button>
+            <button type="button" class="seg" data-gentype="barcode">Barcode (1D)</button>
+          </div>
+        </div>
+        <div id="genOutput" style="text-align:center;padding:24px 10px">
+          <div id="genQrBox"></div>
+          <svg id="genBarcodeSvg" style="max-width:100%;display:none"></svg>
+          <div id="genTextLabel" style="font-weight:900;font-size:1.3em;margin-top:10px;word-break:break-all"></div>
+        </div>
+      </div>
+
+      <div id="utilScancode" class="card util-panel no-print" hidden>
+        <p class="hint">Scan any barcode or QR code — same scanner already used in Master Lookup and Pallet Labels — and do something with the result.</p>
+        <div class="actions"><button type="button" id="scReadBtn">Start Scanning</button></div>
+        <div class="card" style="margin-top:14px;text-align:center;background:var(--bg)" id="scResultCard" hidden>
+          <div class="hint">Last Scanned</div>
+          <div id="scResultText" style="font-size:1.6em;font-weight:900;color:var(--brand);word-break:break-all"></div>
+          <div class="actions" style="justify-content:center;margin-top:10px"><button type="button" id="scCopyBtn" class="ghost">Copy</button><button type="button" id="scNotesBtn" class="ghost">Add to Notes</button><button type="button" id="scEmailBtn" class="ghost">Email</button></div>
+        </div>
+      </div>
+
+      <div id="utilMessage" class="card util-panel no-print" hidden>
+        <p class="hint">Flag something to a manager fast — e.g. "Can't load trailer in Dock 5, hole in floor." Add managers first in Settings.</p>
+        <label>Send To<select id="qmManager"></select></label>
+        <label>Message<textarea id="qmMessage" rows="4" placeholder="What's going on and where?"></textarea></label>
+        <label>Attach Photo (optional)<input type="file" id="qmPhoto" accept="image/*" capture="environment" /></label>
+        <div id="qmPhotoPreviewWrap" hidden style="margin-top:8px;text-align:center"><img id="qmPhotoPreview" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid var(--line)" /><div class="actions" style="justify-content:center"><button type="button" id="qmPhotoRemove" class="ghost">Remove Photo</button></div></div>
+        <div class="actions"><button type="button" id="qmSendBtn">Send</button></div>
+        <p class="hint" id="qmNote" style="margin-top:10px">No photo: opens your email app addressed straight to the manager. With a photo: opens your phone's share sheet instead (Mail, Messages, whatever you've got) — the recipient's name and email are included in the message text, but double-check the To: field once you're there, since a photo attachment means we can't pre-fill it directly.</p>
+      </div>
+    </section>
+
+    <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Primary color<input id="setColor" type="color" value="#0f4a45" /></label><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one sheet now. Auto-loads fresh every time the app opens.</p><label>CSV / Google Sheet export URL<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message.</p><div id="mgrList"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
+
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.8.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Warehouse Tools, Settings, Print Calibration.</p></div></section>
+  </main>
+  <div id="scannerModal" class="scanner-modal no-print" hidden>
+    <div class="scanner-card">
+      <div class="scanner-head"><b>Camera Barcode Scan</b><button type="button" id="scannerClose" class="ghost">Close</button></div>
+      <div id="scannerReader"></div>
+      <p id="scannerStatus" class="hint">Point the camera at a barcode or QR code.</p><p class="hint small">If camera scanning is not supported, type or paste the barcode into Search.</p>
+    </div>
+  </div>
+  <div id="toast" class="toast no-print" hidden></div>
+</body>
+</html>

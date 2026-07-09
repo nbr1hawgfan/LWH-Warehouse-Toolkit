@@ -1,15 +1,14 @@
-const CACHE_NAME='lwh-toolkit-v1-7-1';
-const ASSETS=['./','./index.html','./manifest.json','./css/app.css','./css/print.css','./js/storage.js','./js/qr.js','./js/barcode.js','./js/ui.js','./js/labels.js','./js/visitors.js','./js/trailer.js','./js/inventory.js','./js/scanner.js','./js/utilities.js','./js/app.js','./icons/icon-192.png','./icons/icon-512.png','./icons/favicon.png'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const url=new URL(e.request.url);
-  if(url.origin!==location.origin){ e.respondWith(fetch(e.request,{cache:'no-store'})); return; }
-  const networkFirst=/\.(html|js|css)$/.test(url.pathname) || url.pathname.endsWith('/');
-  if(networkFirst){
-    e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone(); caches.open(CACHE_NAME).then(c=>c.put(e.request,copy)); return r;}).catch(()=>caches.match(e.request)));
-    return;
-  }
-  e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(r=>{const copy=r.clone(); caches.open(CACHE_NAME).then(c=>c.put(e.request,copy)); return r;})));
-});
+{
+  "name": "LWH Warehouse Toolkit",
+  "short_name": "LWH Toolkit",
+  "description": "Warehouse labels, signs, visitor badges, and inventory lookup for Logistics Warehouse.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f4a45",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
