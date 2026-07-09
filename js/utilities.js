@@ -109,6 +109,9 @@
     const count=el('seCount'), stack=el('seStack'), aisle=el('seAisle'), seSqFt=el('seSqFt'), seDetail=el('seDetail');
     const availSqFt=el('seAvailSqFt'), seCapacity=el('seCapacity'), seCapacityDetail=el('seCapacityDetail');
     if(!len) return;
+    const required={len,wid,sqft,sqin,count,stack,aisle,seSqFt,seDetail,availSqFt,seCapacity,seCapacityDetail};
+    const missing=Object.keys(required).filter(k=>!required[k]);
+    if(missing.length){ console.error('Warehouse Tools: Pallet Footprint is missing expected elements — check for an old cached utilities.js or index.html mismatch:',missing); return; }
 
     function palletSqFt(){ return ((parseFloat(len.value)||0)*(parseFloat(wid.value)||0))/144; }
 
@@ -146,11 +149,14 @@
     function recalcAll(){ calcSingleFootprint(); calcStorageSpace(); calcReverseCapacity(); }
 
     len.addEventListener('input',recalcAll); wid.addEventListener('input',recalcAll);
+    len.addEventListener('change',recalcAll); wid.addEventListener('change',recalcAll);
     if(std) std.onclick=()=>{ len.value=48; wid.value=40; recalcAll(); };
-    count.addEventListener('input',calcStorageSpace);
+    count.addEventListener('input',calcStorageSpace); count.addEventListener('change',calcStorageSpace);
     stack.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
+    stack.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); });
     aisle.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
-    availSqFt.addEventListener('input',calcReverseCapacity);
+    aisle.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); });
+    availSqFt.addEventListener('input',calcReverseCapacity); availSqFt.addEventListener('change',calcReverseCapacity);
 
     recalcAll();
   }

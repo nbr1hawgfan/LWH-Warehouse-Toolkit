@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.5.3
+- Hardened the Storage Space Estimator: if any expected field is missing it now logs a clear console error instead of silently doing nothing, and calculations also listen for the `change` event as a fallback to `input`.
+- Bumped the service worker cache version to force a clean re-fetch of all app files — if the estimator boxes were showing 0 despite valid inputs, this was very likely a stale cached JS file from before that feature existed. If it happens again after this update, fully close the app/tab (not just refresh) or clear site data for the page once, since PWA service workers can hold onto an old version until every tab is closed.
+
 ## v1.5.2
 - Pallet Footprint expanded into a full **Storage Space Estimator**: enter pallet count, stack height, and drive-aisle allowance % to get an estimated total square footage — plus the reverse, enter available square footage to see how many pallets it could hold. Same pallet dimensions, stack height, and aisle % drive both directions.
 
