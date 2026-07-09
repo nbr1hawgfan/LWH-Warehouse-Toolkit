@@ -65,34 +65,94 @@
 
   // ---------- Unit converter (linked fields — type into any one, others update) ----------
   function initConvert(){
-    const kg=el('cvKg'), lb=el('cvLb'), inch=el('cvIn'), ft=el('cvFt'), cm=el('cvCm'), m=el('cvM');
+    const kg=el('cvKg'), lb=el('cvLb'), oz=el('cvOz'), inch=el('cvIn'), ft=el('cvFt'), cm=el('cvCm'), m=el('cvM');
+    const gal=el('cvGal'), liter=el('cvLiter'), qt=el('cvQt'), floz=el('cvFloz');
+    const lwGal=el('lwGal'), lwDensity=el('lwDensity'), lwLb=el('lwLb');
     if(!kg) return;
-    const KG_LB=2.2046226218, IN_CM=2.54;
-    kg.addEventListener('input',()=>{ const v=parseFloat(kg.value); lb.value=isNaN(v)?'':round(v*KG_LB,3); });
-    lb.addEventListener('input',()=>{ const v=parseFloat(lb.value); kg.value=isNaN(v)?'':round(v/KG_LB,3); });
-    function fromInches(inches){
-      if(isNaN(inches)){ inch.value=ft.value=cm.value=m.value=''; return; }
-      inch.value=round(inches,3); ft.value=round(inches/12,3); cm.value=round(inches*IN_CM,3); m.value=round(inches*IN_CM/100,4);
-    }
+    const KG_LB=2.2046226218, IN_CM=2.54, GAL_L=3.785411784;
+
+    // Weight: kg / lb / oz, any field drives the other two
+    kg.addEventListener('input',()=>{ const v=parseFloat(kg.value); if(isNaN(v)){lb.value=oz.value='';return;} const l=v*KG_LB; lb.value=round(l,3); oz.value=round(l*16,2); });
+    lb.addEventListener('input',()=>{ const v=parseFloat(lb.value); if(isNaN(v)){kg.value=oz.value='';return;} kg.value=round(v/KG_LB,3); oz.value=round(v*16,2); });
+    oz.addEventListener('input',()=>{ const v=parseFloat(oz.value); if(isNaN(v)){kg.value=lb.value='';return;} const l=v/16; kg.value=round(l/KG_LB,3); lb.value=round(l,3); });
+
+    // Length: in / ft / cm / m
     inch.addEventListener('input',()=>{ const v=parseFloat(inch.value); if(isNaN(v)){ft.value=cm.value=m.value='';return;} ft.value=round(v/12,3); cm.value=round(v*IN_CM,3); m.value=round(v*IN_CM/100,4); });
     ft.addEventListener('input',()=>{ const v=parseFloat(ft.value); if(isNaN(v)){inch.value=cm.value=m.value='';return;} inch.value=round(v*12,3); cm.value=round(v*12*IN_CM,3); m.value=round(v*12*IN_CM/100,4); });
     cm.addEventListener('input',()=>{ const v=parseFloat(cm.value); if(isNaN(v)){inch.value=ft.value=m.value='';return;} const i=v/IN_CM; inch.value=round(i,3); ft.value=round(i/12,3); m.value=round(v/100,4); });
     m.addEventListener('input',()=>{ const v=parseFloat(m.value); if(isNaN(v)){inch.value=ft.value=cm.value='';return;} const i=(v*100)/IN_CM; inch.value=round(i,3); ft.value=round(i/12,3); cm.value=round(v*100,3); });
+
+    // Volume: gal / L / qt / fl oz
+    gal.addEventListener('input',()=>{ const v=parseFloat(gal.value); if(isNaN(v)){liter.value=qt.value=floz.value='';return;} liter.value=round(v*GAL_L,3); qt.value=round(v*4,3); floz.value=round(v*128,2); });
+    liter.addEventListener('input',()=>{ const v=parseFloat(liter.value); if(isNaN(v)){gal.value=qt.value=floz.value='';return;} const g=v/GAL_L; gal.value=round(g,3); qt.value=round(g*4,3); floz.value=round(g*128,2); });
+    qt.addEventListener('input',()=>{ const v=parseFloat(qt.value); if(isNaN(v)){gal.value=liter.value=floz.value='';return;} const g=v/4; gal.value=round(g,3); liter.value=round(g*GAL_L,3); floz.value=round(v*32,2); });
+    floz.addEventListener('input',()=>{ const v=parseFloat(floz.value); if(isNaN(v)){gal.value=liter.value=qt.value='';return;} const g=v/128; gal.value=round(g,3); liter.value=round(g*GAL_L,3); qt.value=round(g*4,3); });
+
+    // Liquid Weight Estimator: gallons × density = pounds (density defaults to water, editable)
+    function lwCalc(){
+      const g=parseFloat(lwGal.value), d=parseFloat(lwDensity.value);
+      if(isNaN(g)||isNaN(d)){ lwLb.value=''; return; }
+      lwLb.value=round(g*d,2);
+    }
+    lwGal.addEventListener('input',lwCalc);
+    lwDensity.addEventListener('input',lwCalc);
+    lwLb.addEventListener('input',()=>{
+      const p=parseFloat(lwLb.value), d=parseFloat(lwDensity.value);
+      if(isNaN(p)||isNaN(d)||d===0){ lwGal.value=''; return; }
+      lwGal.value=round(p/d,3);
+    });
   }
 
-  // ---------- Pallet footprint ----------
+  // ---------- Pallet footprint + Storage Space Estimator ----------
   function initPallet(){
     const len=el('pfLen'), wid=el('pfWid'), sqft=el('pfSqFt'), sqin=el('pfSqIn'), std=el('pfStandard');
+    const count=el('seCount'), stack=el('seStack'), aisle=el('seAisle'), seSqFt=el('seSqFt'), seDetail=el('seDetail');
+    const availSqFt=el('seAvailSqFt'), seCapacity=el('seCapacity'), seCapacityDetail=el('seCapacityDetail');
     if(!len) return;
-    function calcFootprint(){
-      const l=parseFloat(len.value)||0, w=parseFloat(wid.value)||0;
-      const area=l*w;
+
+    function palletSqFt(){ return ((parseFloat(len.value)||0)*(parseFloat(wid.value)||0))/144; }
+
+    function calcSingleFootprint(){
+      const area=(parseFloat(len.value)||0)*(parseFloat(wid.value)||0);
       sqft.textContent=round(area/144,2);
       sqin.textContent=Math.round(area)+' sq in';
     }
-    len.addEventListener('input',calcFootprint); wid.addEventListener('input',calcFootprint);
-    if(std) std.onclick=()=>{ len.value=48; wid.value=40; calcFootprint(); };
-    calcFootprint();
+    // Forward: pallet count -> estimated sq ft needed.
+    // Floor positions = ceil(count / stackHeight) since stacked pallets share a floor position.
+    // Total = (positions × single pallet sq ft) inflated by the aisle allowance %.
+    function calcStorageSpace(){
+      const n=parseFloat(count.value)||0, s=Math.max(1,parseFloat(stack.value)||1), a=parseFloat(aisle.value)||0;
+      const pFt=palletSqFt();
+      if(!n||!pFt){ seSqFt.textContent='0 sq ft'; seDetail.textContent='—'; return; }
+      const positions=Math.ceil(n/s);
+      const base=positions*pFt;
+      const total=base*(1+a/100);
+      seSqFt.textContent=round(total,0).toLocaleString()+' sq ft';
+      seDetail.textContent=`${positions.toLocaleString()} floor position(s) × ${round(pFt,2)} sq ft, +${a}% aisle allowance`;
+    }
+    // Reverse: available sq ft -> how many pallets fit.
+    // Back out the aisle allowance first, see how many floor positions fit in what's left,
+    // then multiply by stack height for total pallet capacity.
+    function calcReverseCapacity(){
+      const avail=parseFloat(availSqFt.value)||0, s=Math.max(1,parseFloat(stack.value)||1), a=parseFloat(aisle.value)||0;
+      const pFt=palletSqFt();
+      if(!avail||!pFt){ seCapacity.textContent='0 pallets'; seCapacityDetail.textContent='—'; return; }
+      const usable=avail/(1+a/100);
+      const positions=Math.floor(usable/pFt);
+      const capacity=positions*s;
+      seCapacity.textContent=capacity.toLocaleString()+' pallets';
+      seCapacityDetail.textContent=`${positions.toLocaleString()} floor position(s) × stack of ${s}`;
+    }
+    function recalcAll(){ calcSingleFootprint(); calcStorageSpace(); calcReverseCapacity(); }
+
+    len.addEventListener('input',recalcAll); wid.addEventListener('input',recalcAll);
+    if(std) std.onclick=()=>{ len.value=48; wid.value=40; recalcAll(); };
+    count.addEventListener('input',calcStorageSpace);
+    stack.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
+    aisle.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
+    availSqFt.addEventListener('input',calcReverseCapacity);
+
+    recalcAll();
   }
 
   // ---------- Notepad ----------
@@ -118,6 +178,7 @@
     try{
       scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
       const video=el('scanVideo'); video.srcObject=scanStream;
+      try{ await video.play(); }catch(playErr){ /* some browsers auto-play once metadata loads; ignore */ }
       el('scanCameraWrap').hidden=false; el('scanCaptureBtn').hidden=true; el('scanCloseBtn').hidden=false;
     }catch(e){ alert('Could not open the camera: '+e.message+'\n\nMake sure the page is served over HTTPS and camera permission is allowed.'); }
   }

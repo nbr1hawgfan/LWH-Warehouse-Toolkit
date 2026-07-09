@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.2
+- Pallet Footprint expanded into a full **Storage Space Estimator**: enter pallet count, stack height, and drive-aisle allowance % to get an estimated total square footage — plus the reverse, enter available square footage to see how many pallets it could hold. Same pallet dimensions, stack height, and aisle % drive both directions.
+
+## v1.5.1
+- **Fixed:** document scanner camera showing a black screen — the video stream was attached but never actually told to play. Added the explicit play() call.
+- Converter expanded: weight now includes ounces, added a linked Volume group (gallons/liters/quarts/fl oz), and a Liquid Weight Estimator (gallons × editable density = pounds — density is adjustable since it depends on the liquid, not hardcoded to water).
+- Clarified that Weight/Length converter fields were already bidirectional — added a hint saying so.
+
 ## v1.5.0
 - **New: Warehouse Tools** — a self-contained toolkit for the floor, no leaving the app: four-function calculator, unit converter (kg↔lb, in/ft/cm/m, all fields linked live), pallet footprint calculator (one-tap standard 40×48), a persistent notepad (copy to clipboard or email), and a basic document scanner (capture pages, optional contrast/grayscale enhance, share via the phone's native share sheet or download).
 - **Pallet label fixes:** Item number now a fixed large size (was silently shrinking due to a bug where a second auto-fit pass used its own already-shrunk size as the new ceiling — fixed generally, also benefits rack labels). All label field values now explicit bold black instead of relying on inherited styling; added a meta tag to stop iOS from auto-linking numbers blue.
