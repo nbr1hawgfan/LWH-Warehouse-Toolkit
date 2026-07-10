@@ -56,6 +56,7 @@ function applySettings(){
   document.documentElement.style.setProperty('--brand-tint',shadeColor(color,0.88));
   setColor.value=color;
   if(window.setWeatherLoc) setWeatherLoc.value=LWHStorage.get('weatherLoc','');
+  if(window.setReadAloud) setReadAloud.checked=LWHStorage.get('readAloudEnabled',true);
   const logo=LWHStorage.get('companyLogo',''); if(logo){brandLogoBox.hidden=false; brandLogoBox.style.backgroundImage=`url(${logo})`;} else {brandLogoBox.hidden=true;}
   if(window.setTagline) setTagline.value=LWHStorage.get('companyTagline','');
   if(window.setUserName) setUserName.value=LWHStorage.get('userName','');
@@ -347,7 +348,7 @@ if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefaul
 if(window.recClearBtn){recClearBtn.onclick=()=>{recInvRec.value=''; if(window.receivingResults) receivingResults.innerHTML=''; if(window.receivingPrintOutput) receivingPrintOutput.innerHTML=''; if(window.recStatus) recStatus.textContent='Enter an InvRec to begin.'; recInvRec.focus();};}
 if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findReceiving(); if(list && list.length) LWHInventory.printRows(list,receivingPrintOutput);};}
 if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(recPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} row(s)`);};}
-saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#0f4a45');if(window.setTagline)LWHStorage.set('companyTagline',setTagline.value||'');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};
+saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#0f4a45');if(window.setTagline)LWHStorage.set('companyTagline',setTagline.value||'');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}if(window.setReadAloud)LWHStorage.set('readAloudEnabled',setReadAloud.checked);LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
 saveCalibration.onclick=()=>{LWHStorage.set('calX',calX.value||0);LWHStorage.set('calY',calY.value||0);LWHStorage.set('calScale',calScale.value||100);LWHUI.toast('Calibration saved')};
 if(window.saveCustomerLookupUrl){saveCustomerLookupUrl.onclick=()=>{const url=LWHInventory.normalizeUrl(setCustomerLookupUrl.value||LWHInventory.CUSTOMER_DEFAULT_URL,LWHInventory.CUSTOMER_DEFAULT_URL); LWHStorage.set('customerLookupUrl',url); setCustomerLookupUrl.value=url; if(window.custCurrentUrl) custCurrentUrl.textContent=url; LWHUI.toast('Source saved')};}

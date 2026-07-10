@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.24.0
+- **New: read results aloud.** When a Master Lookup search returns exactly one match, the browser's own built-in text-to-speech reads back Item, Bay, and Quantity — no external service, no API, no network call, works offline. Defaults on (Settings → App Settings → "Read Master Lookup results aloud"), easy for anyone to turn off individually. Only triggers on a single clean match, not broad multi-result searches.
+
 ## v1.23.1
 - **Usage Log URL is now baked in as the default** — same pattern as Managers/Quick Links. Every device just needs someone's name entered once; the logging endpoint itself works automatically, no URL to paste or configure.
 
