@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','casecalc','health'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -105,9 +105,10 @@
 
   // ---------- Pallet footprint + Storage Space Estimator ----------
   function initPallet(){
-    const len=el('pfLen'), wid=el('pfWid'), sqft=el('pfSqFt'), sqin=el('pfSqIn'), std=el('pfStandard');
+    const len=el('pfLen'), wid=el('pfWid'), sqft=el('pfSqFt'), sqin=el('pfSqIn');
     const count=el('seCount'), stack=el('seStack'), aisle=el('seAisle'), seSqFt=el('seSqFt'), seDetail=el('seDetail');
     const availSqFt=el('seAvailSqFt'), seCapacity=el('seCapacity'), seCapacityDetail=el('seCapacityDetail');
+    const rate=el('seRate'), seCost=el('seCost'), seCostDetail=el('seCostDetail');
     if(!len) return;
     const required={len,wid,sqft,sqin,count,stack,aisle,seSqFt,seDetail,availSqFt,seCapacity,seCapacityDetail};
     const missing=Object.keys(required).filter(k=>!required[k]);
@@ -126,12 +127,21 @@
     function calcStorageSpace(){
       const n=parseFloat(count.value)||0, s=Math.max(1,parseFloat(stack.value)||1), a=parseFloat(aisle.value)||0;
       const pFt=palletSqFt();
-      if(!n||!pFt){ seSqFt.textContent='0 sq ft'; seDetail.textContent='—'; return; }
+      if(!n||!pFt){ seSqFt.textContent='0 sq ft'; seDetail.textContent='—'; calcCost(0); return; }
       const positions=Math.ceil(n/s);
       const base=positions*pFt;
       const total=base*(1+a/100);
       seSqFt.textContent=round(total,0).toLocaleString()+' sq ft';
       seDetail.textContent=`${positions.toLocaleString()} floor position(s) × ${round(pFt,2)} sq ft, +${a}% aisle allowance`;
+      calcCost(total);
+    }
+    function calcCost(totalSqFt){
+      if(!rate||!seCost) return;
+      const r=parseFloat(rate.value)||0;
+      if(!totalSqFt||!r){ seCost.textContent='—'; if(seCostDetail) seCostDetail.textContent='—'; return; }
+      const cost=totalSqFt*r;
+      seCost.textContent='$'+cost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(seCostDetail) seCostDetail.textContent=`${round(totalSqFt,0).toLocaleString()} sq ft × $${r}/sq ft`;
     }
     // Reverse: available sq ft -> how many pallets fit.
     // Back out the aisle allowance first, see how many floor positions fit in what's left,
@@ -150,12 +160,19 @@
 
     len.addEventListener('input',recalcAll); wid.addEventListener('input',recalcAll);
     len.addEventListener('change',recalcAll); wid.addEventListener('change',recalcAll);
-    if(std) std.onclick=()=>{ len.value=48; wid.value=40; recalcAll(); };
+    document.querySelectorAll('#utilPallet [data-preset]').forEach(btn=>{
+      btn.onclick=()=>{
+        const [l,w]=btn.dataset.preset.split(',');
+        len.value=l; wid.value=w;
+        recalcAll();
+      };
+    });
     count.addEventListener('input',calcStorageSpace); count.addEventListener('change',calcStorageSpace);
     stack.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
     stack.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); });
     aisle.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
     aisle.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); });
+    if(rate){ rate.addEventListener('input',calcStorageSpace); rate.addEventListener('change',calcStorageSpace); }
     availSqFt.addEventListener('input',calcReverseCapacity); availSqFt.addEventListener('change',calcReverseCapacity);
 
     recalcAll();
@@ -591,6 +608,81 @@
     });
   }
 
+  // ---------- Case / Layer / Pallet Counter ----------
+  function initCaseCalc(){
+    const upc=el('ccUnitsPerCase'), cpl=el('ccCasesPerLayer'), lpp=el('ccLayersPerPallet'), upp=el('ccUnitsPerPallet'), uppDetail=el('ccUnitsDetail');
+    const target=el('ccTarget'), palletsNeeded=el('ccPalletsNeeded'), palletsDetail=el('ccPalletsDetail');
+    if(!upc) return;
+    function unitsPerPallet(){ return (parseFloat(upc.value)||0)*(parseFloat(cpl.value)||0)*(parseFloat(lpp.value)||0); }
+    function calcPallets(){
+      const u=unitsPerPallet(), t=parseFloat(target.value)||0;
+      if(!u||!t){ palletsNeeded.textContent='0'; palletsDetail.textContent='—'; return; }
+      const pallets=Math.ceil(t/u);
+      const lastPallet=t-(pallets-1)*u;
+      palletsNeeded.textContent=pallets.toLocaleString();
+      palletsDetail.textContent=(t%u===0)?`Even split — all ${pallets} pallet(s) full`:`${(pallets-1).toLocaleString()} full pallet(s) + ${lastPallet.toLocaleString()} units on the last one`;
+    }
+    function calcUpp(){
+      const u=unitsPerPallet();
+      upp.textContent=u.toLocaleString();
+      uppDetail.textContent=u?`${upc.value||0} units/case × ${cpl.value||0} cases/layer × ${lpp.value||0} layer(s)`:'—';
+      calcPallets();
+    }
+    [upc,cpl,lpp].forEach(f=>f.addEventListener('input',calcUpp));
+    target.addEventListener('input',calcPallets);
+    calcUpp();
+  }
+
+  // ---------- Health: BMI + Body Fat % (nothing here is ever saved anywhere) ----------
+  function initHealth(){
+    const weight=el('bmiWeight'), hFt=el('bmiHeightFt'), hIn=el('bmiHeightIn'), bmiResult=el('bmiResult'), bmiCategory=el('bmiCategory');
+    if(!weight) return;
+    function calcBmi(){
+      const w=parseFloat(weight.value), ft=parseFloat(hFt.value)||0, inch=parseFloat(hIn.value)||0;
+      const totalIn=ft*12+inch;
+      if(!w||!totalIn){ bmiResult.textContent='—'; bmiCategory.textContent='—'; return; }
+      const bmi=703*w/(totalIn*totalIn);
+      bmiResult.textContent=round(bmi,1);
+      let cat;
+      if(bmi<18.5) cat='Underweight';
+      else if(bmi<25) cat='Normal weight';
+      else if(bmi<30) cat='Overweight';
+      else cat='Obese';
+      bmiCategory.textContent=cat+' (standard BMI categories)';
+    }
+    [weight,hFt,hIn].forEach(f=>f.addEventListener('input',calcBmi));
+
+    const gender=el('bfGender'), neck=el('bfNeck'), waist=el('bfWaist'), hip=el('bfHip'), hipLabel=el('bfHipLabel'), bfHeight=el('bfHeight'), bfResult=el('bfResult'), bfCategory=el('bfCategory');
+    function toggleHip(){ hipLabel.style.display=(gender.value==='female')?'':'none'; }
+    function bfCategoryFor(pct,sex){
+      if(sex==='male'){
+        if(pct<6) return 'Essential fat';
+        if(pct<14) return 'Athletic';
+        if(pct<18) return 'Fitness';
+        if(pct<25) return 'Acceptable';
+        return 'Obese range';
+      }
+      if(pct<14) return 'Essential fat';
+      if(pct<21) return 'Athletic';
+      if(pct<25) return 'Fitness';
+      if(pct<32) return 'Acceptable';
+      return 'Obese range';
+    }
+    function calcBodyFat(){
+      const sex=gender.value, n=parseFloat(neck.value), wa=parseFloat(waist.value), h=parseFloat(bfHeight.value), hi=parseFloat(hip.value);
+      if(!n||!wa||!h||(sex==='female'&&!hi)){ bfResult.textContent='—'; bfCategory.textContent='—'; return; }
+      let bf;
+      if(sex==='male') bf=86.010*Math.log10(wa-n)-70.041*Math.log10(h)+36.76;
+      else bf=163.205*Math.log10(wa+hi-n)-97.684*Math.log10(h)-78.387;
+      if(!isFinite(bf)||isNaN(bf)){ bfResult.textContent='—'; bfCategory.textContent='Check your measurements — waist should be larger than neck.'; return; }
+      bfResult.textContent=round(bf,1)+'%';
+      bfCategory.textContent=bfCategoryFor(bf,sex)+' range (estimate only)';
+    }
+    gender.addEventListener('change',()=>{ toggleHip(); calcBodyFat(); });
+    [neck,waist,hip,bfHeight].forEach(f=>f.addEventListener('input',calcBodyFat));
+    toggleHip();
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initCaseCalc(); initHealth(); });
 })();

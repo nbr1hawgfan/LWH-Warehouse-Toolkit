@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.15.0
+- **Storage Cost Estimator**: added a $/sq ft rate to the existing Storage Space Estimator — gives an actual dollar quote alongside the square footage.
+- **New: Case/Layer/Pallet Counter** — units per case × cases per layer × layers per pallet = units per pallet; flip it around with a target quantity to see how many pallets are needed and how full the last one is.
+- **New: Health tab** (BMI + Body Fat % via the U.S. Navy circumference method). Nothing entered here is ever saved anywhere, not even in local storage — it exists only while the screen is open and disappears the moment it's closed, matching the privacy point about personal devices.
+
+## v1.14.0
+- **Pallet Footprint: 4 size presets** — Standard 40×48, Bulk 56×44, Euro 47.5×39.8, and Small Standard 42×42, each one tap to fill in.
+- **New: Employee Timecard Badge** — prints at exact CR80 card size (3.375×2.125in, standard credit-card size) with employee name, ID, optional department, and a 1D barcode or QR encoding the employee ID for time clock scanning. Two modes: Single CR80 Card (no cutting needed at all if the printer/OS accepts a custom small page size, or feeding straight to a card printer) and Multiple on Letter Sheet (tiles several badges on standard 8.5×11 paper with a visible border to cut along, for any printer that won't do custom page sizes). Honest note on the HID DTC1000 specifically: whether it accepts a direct browser print job depends on its own driver being installed and selected — the badge is sized exactly to what it expects, which is the main requirement, but this hasn't been tested against the actual hardware.
+
 ## v1.13.3
 - **Customer ID QR moved off the bottom corner** — now sits in its own box directly beside the field grid (near Bay/Lot/InvRec), and made noticeably larger (was ~.72in in a shared corner, now ~.95in with its own dedicated space). Should scan much easier on rounded/curved units where the far corner was hard to reach. Item number stays full-width and prominent below the grid, unaffected. Barcode at the bottom now has the full row to itself and can run wider since it's no longer sharing space with the QR.
 

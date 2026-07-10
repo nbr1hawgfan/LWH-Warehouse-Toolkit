@@ -256,6 +256,24 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .tc-sig-img{height:44px;vertical-align:middle;margin-left:6px}
 
 /* =========================================================================
+   EMPLOYEE TIMECARD BADGE — CR80 card size (3.375x2.125in, standard credit
+   card size). Page size set dynamically via setPrintPageSize() depending on
+   mode: exact CR80 for a single card, or 8.5x11 Letter when tiling several
+   for cutting. Independent of the small-label @page sizing above.
+   ========================================================================= */
+.employee-badge-page{width:3.375in;height:2.125in;overflow:hidden}
+.employee-sheet-page{width:8.5in;min-height:11in;padding:.4in;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:.2in;align-content:flex-start}
+.employee-badge{width:3.375in;height:2.125in;padding:.12in;border:2px solid #000;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:.02in;background:#fff;color:#000;font-family:Arial,sans-serif}
+.eb-top{font-size:.11in;font-weight:900}
+.eb-type{font-size:.09in;font-weight:700;border-top:1px solid #000;border-bottom:1px solid #000;padding:.02in 0;margin:.02in 0}
+.eb-name{font-size:.20in;font-weight:900}
+.eb-dept{font-size:.11in}
+.eb-code{margin-top:.03in}
+.eb-code svg{max-width:2.4in;height:auto}
+.eb-code .qrbox{width:.85in;height:.85in;margin:0 auto}
+.eb-id{font-size:.11in;font-weight:700;margin-top:.02in}
+
+/* =========================================================================
    PICK LIST — landscape 8.5x11 report. Page size set dynamically via
    LWHLabels.setPrintPageSize(11,8.5) when generated, independent of the
    small-label @page sizing and the portrait Trailer Checklist page above.

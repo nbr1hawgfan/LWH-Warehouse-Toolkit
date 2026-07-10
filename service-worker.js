@@ -1,5 +1,5 @@
-const CACHE_NAME='lwh-toolkit-v1-13-3';
-const ASSETS=['./','./index.html','./manifest.json','./css/app.css','./css/print.css','./js/storage.js','./js/qr.js','./js/barcode.js','./js/ui.js','./js/labels.js','./js/visitors.js','./js/trailer.js','./js/picklist.js','./js/inventory.js','./js/scanner.js','./js/utilities.js','./js/app.js','./icons/icon-192.png','./icons/icon-512.png','./icons/favicon.png'];
+const CACHE_NAME='lwh-toolkit-v1-15-0';
+const ASSETS=['./','./index.html','./manifest.json','./css/app.css','./css/print.css','./js/storage.js','./js/qr.js','./js/barcode.js','./js/ui.js','./js/labels.js','./js/visitors.js','./js/empbadge.js','./js/trailer.js','./js/picklist.js','./js/inventory.js','./js/scanner.js','./js/utilities.js','./js/app.js','./icons/icon-192.png','./icons/icon-512.png','./icons/favicon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
