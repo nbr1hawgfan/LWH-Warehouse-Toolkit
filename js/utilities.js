@@ -253,13 +253,47 @@
       enhanceBtn.textContent=p.enhanced?'Enhanced':'Enhance';
       enhanceBtn.disabled=p.enhanced;
       enhanceBtn.onclick=()=>{ enhanceCanvas(p.canvas); p.enhanced=true; renderScanPages(); };
+      const ocrBtn=document.createElement('button'); ocrBtn.type='button'; ocrBtn.className='ghost';
+      ocrBtn.textContent=p.ocrRunning?'Extracting…':'Extract Text';
+      ocrBtn.disabled=!!p.ocrRunning;
+      ocrBtn.onclick=()=>extractText(p);
       const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.className='ghost'; removeBtn.textContent='Remove';
       removeBtn.onclick=()=>{ scanPagesData.splice(i,1); renderScanPages(); };
-      actions.append(enhanceBtn,removeBtn);
+      actions.append(enhanceBtn,ocrBtn,removeBtn);
       div.append(actions);
+      if(p.ocrText!=null){
+        const ta=document.createElement('textarea'); ta.rows=4; ta.style.marginTop='8px'; ta.value=p.ocrText;
+        ta.placeholder='Extracted text — edit to fix any misreads before copying';
+        ta.addEventListener('input',()=>{ p.ocrText=ta.value; });
+        div.append(ta);
+        const copyBtn=document.createElement('button'); copyBtn.type='button'; copyBtn.className='ghost'; copyBtn.style.marginTop='6px';
+        copyBtn.textContent='Copy Text';
+        copyBtn.onclick=()=>{ navigator.clipboard?.writeText(ta.value).then(()=>LWHUI.toast('Text copied')).catch(()=>alert(ta.value)); };
+        div.append(copyBtn);
+      }
       wrap.append(div);
     });
     const bulk=el('scanBulkActions'); if(bulk) bulk.hidden=!scanPagesData.length;
+  }
+  // Runs entirely in the browser via WebAssembly (Tesseract.js) rather than
+  // any OS-level camera text detection — that's deliberate, since iOS Safari
+  // never implemented the browser text-detection APIs Android's Chrome has,
+  // so relying on those would only ever work on Android. This approach reads
+  // printed text the same way on both platforms. First run on a page loads
+  // the OCR engine/language data over the network, so it's a bit slower than
+  // subsequent runs in the same session.
+  async function extractText(p){
+    if(!window.Tesseract){ alert('Text extraction library failed to load — check your internet connection.'); return; }
+    p.ocrRunning=true; renderScanPages();
+    try{
+      const { data }=await Tesseract.recognize(p.canvas,'eng');
+      p.ocrText=(data&&data.text||'').trim()||'(No text found — try Enhance first, or retake with better lighting/focus.)';
+    }catch(e){
+      p.ocrText='Text extraction failed: '+e.message;
+    }
+    p.ocrRunning=false;
+    renderScanPages();
+    LWHUI.toast('Text extracted — review and Copy Text');
   }
   function canvasToFile(canvas,name){
     return new Promise(resolve=>canvas.toBlob(blob=>resolve(new File([blob],name,{type:'image/jpeg'})),'image/jpeg',0.9));
