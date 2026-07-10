@@ -266,30 +266,41 @@ if(window.custClearBtn){custClearBtn.onclick=()=>{custSearch.value=''; LWHInvent
 // browsers without Web Speech API support rather than showing something
 // that won't work. Populating the field fires its existing 'input' handler,
 // so live search runs the same as if it had been typed or pasted.
-function attachVoiceInput(btn,inputEl){
+function attachVoiceInput(btn,inputEl,opts={}){
   if(!btn||!inputEl) return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ return; }
   btn.hidden=false;
   const recognition=new SR();
-  recognition.lang='en-US';
   recognition.interimResults=false;
   recognition.maxAlternatives=1;
   let listening=false;
+  const idleLabel=opts.idleLabel||btn.textContent;
   btn.onclick=()=>{
     if(listening) return;
+    recognition.lang=typeof opts.lang==='function'?opts.lang():(opts.lang||'en-US');
     listening=true; btn.textContent='Listening…';
-    try{ recognition.start(); }catch(e){ listening=false; btn.textContent='Speak Search'; }
+    try{ recognition.start(); }catch(e){ listening=false; btn.textContent=idleLabel; }
   };
   recognition.onresult=(e)=>{
-    const text=e.results[0][0].transcript;
+    let text=e.results[0][0].transcript;
+    // Speech recognition often "smart formats" spoken digit sequences as if
+    // they were phone numbers (e.g. saying "4226615" comes back "422-6615"),
+    // which breaks lookups here since these are plain reference numbers, not
+    // phone numbers. If the whole transcript is just digits once spaces/
+    // dashes are removed, use the plain digit string instead.
+    if(opts.cleanDigits){
+      const digitsOnly=text.replace(/[\s-]/g,'');
+      if(/^\d+$/.test(digitsOnly)) text=digitsOnly;
+    }
     inputEl.value=text;
     inputEl.dispatchEvent(new Event('input'));
   };
-  recognition.onerror=()=>{ listening=false; btn.textContent='Speak Search'; };
-  recognition.onend=()=>{ listening=false; btn.textContent='Speak Search'; };
+  recognition.onerror=()=>{ listening=false; btn.textContent=idleLabel; };
+  recognition.onend=()=>{ listening=false; btn.textContent=idleLabel; };
 }
-if(window.custVoiceBtn) attachVoiceInput(custVoiceBtn,custSearch);
+window.attachVoiceInput=attachVoiceInput;
+if(window.custVoiceBtn) attachVoiceInput(custVoiceBtn,custSearch,{cleanDigits:true,idleLabel:'Speak Search'});
 if(window.custLoadBtn){custLoadBtn.onclick=async()=>{try{await LWHInventory.loadCustomerFromUrl();LWHUI.toast('Master Lookup data loaded')}catch(e){custLookupStatus.textContent='Load failed: '+e.message; console.error(e);}};}
 if(window.custPasteBtn){custPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(custPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted row(s)`)};}
 if(window.recLoadBtn){recLoadBtn.onclick=()=>custLoadBtn.click();}

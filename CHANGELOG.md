@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.21.0
+- **Fixed the voice search phone-number trap** — speech recognition was auto-formatting spoken digit sequences like a phone number (e.g. "4226615" coming back as "422-6615"), breaking numeric lookups. Now detects when the whole result is just digits once dashes/spaces are removed, and uses the plain digit string instead. Master Lookup's voice search specifically benefits; word-based speech elsewhere is untouched.
+- **New: Translate** — Warehouse Tools tab using MyMemory's free, keyless translation API (no account, no billing, nothing to expose on the public repo). Type, paste, or speak a phrase, pick From/Language, get it translated — plus six Quick Phrase buttons for the exact carrier interactions described (paperwork, pickup/delivery number, dock directions, BOL, etc.) that translate in one tap. Swap button flips languages and carries the last result back into the input for a reply. Good for short practical exchanges; not a substitute for a paid service on long or complex text.
+
 ## v1.20.0
 - **Safety Training added as a third hardcoded Quick Link** — same pattern as Forklift Inspection/PTO Requests. Includes a one-time migration so devices that already had the app set up get it too, without needing to touch Settings, and without disturbing anything already customized there.
 - **Calculator now shows what you entered** — a line above the main display shows the running expression (e.g. "9 × 9", then "9 × 9 =" once you hit equals), not just the current number.

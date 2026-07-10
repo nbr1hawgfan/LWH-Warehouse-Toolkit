@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','casecalc','health','revenue','distance'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','casecalc','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -796,6 +796,55 @@
     render();
   }
 
+  // ---------- Translate: free, keyless via MyMemory ----------
+  const TRANSLATE_QUICK_PHRASES=[
+    'I need your paperwork.',
+    'What is your pickup or delivery number?',
+    'Please go to the dock number posted.',
+    'Please wait here.',
+    'Do you have your Bill of Lading?',
+    'Thank you, have a safe trip.'
+  ];
+  const SPEECH_LANG_MAP={en:'en-US',es:'es-ES',ru:'ru-RU',fr:'fr-FR',pt:'pt-PT',zh:'zh-CN',ar:'ar-SA',vi:'vi-VN'};
+  function initTranslate(){
+    const from=el('trFrom'), to=el('trTo'), input=el('trInput'), result=el('trResult'), goBtn=el('trGo'), swapBtn=el('trSwap'), voiceBtn=el('trVoiceBtn'), phrasesWrap=el('trQuickPhrases');
+    if(!input) return;
+
+    async function translate(text){
+      if(!text||!text.trim()){ result.textContent='Type, paste, or speak something first.'; return; }
+      result.textContent='Translating…';
+      try{
+        const url=`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from.value}|${to.value}`;
+        const res=await fetch(url);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data=await res.json();
+        const translated=data && data.responseData && data.responseData.translatedText;
+        if(!translated) throw new Error('No translation returned');
+        result.textContent=translated;
+      }catch(e){
+        result.textContent='Translation failed: '+e.message+' — check your connection and try again';
+      }
+    }
+
+    goBtn.onclick=()=>translate(input.value);
+    swapBtn.onclick=()=>{
+      const f=from.value; from.value=to.value; to.value=f;
+      const prevResult=result.textContent;
+      if(prevResult && prevResult!=='—' && !prevResult.startsWith('Translation failed') && !prevResult.startsWith('Type')){
+        input.value=prevResult;
+      }
+      result.textContent='—';
+    };
+    phrasesWrap.innerHTML=TRANSLATE_QUICK_PHRASES.map((p,i)=>`<button type="button" class="ghost" data-phrase="${i}">${p}</button>`).join('');
+    phrasesWrap.addEventListener('click',e=>{
+      const b=e.target.closest('[data-phrase]'); if(!b) return;
+      const phrase=TRANSLATE_QUICK_PHRASES[+b.dataset.phrase];
+      input.value=phrase;
+      translate(phrase);
+    });
+    if(window.attachVoiceInput) attachVoiceInput(voiceBtn,input,{lang:()=>SPEECH_LANG_MAP[from.value]||'en-US',cleanDigits:false,idleLabel:'Speak'});
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initCaseCalc(); initHealth(); initRevenue(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initCaseCalc(); initHealth(); initRevenue(); initTranslate(); });
 })();
