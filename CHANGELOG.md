@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.18.0
+- **New: Distance / Route Planner** — Warehouse Tools tab. Enter city+state or ZIP for a From and To (add more stops for multi-point trips like A → B → C), get driving distance, estimated drive time, a per-leg breakdown, and a map with the route plotted. Uses OpenStreetMap (Nominatim) for geocoding and OSRM's public server for routing — both free and keyless, no account or billing setup needed, no API key exposed on the public repo. Honest tradeoff: these are free shared community services, not paid infrastructure with an uptime guarantee, so occasional slowness or brief unavailability is possible; if the routing service is down, it falls back to showing straight-line distance instead of failing outright. Neither external service could be tested from this environment (no network path to them from here), so this is genuinely worth trying live before relying on it.
+
 ## v1.17.1
 - **Split back into two distinct badge types**, correcting the earlier merge: Timecard Badge (simple, name/ID/barcode, landscape) and ID Badge (full front/back with logo/photo/title, portrait) are now separate modes on the same screen, switchable with a toggle at the top — one tap either way, sharing the Name/ID/code-type fields where it makes sense.
 - **Fixed ID Badge orientation** — was printing landscape (3.375×2.125in), which reads sideways once clipped to a lanyard. Now prints portrait (2.125×3.375in) front and back, so it reads right-side-up hanging normally. Timecard Badge is unchanged — still landscape, since that's what already tested well on the printer.
