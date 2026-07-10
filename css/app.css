@@ -256,27 +256,34 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .tc-sig-img{height:44px;vertical-align:middle;margin-left:6px}
 
 /* =========================================================================
-   EMPLOYEE ID BADGE — CR80 card size (3.375x2.125in, standard credit card
-   size), front and back. Page size set dynamically via setPrintPageSize()
-   depending on mode: exact CR80 for Front & Back (2 pages), or 8.5x11 Letter
-   when tiling several fronts for cutting. Independent of the small-label
-   @page sizing above. Unlike the monochrome Zebra label printers used
-   elsewhere in this app, HID-style card printers are full color, so this
-   badge is allowed to use the actual brand color rather than pure black.
+   EMPLOYEE BADGES — two distinct CR80 (3.375x2.125in credit-card-size)
+   badges. Timecard Badge stays landscape (name/ID/barcode only, unchanged
+   from what already tested well on the printer). ID Badge prints portrait
+   instead — 2.125 wide x 3.375 tall — so it reads right-side-up once clipped
+   to a lanyard, rather than needing to be turned sideways. Page size is set
+   dynamically via setPrintPageSize() per mode; independent of the
+   small-label @page sizing above. HID-style card printers are full color
+   (unlike the monochrome Zebra label printers used elsewhere), so the ID
+   Badge is allowed to use the actual brand color rather than pure black.
    ========================================================================= */
 .employee-badge-page{width:3.375in;height:2.125in;overflow:hidden}
+.employee-badge-page-portrait{width:2.125in;height:3.375in;overflow:hidden}
 .employee-sheet-page{width:8.5in;min-height:11in;padding:.4in;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:.2in;align-content:flex-start}
 .employee-badge{width:3.375in;height:2.125in;padding:.1in;border:2px solid #000;box-sizing:border-box;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.02in;background:#fff;color:#000;font-family:Arial,sans-serif}
-.id-logo{max-width:1.1in;max-height:.45in;object-fit:contain;margin-bottom:.02in}
-.id-tagline{font-size:.075in;font-weight:700;font-style:italic;margin-bottom:.03in}
-.id-photo{width:.85in;height:.85in;object-fit:cover;border:2px solid #1a3a8f;border-radius:2px;margin-bottom:.03in}
+.employee-badge.id-badge-card{width:2.125in;height:3.375in}
+.eb-top{font-size:.11in;font-weight:900}
+.eb-type{font-size:.09in;font-weight:700;border-top:1px solid #000;border-bottom:1px solid #000;padding:.02in 0;margin:.02in 0}
+.eb-name{font-size:.20in;font-weight:900}
+.id-logo{max-width:1.5in;max-height:.55in;object-fit:contain;margin-bottom:.03in}
+.id-tagline{font-size:.085in;font-weight:700;font-style:italic;margin-bottom:.05in}
+.id-photo{width:1.15in;height:1.15in;object-fit:cover;border:2px solid #1a3a8f;border-radius:2px;margin-bottom:.05in}
 .id-photo-placeholder{background:#eee}
-.id-name{font-size:.16in;font-weight:900}
-.id-dept{font-size:.1in;font-weight:700;font-style:italic}
+.id-name{font-size:.19in;font-weight:900}
+.id-dept{font-size:.12in;font-weight:700;font-style:italic}
 .eb-code{margin-top:.03in}
-.eb-code svg{max-width:2.4in;height:auto}
-.eb-code .qrbox{width:.85in;height:.85in;margin:0 auto}
-.eb-id{font-size:.11in;font-weight:700;margin-top:.02in}
+.eb-code svg{max-width:90%;height:auto}
+.eb-code .qrbox{width:1in;height:1in;margin:0 auto}
+.eb-id{font-size:.12in;font-weight:700;margin-top:.03in}
 
 /* =========================================================================
    PICK LIST — landscape 8.5x11 report. Page size set dynamically via

@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.17.1
+- **Split back into two distinct badge types**, correcting the earlier merge: Timecard Badge (simple, name/ID/barcode, landscape) and ID Badge (full front/back with logo/photo/title, portrait) are now separate modes on the same screen, switchable with a toggle at the top — one tap either way, sharing the Name/ID/code-type fields where it makes sense.
+- **Fixed ID Badge orientation** — was printing landscape (3.375×2.125in), which reads sideways once clipped to a lanyard. Now prints portrait (2.125×3.375in) front and back, so it reads right-side-up hanging normally. Timecard Badge is unchanged — still landscape, since that's what already tested well on the printer.
+
 ## v1.17.0
 - **Employee Timecard Badge evolved into a full Employee ID Badge** — front and back, same CR80 card stock as before. Front: your company logo and tagline (pulled automatically from Settings → App Settings), employee photo, name, and title/department. Back: the barcode or QR for door access/WMS scanning. "Front & Back (CR80)" generates both sides as a 2-page job; "Front Only, Letter Sheet" is the fallback for printers that won't accept a custom small page size.
 - Added a Company Tagline setting (Settings → App Settings) — optional, shown on the badge front under the logo.
