@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.20.0
+- **Safety Training added as a third hardcoded Quick Link** — same pattern as Forklift Inspection/PTO Requests. Includes a one-time migration so devices that already had the app set up get it too, without needing to touch Settings, and without disturbing anything already customized there.
+- **Calculator now shows what you entered** — a line above the main display shows the running expression (e.g. "9 × 9", then "9 × 9 =" once you hit equals), not just the current number.
+- **New: voice search on Master Lookup** — a "Speak Search" button using the browser's built-in speech recognition. Say a barcode number or item, it fills the search box and runs the same live search as typing would. Feature-detected: the button only appears on browsers that actually support it, rather than showing something broken. Note for testing: voice-to-text can occasionally spell out digits as words rather than numerals depending on the browser — worth a real test to see how it behaves in practice.
+
 ## v1.19.0
 - **Fixed a real bug found in your screenshot:** blank cells coming through from the sheet as the literal text "NULL" were printing on labels as if it were real data (e.g. Customer ID showing "NULL"). Now treated as blank everywhere it's used — pallet labels and Pick List both fixed at the source.
 - **Pallet label: removed the small Item field from the grid** — the big Item number already covers it, so this was pure duplication. Frees up room and reduces clutter, consistent with the same reasoning already applied to Qty/Lot.

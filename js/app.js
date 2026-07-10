@@ -153,7 +153,8 @@ let renderQuickLinksList=()=>{};
 // alone so edits/removals aren't silently undone on a later load.
 const QUICK_LINKS_DEFAULT=[
   {name:'Forklift Inspection',url:'https://script.google.com/macros/s/AKfycbyqgmk0BG_YoJIQcjCdVyMsR878-J1k0EQODinxxvQSx8CYzW2xZHIRLDbbua9TGup9/exec'},
-  {name:'PTO Requests',url:'https://script.google.com/macros/s/AKfycbwXblseav0VCgynTXxL6BYTLniZ4xJAiYholbDgnFPXBqL46_sxP1Rc49MWMga52QsV/exec'}
+  {name:'PTO Requests',url:'https://script.google.com/macros/s/AKfycbwXblseav0VCgynTXxL6BYTLniZ4xJAiYholbDgnFPXBqL46_sxP1Rc49MWMga52QsV/exec'},
+  {name:'Safety Training',url:'https://script.google.com/a/macros/logisticswarehouse.net/s/AKfycbxY_tZyajeHo00TH_EWaFgHBhG-fOWN8uxeXwxufDBzVnA8cOZxCdDtkdJ7N_O0uKfK/exec'}
 ];
 function renderQuickLinksHome(){
   const wrap=document.getElementById('quickLinksHome'), grid=document.getElementById('quickLinksGrid');
@@ -166,6 +167,16 @@ function renderQuickLinksHome(){
 function initQuickLinks(){
   const list=document.getElementById('qlList'); if(!list) return;
   if(LWHStorage.get('quickLinks',null)===null){ LWHStorage.set('quickLinks',QUICK_LINKS_DEFAULT.slice()); }
+  // One-time migration: devices that already seeded Quick Links before Safety
+  // Training existed get it appended once here, without touching anything
+  // already there. Runs only once ever (flagged below), so it won't keep
+  // re-adding it if someone deliberately removes it afterward.
+  if(!LWHStorage.get('quickLinksMigratedSafety',false)){
+    const links=LWHStorage.get('quickLinks',[]);
+    const safety=QUICK_LINKS_DEFAULT.find(l=>l.name==='Safety Training');
+    if(safety && !links.some(l=>l.url===safety.url)){ links.push(safety); LWHStorage.set('quickLinks',links); }
+    LWHStorage.set('quickLinksMigratedSafety',true);
+  }
   renderQuickLinksList=function render(){
     const links=LWHStorage.get('quickLinks',[]);
     list.innerHTML=links.length?links.map((l,i)=>`<div class="grid-2" style="align-items:center;margin-bottom:6px"><input data-idx="${i}" data-field="name" value="${String(l.name||'').replace(/"/g,'&quot;')}" placeholder="Name (e.g. Forklift Inspection)" /><input data-idx="${i}" data-field="url" value="${String(l.url||'').replace(/"/g,'&quot;')}" placeholder="https://..." /></div><div class="actions" style="margin-bottom:12px"><button type="button" class="ghost" data-remove="${i}">Remove</button></div>`).join(''):'<p class="hint">No quick links yet.</p>';
@@ -251,6 +262,34 @@ if(window.custSearch){custSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefa
   custSearchBtn.click();
 },250));}
 if(window.custClearBtn){custClearBtn.onclick=()=>{custSearch.value=''; LWHInventory.renderCustomerResults([]); custSearch.focus();};}
+// Voice input: feature-detected — the mic button stays hidden entirely on
+// browsers without Web Speech API support rather than showing something
+// that won't work. Populating the field fires its existing 'input' handler,
+// so live search runs the same as if it had been typed or pasted.
+function attachVoiceInput(btn,inputEl){
+  if(!btn||!inputEl) return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ return; }
+  btn.hidden=false;
+  const recognition=new SR();
+  recognition.lang='en-US';
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+  let listening=false;
+  btn.onclick=()=>{
+    if(listening) return;
+    listening=true; btn.textContent='Listening…';
+    try{ recognition.start(); }catch(e){ listening=false; btn.textContent='Speak Search'; }
+  };
+  recognition.onresult=(e)=>{
+    const text=e.results[0][0].transcript;
+    inputEl.value=text;
+    inputEl.dispatchEvent(new Event('input'));
+  };
+  recognition.onerror=()=>{ listening=false; btn.textContent='Speak Search'; };
+  recognition.onend=()=>{ listening=false; btn.textContent='Speak Search'; };
+}
+if(window.custVoiceBtn) attachVoiceInput(custVoiceBtn,custSearch);
 if(window.custLoadBtn){custLoadBtn.onclick=async()=>{try{await LWHInventory.loadCustomerFromUrl();LWHUI.toast('Master Lookup data loaded')}catch(e){custLookupStatus.textContent='Load failed: '+e.message; console.error(e);}};}
 if(window.custPasteBtn){custPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(custPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} pasted row(s)`)};}
 if(window.recLoadBtn){recLoadBtn.onclick=()=>custLoadBtn.click();}

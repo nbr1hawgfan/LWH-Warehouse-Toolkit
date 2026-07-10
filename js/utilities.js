@@ -17,10 +17,15 @@
   }
 
   // ---------- Calculator (classic four-function, left-to-right like a desk calculator) ----------
-  const calc={acc:null,op:null,cur:'0',fresh:true};
-  function calcRender(){ const d=el('calcDisplay'); if(d) d.textContent=calc.cur; }
+  const calc={acc:null,accDisplay:'',op:null,cur:'0',fresh:true,lastExpr:''};
+  function opSymbol(op){ return {'+':'+','-':'−','*':'×','/':'÷'}[op]||op; }
+  function calcRender(){
+    const d=el('calcDisplay'); if(d) d.textContent=calc.cur;
+    const e=el('calcExpr');
+    if(e) e.textContent = calc.op ? `${calc.accDisplay} ${opSymbol(calc.op)} ${calc.cur}` : (calc.lastExpr||'\u00A0');
+  }
   function calcDigit(v){
-    if(calc.fresh){ calc.cur=(v==='.')?'0.':v; calc.fresh=false; }
+    if(calc.fresh){ calc.cur=(v==='.')?'0.':v; calc.fresh=false; if(!calc.op) calc.lastExpr=''; }
     else{
       if(v==='.'&&calc.cur.includes('.')) return;
       calc.cur=(calc.cur==='0'&&v!=='.')?v:calc.cur+v;
@@ -30,8 +35,10 @@
   function calcApplyOp(op){
     if(calc.op&&!calc.fresh) calcEquals();
     calc.acc=parseFloat(calc.cur);
+    calc.accDisplay=calc.cur;
     calc.op=op;
     calc.fresh=true;
+    calcRender();
   }
   function calcEquals(){
     if(calc.op==null||calc.acc==null) return;
@@ -41,11 +48,12 @@
     else if(calc.op==='-') r=calc.acc-b;
     else if(calc.op==='*') r=calc.acc*b;
     else if(calc.op==='/') r=(b===0)?NaN:calc.acc/b;
+    calc.lastExpr=`${calc.accDisplay} ${opSymbol(calc.op)} ${calc.cur} =`;
     calc.cur=String(round(r,8));
     calc.op=null; calc.acc=null; calc.fresh=true;
     calcRender();
   }
-  function calcClear(){ calc.acc=null; calc.op=null; calc.cur='0'; calc.fresh=true; calcRender(); }
+  function calcClear(){ calc.acc=null; calc.accDisplay=''; calc.op=null; calc.cur='0'; calc.fresh=true; calc.lastExpr=''; calcRender(); }
   function calcBack(){ calc.cur=calc.cur.length>1?calc.cur.slice(0,-1):'0'; calcRender(); }
   function calcPercent(){ calc.cur=String(round(parseFloat(calc.cur||'0')/100,8)); calcRender(); }
   function initCalc(){
