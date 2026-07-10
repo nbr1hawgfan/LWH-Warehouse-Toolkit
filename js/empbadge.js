@@ -15,18 +15,23 @@
     return d;
   }
 
-  function badgeHtml(name,id,dept,codeType){
+  function frontHtml(name,dept,photo){
+    const logo=LWHStorage.get('companyLogo','');
+    const tagline=LWHStorage.get('companyTagline','');
+    const brand=LWHStorage.get('primaryColor','#0f4a45');
+    return `<div class="employee-badge id-front">
+      ${logo?`<img class="id-logo" src="${logo}" />`:''}
+      ${tagline?`<div class="id-tagline" style="color:${safe(brand)}">${safe(tagline)}</div>`:''}
+      ${photo?`<img class="id-photo" src="${photo}" />`:'<div class="id-photo id-photo-placeholder"></div>'}
+      <div class="id-name">${safe(name)}</div>
+      ${dept?`<div class="id-dept" style="color:${safe(brand)}">${safe(dept)}</div>`:''}
+    </div>`;
+  }
+  function backHtml(id,codeType){
     const codeBlock=codeType==='qr'
       ? `<div class="qrbox eb-qr" data-qr="${safe(id)}" data-size="90"></div>`
       : `<svg class="eb-barcode" data-barcode="${safe(id)}" data-height="42" data-width="1.6"></svg>`;
-    return `<div class="employee-badge">
-      <div class="eb-top">LOGISTICS WAREHOUSE</div>
-      <div class="eb-type">EMPLOYEE TIMECARD</div>
-      <div class="eb-name">${safe(name)}</div>
-      ${dept?`<div class="eb-dept">${safe(dept)}</div>`:''}
-      <div class="eb-code">${codeBlock}</div>
-      <div class="eb-id">${safe(id)}</div>
-    </div>`;
+    return `<div class="employee-badge id-back">${codeBlock}<div class="eb-id">${safe(id)}</div></div>`;
   }
 
   function finishCodes(root){
@@ -37,29 +42,33 @@
   function generate(mode){
     const out=el('empBadgeOutput'); if(!out) return;
     const name=(el('ebName').value||'').trim(), id=(el('ebId').value||'').trim(), dept=(el('ebDept').value||'').trim(), codeType=el('ebCodeType').value;
-    if(!name||!id){ alert('Enter at least Employee Name and Employee ID.'); return; }
-    out.innerHTML='';
+    if(!name){ alert('Enter at least an Employee Name.'); return; }
+    if(mode==='card' && !id){ alert('Front & Back mode needs a Secure ID for the back barcode.'); return; }
 
-    if(mode==='card'){
-      out.append(makePage('label-page employee-badge-page',badgeHtml(name,id,dept,codeType)));
-      finishCodes(out);
-      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(3.375,2.125);
-      LWHUI.toast('Single CR80 card ready to print');
-    } else {
-      const copies=Math.max(1,+el('ebCopies').value||1);
-      const perSheet=8; // 2 columns x 4 rows fits comfortably on a Letter page with margin
-      const sheets=Math.ceil(copies/perSheet);
-      for(let s=0;s<sheets;s++){
-        const onThisSheet=Math.min(perSheet,copies-s*perSheet);
-        let inner='';
-        for(let i=0;i<onThisSheet;i++) inner+=badgeHtml(name,id,dept,codeType);
-        out.append(makePage('label-page employee-sheet-page',inner));
+    LWHUI.readFile(el('ebPhoto'),photo=>{
+      out.innerHTML='';
+      if(mode==='card'){
+        out.append(makePage('label-page employee-badge-page',frontHtml(name,dept,photo)));
+        out.append(makePage('label-page employee-badge-page',backHtml(id,codeType)));
+        finishCodes(out);
+        if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(3.375,2.125);
+        LWHUI.toast('Front & back ready — 2 pages');
+      } else {
+        const copies=Math.max(1,+el('ebCopies').value||1);
+        const perSheet=8; // 2 columns x 4 rows fits comfortably on a Letter page with margin
+        const sheets=Math.ceil(copies/perSheet);
+        for(let s=0;s<sheets;s++){
+          const onThisSheet=Math.min(perSheet,copies-s*perSheet);
+          let inner='';
+          for(let i=0;i<onThisSheet;i++) inner+=frontHtml(name,dept,photo);
+          out.append(makePage('label-page employee-sheet-page',inner));
+        }
+        finishCodes(out);
+        if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+        LWHUI.toast(`Generated ${copies} front(s) across ${sheets} sheet(s) — cut along each badge's border`);
       }
-      finishCodes(out);
-      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
-      LWHUI.toast(`Generated ${copies} badge(s) across ${sheets} sheet(s) — cut along each badge's border`);
-    }
-    LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+1);
+      LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+1);
+    });
   }
 
   window.addEventListener('load',()=>{

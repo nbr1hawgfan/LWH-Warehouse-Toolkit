@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.17.0
+- **Employee Timecard Badge evolved into a full Employee ID Badge** — front and back, same CR80 card stock as before. Front: your company logo and tagline (pulled automatically from Settings → App Settings), employee photo, name, and title/department. Back: the barcode or QR for door access/WMS scanning. "Front & Back (CR80)" generates both sides as a 2-page job; "Front Only, Letter Sheet" is the fallback for printers that won't accept a custom small page size.
+- Added a Company Tagline setting (Settings → App Settings) — optional, shown on the badge front under the logo.
+- HID DTC1000 duplex (both-sides-in-one-pass) behavior is still untested against the actual hardware — sized correctly, but that's the piece I can't verify from here.
+
+## v1.16.0
+- **New: Storage Revenue & Profitability** — Warehouse Tools tab for multiple customers at once. Enter pallet count and rate per pallet per customer to see total monthly storage revenue; add pallet dimensions to see actual square footage occupied (same math as the Storage Space Estimator) and the effective $/sq ft being charged; add your own cost per sq ft to see real profit or loss per customer, not just revenue. Rows persist between visits. Verified the math against a real three-customer example — total revenue and per-customer profit/loss both came out correct.
+
 ## v1.15.0
 - **Storage Cost Estimator**: added a $/sq ft rate to the existing Storage Space Estimator — gives an actual dollar quote alongside the square footage.
 - **New: Case/Layer/Pallet Counter** — units per case × cases per layer × layers per pallet = units per pallet; flip it around with a target quantity to see how many pallets are needed and how full the last one is.

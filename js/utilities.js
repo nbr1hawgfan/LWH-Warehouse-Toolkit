@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','casecalc','health'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','casecalc','health','revenue'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -683,6 +683,111 @@
     toggleHip();
   }
 
+  // ---------- Storage Revenue & Profitability (multi-customer) ----------
+  function initRevenue(){
+    const rowsWrap=el('revRows'), addBtn=el('revAddRow');
+    const stackIn=el('revStack'), aisleIn=el('revAisle'), costIn=el('revCostPerSqFt');
+    const totalRevenueEl=el('revTotalRevenue'), totalDetailEl=el('revTotalDetail');
+    if(!rowsWrap) return;
+
+    function loadRows(){ return LWHStorage.get('storageRevenueRows',[{name:'',count:'',rate:'',len:'',wid:''}]); }
+    function saveRows(rows){ LWHStorage.set('storageRevenueRows',rows); }
+
+    // Same floor-position/aisle-allowance math as the Storage Space Estimator,
+    // applied per customer row, so the sq ft figure here is consistent with
+    // the rest of the app rather than a separate, different calculation.
+    function rowMetrics(row,stack,aisle,costPerSqFt){
+      const count=parseFloat(row.count)||0, rate=parseFloat(row.rate)||0;
+      const revenue=count*rate;
+      let sqft=null,effRate=null,cost=null,profit=null;
+      const len=parseFloat(row.len)||0, wid=parseFloat(row.wid)||0;
+      if(len&&wid&&count){
+        const pFt=(len*wid)/144;
+        const positions=Math.ceil(count/stack);
+        sqft=positions*pFt*(1+aisle/100);
+        effRate=sqft?revenue/sqft:null;
+        if(costPerSqFt){ cost=sqft*costPerSqFt; profit=revenue-cost; }
+      }
+      return {revenue,sqft,effRate,cost,profit};
+    }
+    function metricsLine(m){
+      return [
+        `Revenue $${round(m.revenue,2).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`,
+        m.sqft!=null?`${round(m.sqft,0).toLocaleString()} sq ft`:null,
+        m.effRate!=null?`$${round(m.effRate,3)}/sq ft charged`:null,
+        m.profit!=null?(m.profit>=0?`+$${round(m.profit,2).toLocaleString()} profit`:`−$${round(Math.abs(m.profit),2).toLocaleString()} loss`):null
+      ].filter(Boolean).join(' · ');
+    }
+    function sharedVals(){ return {stack:Math.max(1,parseFloat(stackIn.value)||1),aisle:parseFloat(aisleIn.value)||0,costPerSqFt:parseFloat(costIn.value)||0}; }
+
+    // Updates only the computed metrics text per row — never rebuilds the
+    // input fields themselves, so typing in one row's field never steals
+    // focus away mid-keystroke the way a full re-render would.
+    function updateMetricsOnly(){
+      const rows=loadRows(); const {stack,aisle,costPerSqFt}=sharedVals();
+      let totalRev=0,totalSqft=0,totalCost=0,anySqft=false,anyCost=false;
+      rows.forEach((row,i)=>{
+        const m=rowMetrics(row,stack,aisle,costPerSqFt);
+        const lineEl=rowsWrap.querySelector(`[data-metrics="${i}"]`);
+        if(lineEl) lineEl.textContent=metricsLine(m)||'—';
+        totalRev+=m.revenue;
+        if(m.sqft!=null){ totalSqft+=m.sqft; anySqft=true; }
+        if(m.cost!=null){ totalCost+=m.cost; anyCost=true; }
+      });
+      totalRevenueEl.textContent='$'+round(totalRev,2).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      let detail=`${rows.length} customer(s)`;
+      if(anySqft) detail+=` · ${round(totalSqft,0).toLocaleString()} sq ft total`;
+      if(anyCost){ const totalProfit=totalRev-totalCost; detail+=totalProfit>=0?` · +$${round(totalProfit,2).toLocaleString()} profit`:` · −$${round(Math.abs(totalProfit),2).toLocaleString()} loss`; }
+      totalDetailEl.textContent=detail;
+    }
+
+    function render(){
+      const rows=loadRows(); const {stack,aisle,costPerSqFt}=sharedVals();
+      rowsWrap.innerHTML=rows.map((row,i)=>{
+        const m=rowMetrics(row,stack,aisle,costPerSqFt);
+        return `<div class="card" style="margin-bottom:8px">
+          <div class="grid-3">
+            <input data-idx="${i}" data-field="name" value="${String(row.name||'').replace(/"/g,'&quot;')}" placeholder="Customer Name" />
+            <input data-idx="${i}" data-field="count" value="${String(row.count||'')}" placeholder="Pallet Count" inputmode="numeric" />
+            <input data-idx="${i}" data-field="rate" value="${String(row.rate||'')}" placeholder="Rate $/Pallet" inputmode="decimal" />
+          </div>
+          <div class="grid-2" style="margin-top:6px">
+            <input data-idx="${i}" data-field="len" value="${String(row.len||'')}" placeholder="Pallet Length (in, optional)" inputmode="decimal" />
+            <input data-idx="${i}" data-field="wid" value="${String(row.wid||'')}" placeholder="Pallet Width (in, optional)" inputmode="decimal" />
+          </div>
+          <div class="hint" style="margin-top:6px" data-metrics="${i}">${metricsLine(m)||'—'}</div>
+          <div class="actions" style="margin-top:6px"><button type="button" class="ghost" data-remove="${i}">Remove Row</button></div>
+        </div>`;
+      }).join('');
+      updateMetricsOnly();
+    }
+
+    rowsWrap.addEventListener('input',e=>{
+      const t=e.target; if(t.dataset.idx===undefined) return;
+      const rows=loadRows();
+      if(!rows[t.dataset.idx]) return;
+      rows[t.dataset.idx][t.dataset.field]=t.value;
+      saveRows(rows);
+      updateMetricsOnly();
+    });
+    rowsWrap.addEventListener('click',e=>{
+      const b=e.target.closest('[data-remove]'); if(!b) return;
+      const rows=loadRows();
+      rows.splice(+b.dataset.remove,1);
+      if(!rows.length) rows.push({name:'',count:'',rate:'',len:'',wid:''});
+      saveRows(rows);
+      render();
+    });
+    addBtn.onclick=()=>{
+      const rows=loadRows();
+      rows.push({name:'',count:'',rate:'',len:'',wid:''});
+      saveRows(rows);
+      render();
+    };
+    [stackIn,aisleIn,costIn].forEach(f=>f.addEventListener('input',updateMetricsOnly));
+    render();
+  }
+
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initCaseCalc(); initHealth(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initCaseCalc(); initHealth(); initRevenue(); });
 })();
