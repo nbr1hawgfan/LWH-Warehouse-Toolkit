@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.19.0
+- **Fixed a real bug found in your screenshot:** blank cells coming through from the sheet as the literal text "NULL" were printing on labels as if it were real data (e.g. Customer ID showing "NULL"). Now treated as blank everywhere it's used — pallet labels and Pick List both fixed at the source.
+- **Pallet label: removed the small Item field from the grid** — the big Item number already covers it, so this was pure duplication. Frees up room and reduces clutter, consistent with the same reasoning already applied to Qty/Lot.
+- **New: Fuel Cost Estimator**, built into the Distance tab — enter your truck's MPG and current fuel price, and it estimates trip fuel cost using whatever distance was just calculated (driving distance if available, straight-line as a fallback). Updates live as MPG/price change, no need to recalculate the route.
+
+## v1.18.1
+- **Pallet label: Qty and Lot now flank the 1D barcode** — Qty large on the left, Lot on the right, matching what forklift drivers said they actually need at a glance. Removed from the small field grid since they're now prominently shown here instead (no more duplication, and it freed up some room in an already-tight layout).
+- **New opt-in "Include Item # Barcode"** checkbox on Pallet Labels — adds a small barcode under the big Item number for customers who want to scan for their item number specifically. Off by default and clearly marked as worth testing before relying on it, since this label's vertical space is genuinely tight after everything that's been added.
+
 ## v1.18.0
 - **New: Distance / Route Planner** — Warehouse Tools tab. Enter city+state or ZIP for a From and To (add more stops for multi-point trips like A → B → C), get driving distance, estimated drive time, a per-leg breakdown, and a map with the route plotted. Uses OpenStreetMap (Nominatim) for geocoding and OSRM's public server for routing — both free and keyless, no account or billing setup needed, no API key exposed on the public repo. Honest tradeoff: these are free shared community services, not paid infrastructure with an uptime guarantee, so occasional slowness or brief unavailability is possible; if the routing service is down, it falls back to showing straight-line distance instead of failing outright. Neither external service could be tested from this environment (no network path to them from here), so this is genuinely worth trying live before relying on it.
 

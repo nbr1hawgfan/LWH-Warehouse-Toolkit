@@ -4,6 +4,7 @@
 
   let stops=['','']; // plain values, re-rendered on add/remove only (not per keystroke)
   let map=null, mapLayer=null;
+  let lastMiles=null; // drives the Fuel Cost Estimator without re-running geocode/route
 
   function renderStops(){
     const wrap=el('distStops'); if(!wrap) return;
@@ -72,6 +73,18 @@
     setTimeout(()=>{ map.invalidateSize(); map.fitBounds(group.getBounds(),{padding:[30,30]}); },50);
   }
 
+  function calcFuelCost(){
+    const costEl=el('distFuelCost'), detailEl=el('distFuelDetail');
+    if(!costEl) return;
+    if(lastMiles==null){ costEl.textContent='—'; detailEl.textContent='Calculate a route above first'; return; }
+    const mpg=parseFloat((el('distMpg')||{}).value), price=parseFloat((el('distFuelPrice')||{}).value);
+    if(!mpg||!price){ costEl.textContent='—'; detailEl.textContent='Enter MPG and fuel price to estimate cost'; return; }
+    const gallons=lastMiles/mpg;
+    const cost=gallons*price;
+    costEl.textContent='$'+cost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    detailEl.textContent=`${Math.round(lastMiles).toLocaleString()} mi ÷ ${mpg} mpg = ${gallons.toFixed(1)} gal × $${price}/gal`;
+  }
+
   async function calculate(){
     const status=el('distStatus'), totalMiles=el('distTotalMiles'), totalDetail=el('distTotalDetail'), legsWrap=el('distLegs');
     const queries=stops.map(s=>(s||'').trim()).filter(Boolean);
@@ -96,10 +109,13 @@
       if(route){
         totalMiles.textContent=Math.round(metersToMiles(route.distance)).toLocaleString()+' mi';
         totalDetail.textContent=`Driving distance · ~${secondsToHm(route.duration)} drive time · ${Math.round(straightTotal).toLocaleString()} mi straight-line`;
+        lastMiles=metersToMiles(route.distance);
       } else {
         totalMiles.textContent=Math.round(straightTotal).toLocaleString()+' mi (straight-line)';
         totalDetail.textContent=`Driving route unavailable right now (${routeError}) — showing straight-line distance only`;
+        lastMiles=straightTotal;
       }
+      calcFuelCost();
 
       legsWrap.innerHTML=legs.map(l=>`<div class="result-card"><div><b>${safe(l.from)}</b> → <b>${safe(l.to)}</b></div><div>${l.driveLeg!=null?`${Math.round(l.driveLeg).toLocaleString()} mi driving`:`${Math.round(l.straight).toLocaleString()} mi straight-line`}</div></div>`).join('');
 
@@ -124,5 +140,8 @@
     });
     const addBtn=el('distAddStop'); if(addBtn) addBtn.onclick=()=>{ stops.splice(stops.length-1,0,''); renderStops(); };
     const calcBtn=el('distCalc'); if(calcBtn) calcBtn.onclick=calculate;
+    const mpgEl=el('distMpg'), priceEl=el('distFuelPrice');
+    if(mpgEl) mpgEl.addEventListener('input',calcFuelCost);
+    if(priceEl) priceEl.addEventListener('input',calcFuelCost);
   });
 })();

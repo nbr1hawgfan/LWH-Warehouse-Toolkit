@@ -2,8 +2,9 @@
   function el(id){ return document.getElementById(id); }
   function safe(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+  function cleanVal(v){ const s=String(v??'').trim(); return (!s||/^null$/i.test(s))?'':s; }
   function toPickRow(r){
-    return { lwhid:r.controlNumber||'', customer:r.subCustNm||'', item:r.itemNm||'', lot:r.lotNum||'', qty:r.qty||'', location:r.location||r.warehouse||'', bay:r.currentBay||r.bayName||'' };
+    return { lwhid:cleanVal(r.controlNumber), customer:cleanVal(r.subCustNm), item:cleanVal(r.itemNm), lot:cleanVal(r.lotNum), qty:cleanVal(r.qty), location:cleanVal(r.location||r.warehouse), bay:cleanVal(r.currentBay||r.bayName) };
   }
 
   // Splits a field's input on commas into lowercase, trimmed tokens — lets a
