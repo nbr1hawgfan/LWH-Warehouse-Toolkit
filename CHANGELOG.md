@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.23.0
+- **New: simple usage tracking.** One-time prompt for your name (self-reported, no login/authentication — just enough to know who's using the app), then a single ping per day to a Google Sheet via a small Apps Script endpoint (same tech as Forklift Inspection/PTO/Safety Training, no new cost). Settings → Usage Tracking holds your name and the log URL. A pivot table on the raw log turns it into "John Smith — 12 days this month" with no formulas to maintain. Fails silently if unconfigured or offline — this is informational only and should never interrupt actual work.
+
 ## v1.22.0
 - **New: Text extraction (OCR) in Doc Scanner** — each captured page now has an "Extract Text" button using Tesseract.js, which runs entirely in the browser via WebAssembly rather than any OS-native camera text detection. That's a deliberate choice: iOS Safari never implemented the browser text-detection API Android's Chrome exposed, so anything relying on that would only ever work on Android. This approach reads printed text the same way on both platforms. Extracted text appears in an editable box (fix any misreads before copying) with a Copy Text button. Works best on printed text, not handwriting — first extraction on a page is a bit slower since it loads the OCR engine over the network; faster on subsequent pages in the same session.
 

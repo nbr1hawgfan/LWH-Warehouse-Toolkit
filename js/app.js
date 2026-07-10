@@ -58,6 +58,8 @@ function applySettings(){
   if(window.setWeatherLoc) setWeatherLoc.value=LWHStorage.get('weatherLoc','');
   const logo=LWHStorage.get('companyLogo',''); if(logo){brandLogoBox.hidden=false; brandLogoBox.style.backgroundImage=`url(${logo})`;} else {brandLogoBox.hidden=true;}
   if(window.setTagline) setTagline.value=LWHStorage.get('companyTagline','');
+  if(window.setUserName) setUserName.value=LWHStorage.get('userName','');
+  if(window.setUsageLogUrl) setUsageLogUrl.value=LWHStorage.get('usageLogUrl','');
   if(window.setCustomerLookupUrl){ const custUrl=LWHStorage.get('customerLookupUrl','')||LWHInventory.CUSTOMER_DEFAULT_URL; setCustomerLookupUrl.value=custUrl; if(window.custCurrentUrl) custCurrentUrl.textContent=custUrl; }
   if(window.LWHInventory && LWHInventory.loadCustomerLabelsToSettings) LWHInventory.loadCustomerLabelsToSettings();
   calX.value=LWHStorage.get('calX',0); calY.value=LWHStorage.get('calY',0); calScale.value=LWHStorage.get('calScale',100);
@@ -215,6 +217,36 @@ function initQuickLinks(){
   renderQuickLinksHome();
 }
 
+// Usage Tracking: simple, self-reported (no login system exists in this
+// app), and deliberately minimal — one name prompt, one ping per day, that's
+// it. Fails silently if unconfigured or if the network call doesn't go
+// through, since this is informational only and should never block or
+// interrupt someone's actual work.
+function promptForNameIfNeeded(){
+  let name=LWHStorage.get('userName','');
+  if(!name){
+    name=(prompt("What's your name? Used to track app usage for the team — nothing else is collected.")||'').trim();
+    if(name) LWHStorage.set('userName',name);
+  }
+  if(window.setUserName) setUserName.value=name;
+}
+async function pingUsage(){
+  const name=LWHStorage.get('userName',''); const url=LWHStorage.get('usageLogUrl','');
+  if(!name||!url) return;
+  const today=new Date().toISOString().slice(0,10);
+  if(LWHStorage.get('lastUsagePingDate','')===today) return; // already logged today
+  try{
+    await fetch(url+'?name='+encodeURIComponent(name)+'&date='+today,{mode:'no-cors'});
+    LWHStorage.set('lastUsagePingDate',today);
+  }catch(e){ /* silent — non-critical, never interrupt the user's actual work */ }
+}
+if(window.saveUsageSettings) saveUsageSettings.onclick=()=>{
+  LWHStorage.set('userName',(setUserName.value||'').trim());
+  LWHStorage.set('usageLogUrl',(setUsageLogUrl.value||'').trim());
+  LWHUI.toast('Saved');
+  pingUsage();
+};
+
 window.addEventListener('load',()=>{
   applySettings();
   refreshHero();
@@ -223,6 +255,8 @@ window.addEventListener('load',()=>{
   setInterval(refreshHero,30*60*1000);
   initManagers();
   initQuickLinks();
+  promptForNameIfNeeded();
+  pingUsage();
   setTimeout(()=>{ loadManagersFromUrl(); },500);
   LWHInventory.loadCached();
   // Auto-load the one master-sheet source so the team never has to remember
