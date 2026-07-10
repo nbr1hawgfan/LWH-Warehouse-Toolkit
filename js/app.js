@@ -59,7 +59,7 @@ function applySettings(){
   const logo=LWHStorage.get('companyLogo',''); if(logo){brandLogoBox.hidden=false; brandLogoBox.style.backgroundImage=`url(${logo})`;} else {brandLogoBox.hidden=true;}
   if(window.setTagline) setTagline.value=LWHStorage.get('companyTagline','');
   if(window.setUserName) setUserName.value=LWHStorage.get('userName','');
-  if(window.setUsageLogUrl) setUsageLogUrl.value=LWHStorage.get('usageLogUrl','');
+  if(window.setUsageLogUrl) setUsageLogUrl.value=LWHStorage.get('usageLogUrl','')||USAGE_LOG_URL_DEFAULT;
   if(window.setCustomerLookupUrl){ const custUrl=LWHStorage.get('customerLookupUrl','')||LWHInventory.CUSTOMER_DEFAULT_URL; setCustomerLookupUrl.value=custUrl; if(window.custCurrentUrl) custCurrentUrl.textContent=custUrl; }
   if(window.LWHInventory && LWHInventory.loadCustomerLabelsToSettings) LWHInventory.loadCustomerLabelsToSettings();
   calX.value=LWHStorage.get('calX',0); calY.value=LWHStorage.get('calY',0); calScale.value=LWHStorage.get('calScale',100);
@@ -222,6 +222,7 @@ function initQuickLinks(){
 // it. Fails silently if unconfigured or if the network call doesn't go
 // through, since this is informational only and should never block or
 // interrupt someone's actual work.
+const USAGE_LOG_URL_DEFAULT='https://script.google.com/macros/s/AKfycbxK1F5DNmXdtJma1NZHXQj6-URZdjjRgE8maFm9ypPQ7JinlXnzQGwUmLuwyCgau0YR/exec';
 function promptForNameIfNeeded(){
   let name=LWHStorage.get('userName','');
   if(!name){
@@ -231,7 +232,7 @@ function promptForNameIfNeeded(){
   if(window.setUserName) setUserName.value=name;
 }
 async function pingUsage(){
-  const name=LWHStorage.get('userName',''); const url=LWHStorage.get('usageLogUrl','');
+  const name=LWHStorage.get('userName',''); const url=LWHStorage.get('usageLogUrl','')||USAGE_LOG_URL_DEFAULT;
   if(!name||!url) return;
   const today=new Date().toISOString().slice(0,10);
   if(LWHStorage.get('lastUsagePingDate','')===today) return; // already logged today

@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.23.1
+- **Usage Log URL is now baked in as the default** — same pattern as Managers/Quick Links. Every device just needs someone's name entered once; the logging endpoint itself works automatically, no URL to paste or configure.
+
 ## v1.23.0
 - **New: simple usage tracking.** One-time prompt for your name (self-reported, no login/authentication — just enough to know who's using the app), then a single ping per day to a Google Sheet via a small Apps Script endpoint (same tech as Forklift Inspection/PTO/Safety Training, no new cost). Settings → Usage Tracking holds your name and the log URL. A pivot table on the raw log turns it into "John Smith — 12 days this month" with no formulas to maintain. Fails silently if unconfigured or offline — this is informational only and should never interrupt actual work.
 
