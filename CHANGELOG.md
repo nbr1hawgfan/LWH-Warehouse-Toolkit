@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.27.0
+- **Bill of Lading: removed Standard BOL, Simple/Generic BOL is now the only mode.** No more mode toggle — one clean form (Ship From/To, Carrier/Driver, Item table, three signatures). Printed BOL now carries brand-color accents (header rule, box borders, section titles, table headers) instead of plain black/white, with print-color-adjust set so those colors actually survive to the printed page.
+- **Warehouse Tools: added an explicit Download button to Generate Code**, next to Share — Download always saves the PNG straight to the device; Share still opens the native share sheet where supported (and falls back to download automatically where it isn't).
+- **New: Age Calculator**, folded into the Date Calc tab — enter a date of birth and any "as of" date (defaults to today) to get exact age in years/months/days, plus total days lived.
+- **New: Loan Calculator** tab — Loan Amount, Down Payment, Interest Rate, and Term produce a standard amortizing Monthly Payment, Total Interest, and Total Paid.
+- **New: Cost per Square Foot** tab — enter a landlord's annualized rate (e.g. $3.25/sq ft/year) to get the true monthly rate per foot, and optionally enter total square footage for full monthly/annual dollar costs.
+
 ## v1.26.1
 - **Simple BOL: added Seal Number and Truck Number (optional)**, separate from Trailer Number.
 - **Simple BOL: added optional Weight per item row**, plus a new "Item Totals" summary table on the printed BOL — rolls line items up by Item Number (same item across multiple lots gets summed together), showing total Qty, total Pallets, and total Weight per item, with a bold Grand Total row. Verified against a real multi-lot example.

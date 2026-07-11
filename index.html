@@ -37,7 +37,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.26.1</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.27.0</div></div></div>
     <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -75,7 +75,7 @@
         <button class="module-card" data-view="visitor"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg></div><b>Visitor Badges</b><span>Visitor, vendor, contractor badges with optional photo.</span></button>
         <button class="module-card" data-view="empbadge"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h5M13 14h3"/></svg></div><b>Employee Badges</b><span>Timecard scan badge or full front/back company ID badge — CR80 card size.</span></button>
         <button class="module-card" data-view="settings"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.4-2-3.4-2.3.8a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.3-.8-2 3.4 2 1.4a7.6 7.6 0 0 0 0 3l-2 1.4 2 3.4 2.3-.8a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.8 2-3.4z"/></svg></div><b>Settings</b><span>Logo, colors, calibration, and source data.</span></button>
-        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, QR/barcode generator + reader, Quick Message, trailer cube, date calc, health, storage revenue, distance planner, and more.</span></button>
+        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, QR/barcode generator + reader, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
       </div>
 
       <div id="quickLinksHome" class="card no-print" style="margin-top:16px" hidden>
@@ -205,60 +205,9 @@
       <div class="tool-layout wide">
         <form class="panel no-print" id="bolForm">
           <h2>Bill of Lading</h2>
-          <div class="segmented" id="bolModeTabs">
-            <button type="button" class="seg active" data-bolmode="standard">Standard BOL</button>
-            <button type="button" class="seg" data-bolmode="simple">Simple / Generic BOL</button>
-          </div>
-          <p class="hint" id="bolModeHint">Full short-form BOL with freight terms, NMFC/class, and detailed line items. Your logo (Settings → App Settings) prints automatically in the header.</p>
+          <p class="hint">No internal IDs needed — just what any driver would have on hand. Your logo (Settings → App Settings) prints automatically in the header.</p>
 
-          <div id="bolStandardFields">
-            <div class="grid-2"><label>Date<input id="bolDate" type="date" /></label><label>Bill of Lading Number<input id="bolNumber" placeholder="e.g. BOL-10234" /></label></div>
-
-            <h3>Ship From</h3>
-            <label>Name<input id="bolFromName" /></label>
-            <label>Street Address<input id="bolFromAddr" /></label>
-            <label>City, ST ZIP<input id="bolFromCity" /></label>
-
-            <h3>Ship To</h3>
-            <label>Name<input id="bolToName" /></label>
-            <label>Street Address<input id="bolToAddr" /></label>
-            <label>City, ST ZIP<input id="bolToCity" /></label>
-            <div class="grid-2"><label>Carrier Name<input id="bolCarrier" value="Logistics Warehouse" /></label><label>Trailer Number<input id="bolTrailer" /></label></div>
-            <label>Serial Number(s)<input id="bolSerial" /></label>
-
-            <h3>Third Party Freight Charges Bill To</h3>
-            <label>Name<input id="bolBillName" /></label>
-            <label>Street Address<input id="bolBillAddr" /></label>
-            <div class="grid-2"><label>City, ST ZIP<input id="bolBillCity" /></label><label>SCAC<input id="bolScac" /></label></div>
-            <label>Pro Number<input id="bolPro" /></label>
-
-            <h3>Freight Terms</h3>
-            <div class="grid-2"><label>Freight Charge Terms<select id="bolFreightTerms"><option value="Prepaid">Prepaid</option><option value="Collect">Collect</option><option value="3rd Party">3rd Party</option></select></label><label>&nbsp;<span style="display:block;margin-top:10px"><input id="bolMasterBol" type="checkbox" /> Master BOL with attached underlying BOLs</span></label></div>
-            <label>Special Instructions<textarea id="bolInstructions" rows="2"></textarea></label>
-
-            <h3>Customer Order Information</h3>
-            <div id="bolOrderRows"></div>
-            <div class="actions"><button type="button" id="bolAddOrderRow" class="ghost">Add Order Row</button></div>
-
-            <h3>Carrier Information</h3>
-            <div id="bolCarrierRows"></div>
-            <div class="actions"><button type="button" id="bolAddCarrierRow" class="ghost">Add Commodity Row</button></div>
-
-            <h3>Additional Terms</h3>
-            <div class="grid-2"><label>COD Amount ($)<input id="bolCod" inputmode="decimal" /></label><label>Fee Terms<select id="bolFeeTerms"><option value="Prepaid">Prepaid</option><option value="Collect">Collect</option><option value="Customer check acceptable">Customer check acceptable</option></select></label></div>
-            <div class="grid-2"><label>Trailer Loaded<select id="bolTrailerLoaded"><option value="By shipper">By shipper</option><option value="By driver">By driver</option></select></label><label>Freight Counted<select id="bolFreightCounted"><option value="By shipper">By shipper</option><option value="By driver/pallets said to contain">By driver/pallets said to contain</option><option value="By driver/pieces">By driver/pieces</option></select></label></div>
-
-            <h3>Signatures</h3>
-            <label>Shipper Signature</label>
-            <canvas id="bolSigShipper" class="sig-pad"></canvas>
-            <div class="grid-2"><button type="button" id="bolSigShipperClear" class="ghost">Clear Shipper Signature</button><label style="margin:0">Date<input id="bolShipperDate" type="date" /></label></div>
-            <label style="margin-top:12px">Carrier Signature</label>
-            <canvas id="bolSigCarrier" class="sig-pad"></canvas>
-            <div class="grid-2"><button type="button" id="bolSigCarrierClear" class="ghost">Clear Carrier Signature</button><label style="margin:0">Pickup Date<input id="bolCarrierDate" type="date" /></label></div>
-          </div>
-
-          <div id="bolSimpleFields" hidden>
-            <p class="hint">No internal IDs needed — just what any driver would have on hand. Good as a backup when a real BOL was lost, or picking up somewhere that never issued one.</p>
+          <div id="bolSimpleFields">
             <div class="grid-2"><label>Date<input id="bolSimpleDate" type="date" /></label><label>BOL Number (optional)<input id="bolSimpleNumber" placeholder="Leave blank if none" /></label></div>
 
             <h3>Ship From</h3>
@@ -330,7 +279,7 @@
     </section>
 
     <section id="utilities" class="view">
-      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools</h2><p class="hint">Calculator, unit converter, pallet footprint, scratch notepad, document scanner, and a QR/barcode generator — no need to leave the app.</p>
+      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools</h2><p class="hint">Calculator, unit converter, pallet footprint, age/loan/cost-per-foot calculators, scratch notepad, document scanner, and a QR/barcode generator — no need to leave the app.</p>
         <div class="segmented" id="utilTabs">
           <button type="button" class="seg active" data-util="calc">Calculator</button>
           <button type="button" class="seg" data-util="convert">Converter</button>
@@ -342,6 +291,8 @@
           <button type="button" class="seg" data-util="message">Quick Message</button>
           <button type="button" class="seg" data-util="trailercube">Trailer Cube</button>
           <button type="button" class="seg" data-util="datecalc">Date Calc</button>
+          <button type="button" class="seg" data-util="loancalc">Loan Calc</button>
+          <button type="button" class="seg" data-util="costperfoot">Cost / Ft</button>
           <button type="button" class="seg" data-util="casecalc">Case/Pallet Count</button>
           <button type="button" class="seg" data-util="health">Health</button>
           <button type="button" class="seg" data-util="revenue">Storage Revenue</button>
@@ -439,7 +390,7 @@
           <svg id="genBarcodeSvg" style="max-width:100%;display:none"></svg>
           <div id="genTextLabel" style="font-weight:900;font-size:1.3em;margin-top:10px;word-break:break-all"></div>
         </div>
-        <div class="actions no-print" style="justify-content:center"><button type="button" id="genShareBtn" class="ghost">Share</button></div>
+        <div class="actions no-print" style="justify-content:center"><button type="button" id="genDownloadBtn" class="ghost">Download</button><button type="button" id="genShareBtn" class="ghost">Share</button></div>
       </div>
 
       <div id="utilScancode" class="card util-panel no-print" hidden>
@@ -497,7 +448,12 @@
       </div>
 
       <div id="utilDatecalc" class="card util-panel no-print" hidden>
-        <h3>Days Between Two Dates</h3>
+        <h3>Age Calculator</h3>
+        <p class="hint">Enter a date of birth and the date to calculate age as of — defaults to today.</p>
+        <div class="grid-2"><label>Date of Birth<input id="acDob" type="date" /></label><label>Age as of<input id="acAsOf" type="date" /></label></div>
+        <div class="card" style="margin-top:10px;text-align:center;background:var(--bg)"><div class="hint">Age</div><div id="acResult" style="font-size:2em;font-weight:900;color:var(--brand)">—</div><div class="hint" id="acDetail">—</div></div>
+
+        <h3 style="margin-top:22px">Days Between Two Dates</h3>
         <div class="grid-2"><label>Start Date<input id="dcStart" type="date" /></label><label>End Date<input id="dcEnd" type="date" /></label></div>
         <div class="card" style="margin-top:10px;text-align:center;background:var(--bg)"><div class="hint">Days Between</div><div id="dcDaysBetween" style="font-size:2em;font-weight:900;color:var(--brand)">0</div></div>
 
@@ -519,6 +475,31 @@
         <h3 style="margin-top:22px">Day of the Week</h3>
         <label>Date<input id="dcDow" type="date" /></label>
         <div class="card" style="margin-top:10px;text-align:center;background:var(--bg)"><div class="hint">Day of the Week</div><div id="dcDowResult" style="font-size:1.8em;font-weight:900;color:var(--brand)">—</div></div>
+      </div>
+
+      <div id="utilLoancalc" class="card util-panel no-print" hidden>
+        <h3>Loan Calculator</h3>
+        <p class="hint">Standard amortizing loan — Loan Amount is the total price before down payment.</p>
+        <div class="grid-2"><label>Loan Amount ($)<input id="lcAmount" inputmode="decimal" placeholder="30000" /></label><label>Down Payment ($)<input id="lcDown" inputmode="decimal" placeholder="3000" /></label></div>
+        <div class="grid-2"><label>Interest Rate (annual %)<input id="lcRate" inputmode="decimal" placeholder="6.5" /></label><label>Term (years)<input id="lcTerm" inputmode="decimal" placeholder="5" /></label></div>
+        <div class="card" style="margin-top:12px;text-align:center;background:var(--bg)"><div class="hint">Monthly Payment</div><div id="lcMonthly" style="font-size:2.2em;font-weight:900;color:var(--brand)">—</div><div class="hint" id="lcFinanced">—</div></div>
+        <div class="grid-2" style="margin-top:10px">
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Total Interest</div><div id="lcInterest" style="font-size:1.5em;font-weight:900;color:var(--brand)">—</div></div>
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Total Paid</div><div id="lcTotal" style="font-size:1.5em;font-weight:900;color:var(--brand)">—</div></div>
+        </div>
+      </div>
+
+      <div id="utilCostperfoot" class="card util-panel no-print" hidden>
+        <h3>Cost per Square Foot</h3>
+        <p class="hint">Landlord rates are usually quoted annualized (e.g. $3.25/sq ft/year) — enter that rate to see your actual monthly cost per foot. Add total square footage for the full monthly and annual dollar amounts.</p>
+        <label>Annual Rate ($ per sq ft / year)<input id="cpfAnnualRate" inputmode="decimal" placeholder="3.25" /></label>
+        <div class="card" style="margin-top:10px;text-align:center;background:var(--bg)"><div class="hint">Monthly Rate per Sq Ft</div><div id="cpfMonthlyRate" style="font-size:2.2em;font-weight:900;color:var(--brand)">—</div></div>
+
+        <label style="margin-top:14px">Total Square Feet (optional)<input id="cpfSqFt" inputmode="numeric" placeholder="50000" /></label>
+        <div class="grid-2" style="margin-top:10px">
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Monthly Cost</div><div id="cpfMonthlyCost" style="font-size:1.6em;font-weight:900;color:var(--brand)">—</div></div>
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Annual Cost</div><div id="cpfAnnualCost" style="font-size:1.6em;font-weight:900;color:var(--brand)">—</div></div>
+        </div>
       </div>
 
       <div id="utilCasecalc" class="card util-panel no-print" hidden>
@@ -595,7 +576,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><label>Primary color<input id="setColor" type="color" value="#0f4a45" /></label><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one sheet now. Auto-loads fresh every time the app opens.</p><label>CSV / Google Sheet export URL<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.26.1</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Warehouse Tools, Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.27.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Warehouse Tools (including Age, Loan, and Cost-per-Foot calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

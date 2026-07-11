@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','casecalc','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','loancalc','costperfoot','casecalc','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -343,7 +343,7 @@
 
   // ---------- Ad-hoc QR/Barcode generator ----------
   function initGenerate(){
-    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel'), shareBtn=el('genShareBtn');
+    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel'), shareBtn=el('genShareBtn'), downloadBtn=el('genDownloadBtn');
     if(!text) return;
     let mode='qr';
     function render(){
@@ -408,6 +408,13 @@
         const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; document.body.append(a); a.click(); a.remove();
         LWHUI.toast('Sharing not supported here — downloaded instead');
       }
+    };
+    if(downloadBtn) downloadBtn.onclick=async()=>{
+      const blob=await currentOutputAsBlob();
+      if(!blob){ alert('Type something first to generate a code.'); return; }
+      const file=new File([blob],(mode==='qr'?'qr-code.png':'barcode.png'),{type:'image/png'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; document.body.append(a); a.click(); a.remove();
+      LWHUI.toast('Downloaded');
     };
   }
 
@@ -595,6 +602,30 @@
     const jcDate=el('jcDate'), jcCode=el('jcCode'), jcResultJulian=el('jcResultJulian'), jcResultCalendar=el('jcResultCalendar');
     if(!start) return;
 
+    // ---------- Age Calculator ----------
+    const acDob=el('acDob'), acAsOf=el('acAsOf'), acResult=el('acResult'), acDetail=el('acDetail');
+    function calcAge(){
+      if(!acDob.value||!acAsOf.value){ acResult.textContent='—'; acDetail.textContent='—'; return; }
+      const dob=new Date(acDob.value+'T00:00:00'), asOf=new Date(acAsOf.value+'T00:00:00');
+      if(asOf<dob){ acResult.textContent='—'; acDetail.textContent='"Age as of" date is before the date of birth.'; return; }
+      let years=asOf.getFullYear()-dob.getFullYear();
+      let months=asOf.getMonth()-dob.getMonth();
+      let days=asOf.getDate()-dob.getDate();
+      if(days<0){
+        months--;
+        const prevMonth=new Date(asOf.getFullYear(),asOf.getMonth(),0);
+        days+=prevMonth.getDate();
+      }
+      if(months<0){ years--; months+=12; }
+      const totalDays=Math.round((asOf-dob)/86400000);
+      acResult.textContent=`${years}y ${months}m ${days}d`;
+      acDetail.textContent=`${totalDays.toLocaleString()} total days`;
+    }
+    if(acDob){
+      acDob.addEventListener('input',calcAge); acAsOf.addEventListener('input',calcAge);
+      if(!acAsOf.value) acAsOf.value=new Date().toISOString().slice(0,10);
+    }
+
     function calcBetween(){
       if(!start.value||!end.value){ daysBetween.textContent='0'; return; }
       const d1=new Date(start.value+'T00:00:00'), d2=new Date(end.value+'T00:00:00');
@@ -648,6 +679,58 @@
       const d=new Date(dow.value+'T00:00:00');
       dowResult.textContent=d.toLocaleDateString(undefined,{weekday:'long'});
     });
+  }
+
+  // ---------- Loan Calculator (standard amortizing monthly payment) ----------
+  function initLoanCalc(){
+    const amount=el('lcAmount'), down=el('lcDown'), rate=el('lcRate'), term=el('lcTerm');
+    const monthlyOut=el('lcMonthly'), financedOut=el('lcFinanced'), interestOut=el('lcInterest'), totalOut=el('lcTotal');
+    if(!amount) return;
+    function calc(){
+      const principal=(parseFloat(amount.value)||0)-(parseFloat(down.value)||0);
+      const annualRate=parseFloat(rate.value)||0;
+      const years=parseFloat(term.value)||0;
+      const n=Math.round(years*12);
+      if(principal<=0||n<=0){
+        monthlyOut.textContent='—'; financedOut.textContent='—'; interestOut.textContent='—'; totalOut.textContent='—';
+        return;
+      }
+      const monthlyRate=(annualRate/100)/12;
+      let payment;
+      if(monthlyRate===0){
+        payment=principal/n;
+      } else {
+        payment=principal*(monthlyRate*Math.pow(1+monthlyRate,n))/(Math.pow(1+monthlyRate,n)-1);
+      }
+      const totalPaid=payment*n;
+      const totalInterest=totalPaid-principal;
+      monthlyOut.textContent='$'+payment.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      financedOut.textContent='Financed: $'+principal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+' over '+n+' months';
+      interestOut.textContent='$'+totalInterest.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      totalOut.textContent='$'+totalPaid.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    [amount,down,rate,term].forEach(f=>f.addEventListener('input',calc));
+  }
+
+  // ---------- Cost per Square Foot (annualized landlord rate -> monthly) ----------
+  function initCostPerFoot(){
+    const annualRate=el('cpfAnnualRate'), sqFt=el('cpfSqFt');
+    const monthlyRateOut=el('cpfMonthlyRate'), monthlyCostOut=el('cpfMonthlyCost'), annualCostOut=el('cpfAnnualCost');
+    if(!annualRate) return;
+    function calc(){
+      const rate=parseFloat(annualRate.value)||0;
+      if(!rate){ monthlyRateOut.textContent='—'; monthlyCostOut.textContent='—'; annualCostOut.textContent='—'; return; }
+      const monthlyRate=rate/12;
+      monthlyRateOut.textContent='$'+monthlyRate.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4})+' / sq ft / mo';
+      const area=parseFloat(sqFt.value)||0;
+      if(area>0){
+        monthlyCostOut.textContent='$'+(monthlyRate*area).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+        annualCostOut.textContent='$'+(rate*area).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      } else {
+        monthlyCostOut.textContent='—'; annualCostOut.textContent='—';
+      }
+    }
+    annualRate.addEventListener('input',calc); sqFt.addEventListener('input',calc);
   }
 
   // ---------- Case / Layer / Pallet Counter ----------
@@ -880,5 +963,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initCaseCalc(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initCaseCalc(); initHealth(); initRevenue(); initTranslate(); });
 })();
