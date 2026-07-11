@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.29.0
+- **Pick List: added a Warehouse filter** alongside Customer/Item/Lot/Bay.
+- **New: Item Summary** in Pick List — a second print output (next to the existing detailed Pick List) that groups matching inventory by Item → Bay → Lot and sums quantity, e.g. "Bay X: 20 @ Lot 8000, 1 @ Lot 6250 · Bay Y: 44 @ Lot 8000" — a compact reference for a picker instead of a long row-by-row table. Same search filters drive both outputs.
+- **Home screen greeting is now personalized** — since the app already captures a name for usage tracking, "Good Morning"/"Good Afternoon"/"Good Evening" now includes it (e.g. "Good Afternoon, Tim!") once a name's been entered. Updates immediately on first-time setup or if the name is changed later in Settings.
+- **Weather now stands out on the Home screen** — larger, bolder, brand-colored, matching the prominence the clock already had instead of blending into a plain hint line.
+
 ## v1.28.0
 - **New: Axle Weight Check** — enter Steer, Drive, and Trailer axle weights plus Gross Vehicle Weight, checked against editable limits (federal defaults: 12,000 / 34,000 / 34,000 / 80,000 lb). Flags each axle group and the overall load as legal or overweight, with the amount over/under shown. Not a substitute for a scale ticket — state and bridge-formula rules can be more restrictive than the federal defaults shown.
 - **Distance / Route Planner: added an "Estimated Time for the Day" total** — combines calculated drive time with an optional Dwell (min) field per stop (loading, unloading, breaks — whatever you know ahead of time), so a multi-stop day (e.g. Fort Smith → Wilburton, OK → Oklahoma City, OK → back) shows one total. Flags when drive time alone is approaching (9h+) or over (11h+) the federal daily driving limit — an awareness flag, not an ELD/HOS replacement.

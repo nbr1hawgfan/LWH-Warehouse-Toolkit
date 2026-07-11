@@ -4,7 +4,7 @@
 
   function cleanVal(v){ const s=String(v??'').trim(); return (!s||/^null$/i.test(s))?'':s; }
   function toPickRow(r){
-    return { lwhid:cleanVal(r.controlNumber), customer:cleanVal(r.subCustNm), item:cleanVal(r.itemNm), lot:cleanVal(r.lotNum), qty:cleanVal(r.qty), location:cleanVal(r.location||r.warehouse), bay:cleanVal(r.currentBay||r.bayName) };
+    return { lwhid:cleanVal(r.controlNumber), customer:cleanVal(r.subCustNm), item:cleanVal(r.itemNm), desc:cleanVal(r.unique8), lot:cleanVal(r.lotNum), qty:cleanVal(r.qty), location:cleanVal(r.location||r.warehouse), warehouse:cleanVal(r.warehouse), bay:cleanVal(r.currentBay||r.bayName) };
   }
 
   // Splits a field's input on commas into lowercase, trimmed tokens — lets a
@@ -18,9 +18,10 @@
     const itemToks=tokens(el('plItem').value);
     const lotToks=tokens(el('plLot').value);
     const bayToks=tokens((el('plBay')||{}).value);
+    const whToks=tokens((el('plWarehouse')||{}).value);
     const status=el('plStatus'), out=el('picklistResults'), printOut=el('picklistPrintOutput');
     if(printOut) printOut.innerHTML='';
-    if(!custToks.length && !itemToks.length && !lotToks.length && !bayToks.length){
+    if(!custToks.length && !itemToks.length && !lotToks.length && !bayToks.length && !whToks.length){
       status.textContent='Enter at least one filter to search.';
       if(out) out.innerHTML='';
       return [];
@@ -32,6 +33,7 @@
       if(!matchesAny(r.itemNm,itemToks)) return false;
       if(!matchesAny(r.lotNum,lotToks)) return false;
       if(!matchesAny(r.currentBay||r.bayName,bayToks)) return false;
+      if(!matchesAny(r.warehouse,whToks)) return false;
       return true;
     });
     render(matches.map(toPickRow));
@@ -45,8 +47,66 @@
     if(!list.length){ out.innerHTML='<div class="card">No matching inventory found.</div>'; return; }
     const totalQty=list.reduce((sum,r)=>sum+(parseFloat(r.qty)||0),0);
     const bays=[...new Set(list.map(r=>r.bay).filter(Boolean))];
-    out.innerHTML=`<div class="card"><b>${list.length}</b> matching row(s) · Total Qty <b>${totalQty.toLocaleString()}</b> · ${bays.length} bay(s): ${safe(bays.slice(0,10).join(', '))}${bays.length>10?'…':''}<div class="actions"><button type="button" id="plGenerateBtn">Generate Pick List</button></div></div><div class="result-list">${list.slice(0,300).map(r=>`<div class="result-card"><div><b>${safe(r.lwhid)}</b> <span>${safe(r.customer)}</span></div><div>${safe(r.item)} · Lot ${safe(r.lot)} · Qty ${safe(r.qty)}</div><div>${safe(r.location)} · Bay <b>${safe(r.bay)}</b></div></div>`).join('')}</div>`;
+    out.innerHTML=`<div class="card"><b>${list.length}</b> matching row(s) · Total Qty <b>${totalQty.toLocaleString()}</b> · ${bays.length} bay(s): ${safe(bays.slice(0,10).join(', '))}${bays.length>10?'…':''}<div class="actions"><button type="button" id="plGenerateBtn">Generate Pick List</button><button type="button" id="plSummaryBtn" class="ghost">Generate Item Summary</button></div></div><div class="result-list">${list.slice(0,300).map(r=>`<div class="result-card"><div><b>${safe(r.lwhid)}</b> <span>${safe(r.customer)}</span></div><div>${safe(r.item)} · Lot ${safe(r.lot)} · Qty ${safe(r.qty)}</div><div>${safe(r.location)} · Bay <b>${safe(r.bay)}</b></div></div>`).join('')}</div>`;
     const genBtn=el('plGenerateBtn'); if(genBtn) genBtn.onclick=()=>generatePrintable(list);
+    const sumBtn=el('plSummaryBtn'); if(sumBtn) sumBtn.onclick=()=>generateSummaryPrintable(list);
+  }
+
+  // Groups matching rows by Item → Bay → Lot, summing quantity within each
+  // Lot group — e.g. "Bay X: 20 @ Lot 8000, 1 @ Lot 6250" — so a picker gets
+  // one compact instruction per bay instead of a long row-by-row table.
+  function buildSummary(list){
+    const byItem={};
+    list.forEach(r=>{
+      const itemKey=r.item||'(no item #)';
+      if(!byItem[itemKey]) byItem[itemKey]={desc:r.desc,customers:new Set(),byBay:{}};
+      const ig=byItem[itemKey];
+      if(r.customer) ig.customers.add(r.customer);
+      if(r.desc && !ig.desc) ig.desc=r.desc;
+      const bayKey=r.bay||'(no bay)';
+      if(!ig.byBay[bayKey]) ig.byBay[bayKey]={};
+      const lotKey=r.lot||'(no lot)';
+      ig.byBay[bayKey][lotKey]=(ig.byBay[bayKey][lotKey]||0)+(parseFloat(r.qty)||0);
+    });
+    return byItem;
+  }
+
+  function generateSummaryPrintable(list){
+    const out=el('picklistPrintOutput'); if(!out) return;
+    if(!list.length){ alert('No results to summarize — search first.'); return; }
+    const summary=buildSummary(list);
+    const itemKeys=Object.keys(summary);
+
+    const itemsHtml=itemKeys.map(itemKey=>{
+      const ig=summary[itemKey];
+      const bayKeys=Object.keys(ig.byBay).sort();
+      let itemTotal=0;
+      const bayLines=bayKeys.map(bayKey=>{
+        const lots=ig.byBay[bayKey];
+        const lotKeys=Object.keys(lots);
+        const lotParts=lotKeys.map(lotKey=>{
+          const qty=lots[lotKey];
+          itemTotal+=qty;
+          return `${qty.toLocaleString()} @ Lot ${safe(lotKey)}`;
+        });
+        return `<tr><td class="pls-bay">${safe(bayKey)}</td><td>${lotParts.join(', ')}</td></tr>`;
+      }).join('');
+      const custLine=[...ig.customers].filter(Boolean).join(', ');
+      return `<div class="pls-item-block">
+        <div class="pls-item-head"><b>Item ${safe(itemKey)}</b>${ig.desc?` — ${safe(ig.desc)}`:''}${custLine?` <span class="pls-cust">(${safe(custLine)})</span>`:''}</div>
+        <table class="pls-table"><thead><tr><th>Bay</th><th>Quantity by Lot</th></tr></thead><tbody>${bayLines}</tbody></table>
+        <div class="pls-item-total">Item Total: ${itemTotal.toLocaleString()}</div>
+      </div>`;
+    }).join('');
+
+    const grandTotal=list.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+    out.innerHTML=`<div class="picklist-summary-page">
+      <h1 class="pl-title">Item Summary — Picking Reference</h1>
+      <p class="pl-meta">Generated ${new Date().toLocaleString()} · ${itemKeys.length} item(s) · Grand Total Qty ${grandTotal.toLocaleString()}</p>
+      ${itemsHtml}
+    </div>`;
+    if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+    LWHUI.toast(`Item summary generated (${itemKeys.length} item(s))`);
   }
 
   function generatePrintable(list){
@@ -77,7 +137,7 @@
   }
 
   function clearForm(){
-    ['plCustomer','plItem','plLot','plBay'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
+    ['plCustomer','plItem','plLot','plBay','plWarehouse'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
     const out=el('picklistResults'); if(out) out.innerHTML='';
     const printOut=el('picklistPrintOutput'); if(printOut) printOut.innerHTML='';
     const status=el('plStatus'); if(status) status.textContent='Enter at least one filter to search.';
@@ -89,7 +149,7 @@
     if(!el('picklistForm')) return;
     const searchBtn=el('plSearchBtn'); if(searchBtn) searchBtn.onclick=doSearch;
     const clearBtn=el('plClearBtn'); if(clearBtn) clearBtn.onclick=clearForm;
-    ['plCustomer','plItem','plLot','plBay'].forEach(id=>{
+    ['plCustomer','plItem','plLot','plBay','plWarehouse'].forEach(id=>{
       const f=el(id); if(!f) return;
       f.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doSearch(); } });
       f.addEventListener('input',debounce(doSearch,300));

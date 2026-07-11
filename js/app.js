@@ -12,9 +12,10 @@ function parseWeatherLoc(v){
 }
 function getGreeting(){
   const h=new Date().getHours();
-  if(h<12) return 'Good Morning';
-  if(h<17) return 'Good Afternoon';
-  return 'Good Evening';
+  const base = h<12?'Good Morning':(h<17?'Good Afternoon':'Good Evening');
+  const fullName=(LWHStorage.get('userName','')||'').trim();
+  const firstName=fullName?fullName.split(/\s+/)[0]:'';
+  return firstName?`${base}, ${firstName}!`:base;
 }
 function tickClock(){
   if(window.heroClock) heroClock.textContent=new Date().toLocaleTimeString([], {weekday:'short', hour:'numeric', minute:'2-digit', second:'2-digit'});
@@ -228,7 +229,7 @@ function promptForNameIfNeeded(){
   let name=LWHStorage.get('userName','');
   if(!name){
     name=(prompt("What's your name? Used to track app usage for the team — nothing else is collected.")||'').trim();
-    if(name) LWHStorage.set('userName',name);
+    if(name){ LWHStorage.set('userName',name); if(window.heroGreeting) heroGreeting.textContent=getGreeting(); }
   }
   if(window.setUserName) setUserName.value=name;
 }
@@ -245,6 +246,7 @@ async function pingUsage(){
 if(window.saveUsageSettings) saveUsageSettings.onclick=()=>{
   LWHStorage.set('userName',(setUserName.value||'').trim());
   LWHStorage.set('usageLogUrl',(setUsageLogUrl.value||'').trim());
+  if(window.heroGreeting) heroGreeting.textContent=getGreeting();
   LWHUI.toast('Saved');
   pingUsage();
 };
