@@ -251,6 +251,32 @@ if(window.saveUsageSettings) saveUsageSettings.onclick=()=>{
   pingUsage();
 };
 
+// Handles two kinds of incoming URL params, both driven by manifest.json:
+// - App Shortcuts (long-press the installed icon) land here as ?view=NAME
+// - Web Share Target (this app appearing in the OS share sheet) lands here
+//   as ?title=&text=&url= — routed into Notepad since that's the simplest
+//   generic drop point for "whatever just got shared in."
+function applyIncomingUrlParams(){
+  const params=new URLSearchParams(location.search);
+  const view=params.get('view');
+  const title=params.get('title')||'', text=params.get('text')||'', sharedUrl=params.get('url')||'';
+  if(title||text||sharedUrl){
+    const shared=[title,text,sharedUrl].filter(Boolean).join('\n');
+    LWHUI.show('utilities');
+    const notepadTab=document.querySelector('[data-util="notepad"]');
+    if(notepadTab) notepadTab.click();
+    const ta=document.getElementById('notepadText');
+    if(ta){
+      ta.value=(ta.value?ta.value+'\n\n':'')+shared;
+      ta.dispatchEvent(new Event('input')); // reuses Notepad's own autosave listener
+    }
+    LWHUI.toast('Shared content added to Notepad');
+    history.replaceState(null,'',location.pathname);
+    return;
+  }
+  if(view && document.getElementById(view)) LWHUI.show(view);
+}
+
 window.addEventListener('load',()=>{
   applySettings();
   refreshHero();
@@ -274,6 +300,7 @@ window.addEventListener('load',()=>{
     }
   },300);
   if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js').then(()=>pwaStatus.textContent='Service worker registered. App is installable from HTTPS/GitHub Pages.').catch(err=>pwaStatus.textContent='Service worker error: '+err.message)}else{pwaStatus.textContent='Service workers not supported in this browser.'}
+  applyIncomingUrlParams();
 });
 document.addEventListener('click',e=>{const v=e.target.closest('[data-view]'); if(v){LWHUI.show(v.dataset.view); document.querySelector('.nav').classList.remove('open'); return}});
 if(window.navToggle){navToggle.onclick=()=>document.querySelector('.nav').classList.toggle('open');}

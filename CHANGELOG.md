@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.30.0
+- **New: App Shortcuts** — long-press (or right-click, on desktop) the installed app icon for quick jumps straight to Master Lookup, Pick List, Bill of Lading, or Warehouse Tools, skipping the Home screen. Android and desktop Chrome/Edge; not supported on iOS.
+- **New: Share Target** — the installed app now shows up in the device's share sheet for text and links (e.g. sharing an address or a note from another app). Shared content lands in Warehouse Tools → Notepad automatically. File/photo sharing (e.g. straight into Doc Scanner) is a possible future add — more involved since it needs a service-worker-level handler, not added yet.
+- No backend, no new data collection — both are pure manifest + client-side routing, same trust model as everything else in the app.
+
 ## v1.29.0
 - **Pick List: added a Warehouse filter** alongside Customer/Item/Lot/Bay.
 - **New: Item Summary** in Pick List — a second print output (next to the existing detailed Pick List) that groups matching inventory by Item → Bay → Lot and sums quantity, e.g. "Bay X: 20 @ Lot 8000, 1 @ Lot 6250 · Bay Y: 44 @ Lot 8000" — a compact reference for a picker instead of a long row-by-row table. Same search filters drive both outputs.
