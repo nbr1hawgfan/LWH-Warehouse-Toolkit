@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.26.0
+- **Bill of Lading: added a Simple/Generic mode.** New toggle at the top — Standard BOL (the full short-form with freight terms/NMFC/class) or Simple/Generic BOL: just Ship From/To, Carrier/Driver, and an Item Number/Lot Number/Description/Qty/# of Pallets table — no internal warehouse IDs required. Meant as a genuine backup document a driver could fill out anywhere, including at a customer pickup where the real BOL was lost or never issued. Three drawable signatures (Warehouse, Carrier, Consignee), matching how the simple mode is actually meant to be used in the field.
+- **New: Download PDF and Share/Email PDF** for the Bill of Lading — renders whatever was generated into a real PDF file (not just relying on the print dialog), and Share hands it to the phone's native share sheet so it can go straight into Mail, Messages, or wherever. Works great for a typical one-page BOL; genuinely long multi-page BOLs are more reliably exported via Print → Save as PDF instead, since that path paginates properly the way browser printing does and this one doesn't automatically.
+
 ## v1.25.0
 - **New: Bill of Lading** — fillable form matching the standard short-form BOL layout (Ship From/To, Third Party Bill To, Freight Terms, Customer Order Information and Carrier Information as dynamic add/remove-row tables, COD/fee terms, trailer-loaded/freight-counted, and the standard DOT liability/certification legal text). Company logo prints automatically in the header (Settings → App Settings). Drawable Shipper and Carrier signatures using the same Pointer Events approach as the Trailer Checklist — works with finger, stylus, or mouse, embeds directly into the printed page if drawn, falls back to a blank line for pen-and-paper signing otherwise. Full page, 8.5×11.
 

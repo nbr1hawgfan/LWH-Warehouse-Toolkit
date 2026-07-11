@@ -2,6 +2,8 @@
   function el(id){ return document.getElementById(id); }
   function safe(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+  let bolMode='standard'; // 'standard' | 'simple'
+
   // Same signature pad approach as the Trailer Checklist — Pointer Events
   // cover mouse, touch, and stylus in one code path.
   function setupSignaturePad(canvas){
@@ -34,12 +36,14 @@
       dataUrl(){ return canvas.toDataURL('image/png'); }
     };
   }
-  let shipperPad=null, carrierPad=null;
+  let shipperPad=null, carrierPad=null, warehousePad=null, carrier2Pad=null, consigneePad=null;
 
   const blankOrderRow=()=>({orderNo:'',packages:'',weight:'',palletSlip:'',shipperInfo:''});
   const blankCarrierRow=()=>({huQty:'',huType:'',pkgQty:'',pkgType:'',weight:'',hm:false,description:'',nmfc:'',class:''});
+  const blankSimpleRow=()=>({itemNumber:'',lotNumber:'',description:'',qty:'',pallets:''});
   let orderRows=[blankOrderRow()];
   let carrierRows=[blankCarrierRow()];
+  let simpleRows=[blankSimpleRow()];
 
   function orderRowHtml(r,i){
     return `<div class="card" style="margin-bottom:8px">
@@ -58,12 +62,21 @@
       <div class="actions" style="margin-top:6px"><button type="button" class="ghost" data-remove-carrier="${i}">Remove Row</button></div>
     </div>`;
   }
+  function simpleRowHtml(r,i){
+    return `<div class="card" style="margin-bottom:8px">
+      <div class="grid-2"><input data-simple-idx="${i}" data-field="itemNumber" value="${safe(r.itemNumber)}" placeholder="Item Number" /><input data-simple-idx="${i}" data-field="lotNumber" value="${safe(r.lotNumber)}" placeholder="Lot Number" /></div>
+      <input data-simple-idx="${i}" data-field="description" value="${safe(r.description)}" placeholder="Description (optional)" style="margin-top:6px" />
+      <div class="grid-2" style="margin-top:6px"><input data-simple-idx="${i}" data-field="qty" value="${safe(r.qty)}" placeholder="Qty" inputmode="numeric" /><input data-simple-idx="${i}" data-field="pallets" value="${safe(r.pallets)}" placeholder="# of Pallets" inputmode="numeric" /></div>
+      <div class="actions" style="margin-top:6px"><button type="button" class="ghost" data-remove-simple="${i}">Remove Row</button></div>
+    </div>`;
+  }
   function renderOrderRows(){ const wrap=el('bolOrderRows'); if(wrap) wrap.innerHTML=orderRows.map(orderRowHtml).join(''); }
   function renderCarrierRows(){ const wrap=el('bolCarrierRows'); if(wrap) wrap.innerHTML=carrierRows.map(carrierRowHtml).join(''); }
+  function renderSimpleRows(){ const wrap=el('bolSimpleRows'); if(wrap) wrap.innerHTML=simpleRows.map(simpleRowHtml).join(''); }
 
   function formatDate(v){ if(!v) return ''; const [y,m,d]=v.split('-'); return (m&&d&&y)?`${m}-${d}-${y}`:v; }
 
-  function bolHtml(){
+  function standardBolHtml(){
     const logo=LWHStorage.get('companyLogo','');
     const date=formatDate(el('bolDate').value), bolNumber=el('bolNumber').value;
     const fromName=el('bolFromName').value, fromAddr=el('bolFromAddr').value, fromCity=el('bolFromCity').value;
@@ -118,31 +131,138 @@
     </div>`;
   }
 
+  function simpleBolHtml(){
+    const logo=LWHStorage.get('companyLogo','');
+    const date=formatDate(el('bolSimpleDate').value), bolNumber=el('bolSimpleNumber').value;
+    const fromName=el('bolSimpleFromName').value, fromAddr=el('bolSimpleFromAddr').value, fromCity=el('bolSimpleFromCity').value;
+    const toName=el('bolSimpleToName').value, toAddr=el('bolSimpleToAddr').value, toCity=el('bolSimpleToCity').value;
+    const carrier=el('bolSimpleCarrier').value, driver=el('bolSimpleDriver').value, trailer=el('bolSimpleTrailer').value;
+    const instructions=el('bolSimpleInstructions').value;
+
+    const rowsHtml=simpleRows.filter(r=>r.itemNumber||r.lotNumber||r.qty||r.pallets).map(r=>`<tr><td>${safe(r.itemNumber)}</td><td>${safe(r.lotNumber)}</td><td>${safe(r.description)}</td><td>${safe(r.qty)}</td><td>${safe(r.pallets)}</td></tr>`).join('')||'<tr><td colspan="5">—</td></tr>';
+
+    const warehouseSig=(warehousePad&&warehousePad.hasSignature())?`<img class="bol-sig-img" src="${warehousePad.dataUrl()}" />`:'<span class="bol-sig-line"></span>';
+    const carrier2Sig=(carrier2Pad&&carrier2Pad.hasSignature())?`<img class="bol-sig-img" src="${carrier2Pad.dataUrl()}" />`:'<span class="bol-sig-line"></span>';
+    const consigneeSig=(consigneePad&&consigneePad.hasSignature())?`<img class="bol-sig-img" src="${consigneePad.dataUrl()}" />`:'<span class="bol-sig-line"></span>';
+
+    return `<div class="checklist-page">
+      <div class="bol-header">
+        ${logo?`<img class="bol-logo" src="${logo}" />`:''}
+        <div>
+          <h1 class="bol-title">Bill of Lading</h1>
+          <div class="bol-meta">Date: ${safe(date)} &nbsp;&nbsp; ${bolNumber?`BOL #: ${safe(bolNumber)}`:''}</div>
+        </div>
+      </div>
+
+      <div class="bol-grid-2col">
+        <div class="bol-box"><div class="bol-box-title">Ship From</div><div>${safe(fromName)}</div><div>${safe(fromAddr)}</div><div>${safe(fromCity)}</div></div>
+        <div class="bol-box"><div class="bol-box-title">Ship To</div><div>${safe(toName)}</div><div>${safe(toAddr)}</div><div>${safe(toCity)}</div></div>
+      </div>
+
+      <div class="bol-box" style="margin-top:6px"><div class="bol-box-title">Carrier</div><div><b>Carrier:</b> ${safe(carrier)} &nbsp;&nbsp; <b>Driver:</b> ${safe(driver)} &nbsp;&nbsp; <b>Trailer #:</b> ${safe(trailer)}</div></div>
+
+      ${instructions?`<div class="bol-row-line" style="margin-top:6px"><b>Special Instructions:</b> ${safe(instructions)}</div>`:''}
+
+      <div class="bol-section-title">Items</div>
+      <table class="bol-table"><thead><tr><th>Item Number</th><th>Lot Number</th><th>Description</th><th>Qty</th><th># Pallets</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+
+      <p class="bol-legal">Received, subject to the rates, classifications, and rules established by the carrier, and to all applicable state and federal regulations. Property described above is received in good order, except as noted, and is tendered for transportation.</p>
+
+      <div class="bol-sig-row">
+        <div class="bol-sig-block"><div class="bol-sig-label">Warehouse / Shipper</div>${warehouseSig}<div class="bol-sig-date">Date</div></div>
+        <div class="bol-sig-block"><div class="bol-sig-label">Carrier</div>${carrier2Sig}<div class="bol-sig-date">Date</div></div>
+        <div class="bol-sig-block"><div class="bol-sig-label">Consignee</div>${consigneeSig}<div class="bol-sig-date">Date</div></div>
+      </div>
+    </div>`;
+  }
+
   function generate(){
     const out=el('bolPrintOutput'); if(!out) return;
-    out.innerHTML=bolHtml();
+    out.innerHTML = bolMode==='simple' ? simpleBolHtml() : standardBolHtml();
     if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
     LWHUI.toast('Bill of Lading generated');
   }
 
   function clearForm(){
-    ['bolDate','bolNumber','bolFromName','bolFromAddr','bolFromCity','bolToName','bolToAddr','bolToCity','bolTrailer','bolSerial','bolBillName','bolBillAddr','bolBillCity','bolScac','bolPro','bolInstructions','bolCod','bolShipperDate','bolCarrierDate'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
+    ['bolDate','bolNumber','bolFromName','bolFromAddr','bolFromCity','bolToName','bolToAddr','bolToCity','bolTrailer','bolSerial','bolBillName','bolBillAddr','bolBillCity','bolScac','bolPro','bolInstructions','bolCod','bolShipperDate','bolCarrierDate',
+     'bolSimpleDate','bolSimpleNumber','bolSimpleFromName','bolSimpleFromAddr','bolSimpleFromCity','bolSimpleToName','bolSimpleToAddr','bolSimpleToCity','bolSimpleDriver','bolSimpleTrailer','bolSimpleInstructions'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
     if(el('bolCarrier')) bolCarrier.value='Logistics Warehouse';
+    if(el('bolSimpleCarrier')) bolSimpleCarrier.value='Logistics Warehouse';
     if(el('bolMasterBol')) bolMasterBol.checked=false;
-    orderRows=[blankOrderRow()]; carrierRows=[blankCarrierRow()];
-    renderOrderRows(); renderCarrierRows();
-    if(shipperPad) shipperPad.clear();
-    if(carrierPad) carrierPad.clear();
+    orderRows=[blankOrderRow()]; carrierRows=[blankCarrierRow()]; simpleRows=[blankSimpleRow()];
+    renderOrderRows(); renderCarrierRows(); renderSimpleRows();
+    [shipperPad,carrierPad,warehousePad,carrier2Pad,consigneePad].forEach(p=>p&&p.clear());
     const out=el('bolPrintOutput'); if(out) out.innerHTML='';
+  }
+
+  function applyModeUi(){
+    const isSimple=bolMode==='simple';
+    el('bolStandardFields').hidden=isSimple;
+    el('bolSimpleFields').hidden=!isSimple;
+    el('bolModeHint').textContent = isSimple
+      ? 'A quick, generic BOL anyone can fill out by hand — no internal system IDs needed. Good as a backup when the real paperwork was lost or never issued.'
+      : 'Full short-form BOL with freight terms, NMFC/class, and detailed line items. Your logo (Settings → App Settings) prints automatically in the header.';
+  }
+
+  // ---------- PDF export (Download / Share) — works on whatever was last generated ----------
+  async function renderToPdf(){
+    const out=el('bolPrintOutput');
+    if(!out || !out.firstElementChild){ alert('Generate the Bill of Lading first.'); return null; }
+    if(!window.html2canvas || !window.jspdf){ alert('PDF library failed to load — check your internet connection.'); return null; }
+    const target=out.firstElementChild;
+    const canvas=await html2canvas(target,{scale:2,backgroundColor:'#ffffff'});
+    const imgData=canvas.toDataURL('image/jpeg',0.92);
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'in',format:'letter'});
+    const pageW=8.5, pageH=11;
+    const ratio=canvas.width/canvas.height;
+    let w=pageW, h=w/ratio;
+    if(h>pageH){ h=pageH; w=h*ratio; }
+    doc.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
+    return doc;
+  }
+  async function downloadPdf(){
+    const doc=await renderToPdf(); if(!doc) return;
+    doc.save('bill-of-lading.pdf');
+    LWHUI.toast('PDF downloaded');
+  }
+  async function sharePdf(){
+    const doc=await renderToPdf(); if(!doc) return;
+    const blob=doc.output('blob');
+    const file=new File([blob],'bill-of-lading.pdf',{type:'application/pdf'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file],title:'Bill of Lading'}); }
+      catch(e){ /* user cancelled — not an error */ }
+    } else {
+      const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; document.body.append(a); a.click(); a.remove();
+      LWHUI.toast('Sharing not supported here — downloaded instead');
+    }
   }
 
   window.addEventListener('load',()=>{
     if(!el('bolForm')) return;
-    renderOrderRows(); renderCarrierRows();
+    renderOrderRows(); renderCarrierRows(); renderSimpleRows();
+
+    const modeTabs=el('bolModeTabs');
+    if(modeTabs) modeTabs.addEventListener('click',e=>{
+      const b=e.target.closest('[data-bolmode]'); if(!b) return;
+      modeTabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
+      bolMode=b.dataset.bolmode;
+      applyModeUi();
+    });
+    applyModeUi();
+
     shipperPad=setupSignaturePad(el('bolSigShipper'));
     carrierPad=setupSignaturePad(el('bolSigCarrier'));
-    const shipperClearBtn=el('bolSigShipperClear'); if(shipperClearBtn) shipperClearBtn.onclick=()=>shipperPad&&shipperPad.clear();
-    const carrierClearBtn=el('bolSigCarrierClear'); if(carrierClearBtn) carrierClearBtn.onclick=()=>carrierPad&&carrierPad.clear();
+    warehousePad=setupSignaturePad(el('bolSigWarehouse'));
+    carrier2Pad=setupSignaturePad(el('bolSigCarrier2'));
+    consigneePad=setupSignaturePad(el('bolSigConsignee'));
+    const bindClear=(btnId,pad)=>{ const b=el(btnId); if(b) b.onclick=()=>pad&&pad.clear(); };
+    bindClear('bolSigShipperClear',shipperPad);
+    bindClear('bolSigCarrierClear',carrierPad);
+    bindClear('bolSigWarehouseClear',warehousePad);
+    bindClear('bolSigCarrier2Clear',carrier2Pad);
+    bindClear('bolSigConsigneeClear',consigneePad);
 
     el('bolOrderRows').addEventListener('input',e=>{ const t=e.target; if(t.dataset.orderIdx===undefined) return; orderRows[+t.dataset.orderIdx][t.dataset.field]=t.value; });
     el('bolOrderRows').addEventListener('click',e=>{ const b=e.target.closest('[data-remove-order]'); if(!b) return; orderRows.splice(+b.dataset.removeOrder,1); if(!orderRows.length) orderRows.push(blankOrderRow()); renderOrderRows(); });
@@ -152,8 +272,16 @@
     el('bolCarrierRows').addEventListener('click',e=>{ const b=e.target.closest('[data-remove-carrier]'); if(!b) return; carrierRows.splice(+b.dataset.removeCarrier,1); if(!carrierRows.length) carrierRows.push(blankCarrierRow()); renderCarrierRows(); });
     el('bolAddCarrierRow').onclick=()=>{ carrierRows.push(blankCarrierRow()); renderCarrierRows(); };
 
+    el('bolSimpleRows').addEventListener('input',e=>{ const t=e.target; if(t.dataset.simpleIdx===undefined) return; simpleRows[+t.dataset.simpleIdx][t.dataset.field]=t.value; });
+    el('bolSimpleRows').addEventListener('click',e=>{ const b=e.target.closest('[data-remove-simple]'); if(!b) return; simpleRows.splice(+b.dataset.removeSimple,1); if(!simpleRows.length) simpleRows.push(blankSimpleRow()); renderSimpleRows(); });
+    el('bolAddSimpleRow').onclick=()=>{ simpleRows.push(blankSimpleRow()); renderSimpleRows(); };
+
     const genBtn=el('bolGenerate'); if(genBtn) genBtn.onclick=generate;
     const clearBtn=el('bolClear'); if(clearBtn) clearBtn.onclick=clearForm;
+    const dlBtn=el('bolDownloadPdf'); if(dlBtn) dlBtn.onclick=downloadPdf;
+    const shareBtn=el('bolSharePdf'); if(shareBtn) shareBtn.onclick=sharePdf;
+
     const d=el('bolDate'); if(d && !d.value) d.value=new Date().toISOString().slice(0,10);
+    const d2=el('bolSimpleDate'); if(d2 && !d2.value) d2.value=new Date().toISOString().slice(0,10);
   });
 })();
