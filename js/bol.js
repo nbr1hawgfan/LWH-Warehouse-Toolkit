@@ -40,7 +40,7 @@
 
   const blankOrderRow=()=>({orderNo:'',packages:'',weight:'',palletSlip:'',shipperInfo:''});
   const blankCarrierRow=()=>({huQty:'',huType:'',pkgQty:'',pkgType:'',weight:'',hm:false,description:'',nmfc:'',class:''});
-  const blankSimpleRow=()=>({itemNumber:'',lotNumber:'',description:'',qty:'',pallets:''});
+  const blankSimpleRow=()=>({itemNumber:'',lotNumber:'',description:'',qty:'',pallets:'',weight:''});
   let orderRows=[blankOrderRow()];
   let carrierRows=[blankCarrierRow()];
   let simpleRows=[blankSimpleRow()];
@@ -66,7 +66,7 @@
     return `<div class="card" style="margin-bottom:8px">
       <div class="grid-2"><input data-simple-idx="${i}" data-field="itemNumber" value="${safe(r.itemNumber)}" placeholder="Item Number" /><input data-simple-idx="${i}" data-field="lotNumber" value="${safe(r.lotNumber)}" placeholder="Lot Number" /></div>
       <input data-simple-idx="${i}" data-field="description" value="${safe(r.description)}" placeholder="Description (optional)" style="margin-top:6px" />
-      <div class="grid-2" style="margin-top:6px"><input data-simple-idx="${i}" data-field="qty" value="${safe(r.qty)}" placeholder="Qty" inputmode="numeric" /><input data-simple-idx="${i}" data-field="pallets" value="${safe(r.pallets)}" placeholder="# of Pallets" inputmode="numeric" /></div>
+      <div class="grid-3" style="margin-top:6px"><input data-simple-idx="${i}" data-field="qty" value="${safe(r.qty)}" placeholder="Qty" inputmode="numeric" /><input data-simple-idx="${i}" data-field="pallets" value="${safe(r.pallets)}" placeholder="# of Pallets" inputmode="numeric" /><input data-simple-idx="${i}" data-field="weight" value="${safe(r.weight)}" placeholder="Weight (optional)" inputmode="decimal" /></div>
       <div class="actions" style="margin-top:6px"><button type="button" class="ghost" data-remove-simple="${i}">Remove Row</button></div>
     </div>`;
   }
@@ -75,6 +75,20 @@
   function renderSimpleRows(){ const wrap=el('bolSimpleRows'); if(wrap) wrap.innerHTML=simpleRows.map(simpleRowHtml).join(''); }
 
   function formatDate(v){ if(!v) return ''; const [y,m,d]=v.split('-'); return (m&&d&&y)?`${m}-${d}-${y}`:v; }
+
+  // Rolls the line-item rows up by Item Number — same item across multiple
+  // lots/rows gets summed together — plus an overall grand total row.
+  function computeItemTotals(rows){
+    const byItem={};
+    rows.forEach(r=>{
+      const key=(r.itemNumber||'').trim(); if(!key) return;
+      if(!byItem[key]) byItem[key]={qty:0,pallets:0,weight:0,hasWeight:false};
+      byItem[key].qty+=parseFloat(r.qty)||0;
+      byItem[key].pallets+=parseFloat(r.pallets)||0;
+      if(r.weight){ byItem[key].weight+=parseFloat(r.weight)||0; byItem[key].hasWeight=true; }
+    });
+    return byItem;
+  }
 
   function standardBolHtml(){
     const logo=LWHStorage.get('companyLogo','');
@@ -137,9 +151,22 @@
     const fromName=el('bolSimpleFromName').value, fromAddr=el('bolSimpleFromAddr').value, fromCity=el('bolSimpleFromCity').value;
     const toName=el('bolSimpleToName').value, toAddr=el('bolSimpleToAddr').value, toCity=el('bolSimpleToCity').value;
     const carrier=el('bolSimpleCarrier').value, driver=el('bolSimpleDriver').value, trailer=el('bolSimpleTrailer').value;
+    const truck=el('bolSimpleTruck').value, seal=el('bolSimpleSeal').value;
     const instructions=el('bolSimpleInstructions').value;
 
-    const rowsHtml=simpleRows.filter(r=>r.itemNumber||r.lotNumber||r.qty||r.pallets).map(r=>`<tr><td>${safe(r.itemNumber)}</td><td>${safe(r.lotNumber)}</td><td>${safe(r.description)}</td><td>${safe(r.qty)}</td><td>${safe(r.pallets)}</td></tr>`).join('')||'<tr><td colspan="5">—</td></tr>';
+    const usedRows=simpleRows.filter(r=>r.itemNumber||r.lotNumber||r.qty||r.pallets);
+    const rowsHtml=usedRows.map(r=>`<tr><td>${safe(r.itemNumber)}</td><td>${safe(r.lotNumber)}</td><td>${safe(r.description)}</td><td>${safe(r.qty)}</td><td>${safe(r.pallets)}</td><td>${safe(r.weight)}</td></tr>`).join('')||'<tr><td colspan="6">—</td></tr>';
+
+    const totals=computeItemTotals(usedRows);
+    const totalKeys=Object.keys(totals);
+    let grandQty=0, grandPallets=0, grandWeight=0, anyWeight=false;
+    const totalsRowsHtml=totalKeys.map(key=>{
+      const t=totals[key];
+      grandQty+=t.qty; grandPallets+=t.pallets; if(t.hasWeight){ grandWeight+=t.weight; anyWeight=true; }
+      return `<tr><td>${safe(key)}</td><td>${t.qty.toLocaleString()}</td><td>${t.pallets.toLocaleString()}</td><td>${t.hasWeight?t.weight.toLocaleString():'—'}</td></tr>`;
+    }).join('');
+    const totalsTable=totalKeys.length?`<div class="bol-section-title">Item Totals</div>
+      <table class="bol-table"><thead><tr><th>Item Number</th><th>Total Qty</th><th>Total Pallets</th><th>Total Weight</th></tr></thead><tbody>${totalsRowsHtml}<tr class="bol-grand-total"><td>Grand Total</td><td>${grandQty.toLocaleString()}</td><td>${grandPallets.toLocaleString()}</td><td>${anyWeight?grandWeight.toLocaleString():'—'}</td></tr></tbody></table>`:'';
 
     const warehouseSig=(warehousePad&&warehousePad.hasSignature())?`<img class="bol-sig-img" src="${warehousePad.dataUrl()}" />`:'<span class="bol-sig-line"></span>';
     const carrier2Sig=(carrier2Pad&&carrier2Pad.hasSignature())?`<img class="bol-sig-img" src="${carrier2Pad.dataUrl()}" />`:'<span class="bol-sig-line"></span>';
@@ -159,12 +186,14 @@
         <div class="bol-box"><div class="bol-box-title">Ship To</div><div>${safe(toName)}</div><div>${safe(toAddr)}</div><div>${safe(toCity)}</div></div>
       </div>
 
-      <div class="bol-box" style="margin-top:6px"><div class="bol-box-title">Carrier</div><div><b>Carrier:</b> ${safe(carrier)} &nbsp;&nbsp; <b>Driver:</b> ${safe(driver)} &nbsp;&nbsp; <b>Trailer #:</b> ${safe(trailer)}</div></div>
+      <div class="bol-box" style="margin-top:6px"><div class="bol-box-title">Carrier</div><div><b>Carrier:</b> ${safe(carrier)} &nbsp;&nbsp; <b>Driver:</b> ${safe(driver)}</div><div><b>Trailer #:</b> ${safe(trailer)} ${truck?`&nbsp;&nbsp; <b>Truck #:</b> ${safe(truck)}`:''} &nbsp;&nbsp; <b>Seal #:</b> ${safe(seal)}</div></div>
 
       ${instructions?`<div class="bol-row-line" style="margin-top:6px"><b>Special Instructions:</b> ${safe(instructions)}</div>`:''}
 
       <div class="bol-section-title">Items</div>
-      <table class="bol-table"><thead><tr><th>Item Number</th><th>Lot Number</th><th>Description</th><th>Qty</th><th># Pallets</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+      <table class="bol-table"><thead><tr><th>Item Number</th><th>Lot Number</th><th>Description</th><th>Qty</th><th># Pallets</th><th>Weight</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+
+      ${totalsTable}
 
       <p class="bol-legal">Received, subject to the rates, classifications, and rules established by the carrier, and to all applicable state and federal regulations. Property described above is received in good order, except as noted, and is tendered for transportation.</p>
 
@@ -185,7 +214,7 @@
 
   function clearForm(){
     ['bolDate','bolNumber','bolFromName','bolFromAddr','bolFromCity','bolToName','bolToAddr','bolToCity','bolTrailer','bolSerial','bolBillName','bolBillAddr','bolBillCity','bolScac','bolPro','bolInstructions','bolCod','bolShipperDate','bolCarrierDate',
-     'bolSimpleDate','bolSimpleNumber','bolSimpleFromName','bolSimpleFromAddr','bolSimpleFromCity','bolSimpleToName','bolSimpleToAddr','bolSimpleToCity','bolSimpleDriver','bolSimpleTrailer','bolSimpleInstructions'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
+     'bolSimpleDate','bolSimpleNumber','bolSimpleFromName','bolSimpleFromAddr','bolSimpleFromCity','bolSimpleToName','bolSimpleToAddr','bolSimpleToCity','bolSimpleDriver','bolSimpleTrailer','bolSimpleTruck','bolSimpleSeal','bolSimpleInstructions'].forEach(id=>{ const f=el(id); if(f) f.value=''; });
     if(el('bolCarrier')) bolCarrier.value='Logistics Warehouse';
     if(el('bolSimpleCarrier')) bolSimpleCarrier.value='Logistics Warehouse';
     if(el('bolMasterBol')) bolMasterBol.checked=false;

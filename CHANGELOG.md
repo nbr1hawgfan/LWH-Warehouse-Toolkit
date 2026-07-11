@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.26.1
+- **Simple BOL: added Seal Number and Truck Number (optional)**, separate from Trailer Number.
+- **Simple BOL: added optional Weight per item row**, plus a new "Item Totals" summary table on the printed BOL — rolls line items up by Item Number (same item across multiple lots gets summed together), showing total Qty, total Pallets, and total Weight per item, with a bold Grand Total row. Verified against a real multi-lot example.
+
 ## v1.26.0
 - **Bill of Lading: added a Simple/Generic mode.** New toggle at the top — Standard BOL (the full short-form with freight terms/NMFC/class) or Simple/Generic BOL: just Ship From/To, Carrier/Driver, and an Item Number/Lot Number/Description/Qty/# of Pallets table — no internal warehouse IDs required. Meant as a genuine backup document a driver could fill out anywhere, including at a customer pickup where the real BOL was lost or never issued. Three drawable signatures (Warehouse, Carrier, Consignee), matching how the simple mode is actually meant to be used in the field.
 - **New: Download PDF and Share/Email PDF** for the Bill of Lading — renders whatever was generated into a real PDF file (not just relying on the print dialog), and Share hands it to the phone's native share sheet so it can go straight into Mail, Messages, or wherever. Works great for a typical one-page BOL; genuinely long multi-page BOLs are more reliably exported via Print → Save as PDF instead, since that path paginates properly the way browser printing does and this one doesn't automatically.
