@@ -10,6 +10,8 @@
   --brand:#0f4a45;
   --brand-dark:#0a332f;
   --brand-tint:#e3edec;
+  --good:#1a7a1a;
+  --bad:#b91c1c;
   --ink:#152524;
   --muted:#5b6e6c;
   --line:#dbe4e2;
@@ -79,6 +81,7 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--brand);outline-o
 textarea{resize:vertical}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.dist-stop-row{display:grid;grid-template-columns:1fr 110px auto;gap:8px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .hint{color:var(--muted);font-size:13px}
 .hint.small code{word-break:break-all}
@@ -134,6 +137,7 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
   .tool-layout,.tool-layout.wide{grid-template-columns:1fr}
   .panel{position:static}
   .grid-2,.grid-3{grid-template-columns:1fr}
+  .dist-stop-row{grid-template-columns:1fr}
   .app-header{align-items:flex-start;flex-direction:column}
   .stats{grid-template-columns:1fr}
 }

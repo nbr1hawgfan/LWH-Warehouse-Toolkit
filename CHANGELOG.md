@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.28.0
+- **New: Axle Weight Check** — enter Steer, Drive, and Trailer axle weights plus Gross Vehicle Weight, checked against editable limits (federal defaults: 12,000 / 34,000 / 34,000 / 80,000 lb). Flags each axle group and the overall load as legal or overweight, with the amount over/under shown. Not a substitute for a scale ticket — state and bridge-formula rules can be more restrictive than the federal defaults shown.
+- **Distance / Route Planner: added an "Estimated Time for the Day" total** — combines calculated drive time with an optional Dwell (min) field per stop (loading, unloading, breaks — whatever you know ahead of time), so a multi-stop day (e.g. Fort Smith → Wilburton, OK → Oklahoma City, OK → back) shows one total. Flags when drive time alone is approaching (9h+) or over (11h+) the federal daily driving limit — an awareness flag, not an ELD/HOS replacement.
+
 ## v1.27.0
 - **Bill of Lading: removed Standard BOL, Simple/Generic BOL is now the only mode.** No more mode toggle — one clean form (Ship From/To, Carrier/Driver, Item table, three signatures). Printed BOL now carries brand-color accents (header rule, box borders, section titles, table headers) instead of plain black/white, with print-color-adjust set so those colors actually survive to the printed page.
 - **Warehouse Tools: added an explicit Download button to Generate Code**, next to Share — Download always saves the PNG straight to the device; Share still opens the native share sheet where supported (and falls back to download automatically where it isn't).

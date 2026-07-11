@@ -2,17 +2,19 @@
   function el(id){ return document.getElementById(id); }
   function safe(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-  let stops=['','']; // plain values, re-rendered on add/remove only (not per keystroke)
+  let stops=[{v:'',dwell:''},{v:'',dwell:''}]; // v = location text; dwell = optional minutes at that stop (loading/unloading, breaks)
   let map=null, mapLayer=null;
   let lastMiles=null; // drives the Fuel Cost Estimator without re-running geocode/route
 
   function renderStops(){
     const wrap=el('distStops'); if(!wrap) return;
-    wrap.innerHTML=stops.map((v,i)=>{
+    wrap.innerHTML=stops.map((s,i)=>{
       const label=i===0?'From':(i===stops.length-1?'To':`Stop ${i+1}`);
       const removable=stops.length>2;
-      return `<div class="grid-2" style="align-items:center;margin-bottom:6px">
-        <input data-stop-idx="${i}" value="${String(v||'').replace(/"/g,'&quot;')}" placeholder="${label} — city, state or ZIP" />
+      const dwellField=i>0?`<input data-stop-dwell="${i}" value="${String(s.dwell||'').replace(/"/g,'&quot;')}" placeholder="Dwell (min)" inputmode="numeric" style="max-width:110px" />`:'<span></span>';
+      return `<div class="dist-stop-row" style="align-items:center;margin-bottom:6px">
+        <input data-stop-idx="${i}" value="${String(s.v||'').replace(/"/g,'&quot;')}" placeholder="${label} — city, state or ZIP" />
+        ${dwellField}
         ${removable?`<button type="button" class="ghost" data-remove-stop="${i}">Remove</button>`:'<span></span>'}
       </div>`;
     }).join('');
@@ -87,10 +89,13 @@
 
   async function calculate(){
     const status=el('distStatus'), totalMiles=el('distTotalMiles'), totalDetail=el('distTotalDetail'), legsWrap=el('distLegs');
-    const queries=stops.map(s=>(s||'').trim()).filter(Boolean);
+    const dayTotal=el('distDayTotal'), dayDetail=el('distDayDetail');
+    const usableStops=stops.filter(s=>(s.v||'').trim());
+    const queries=usableStops.map(s=>s.v.trim());
     if(queries.length<2){ status.textContent='Enter at least a From and To.'; return; }
     status.textContent='Looking up locations…';
     totalMiles.textContent='—'; totalDetail.textContent='—'; legsWrap.innerHTML='';
+    if(dayTotal){ dayTotal.textContent='—'; dayDetail.textContent='—'; dayTotal.style.color=''; }
     try{
       const points=await geocodeAll(queries);
       status.textContent='Calculating route…';
@@ -106,14 +111,30 @@
       }
       const straightTotal=legs.reduce((s,l)=>s+l.straight,0);
 
+      // Sum any dwell time entered at intermediate/end stops (not the starting "From")
+      const totalDwellMin=usableStops.slice(1).reduce((sum,s)=>sum+(parseInt(s.dwell)||0),0);
+
       if(route){
         totalMiles.textContent=Math.round(metersToMiles(route.distance)).toLocaleString()+' mi';
         totalDetail.textContent=`Driving distance · ~${secondsToHm(route.duration)} drive time · ${Math.round(straightTotal).toLocaleString()} mi straight-line`;
         lastMiles=metersToMiles(route.distance);
+
+        if(dayTotal){
+          const driveSeconds=route.duration;
+          const totalSeconds=driveSeconds+totalDwellMin*60;
+          dayTotal.textContent=secondsToHm(totalSeconds);
+          const driveHours=driveSeconds/3600;
+          let hosNote='';
+          if(driveHours>11) hosNote=' — driving time alone is over the 11-hour daily limit';
+          else if(driveHours>9) hosNote=' — getting close to the 11-hour daily driving limit';
+          dayTotal.style.color=driveHours>11?'var(--bad)':(driveHours>9?'#b8860b':'var(--good)');
+          dayDetail.textContent=`${secondsToHm(driveSeconds)} driving${totalDwellMin?` + ${secondsToHm(totalDwellMin*60)} dwell (entered)`:''}${hosNote}`;
+        }
       } else {
         totalMiles.textContent=Math.round(straightTotal).toLocaleString()+' mi (straight-line)';
         totalDetail.textContent=`Driving route unavailable right now (${routeError}) — showing straight-line distance only`;
         lastMiles=straightTotal;
+        if(dayTotal){ dayTotal.textContent='—'; dayDetail.textContent='Drive time needs a working route — unavailable right now'; }
       }
       calcFuelCost();
 
@@ -130,15 +151,16 @@
     if(!el('distStops')) return;
     renderStops();
     el('distStops').addEventListener('input',e=>{
-      const t=e.target; if(t.dataset.stopIdx===undefined) return;
-      stops[+t.dataset.stopIdx]=t.value;
+      const t=e.target;
+      if(t.dataset.stopIdx!==undefined){ stops[+t.dataset.stopIdx].v=t.value; return; }
+      if(t.dataset.stopDwell!==undefined){ stops[+t.dataset.stopDwell].dwell=t.value; return; }
     });
     el('distStops').addEventListener('click',e=>{
       const b=e.target.closest('[data-remove-stop]'); if(!b) return;
       stops.splice(+b.dataset.removeStop,1);
       renderStops();
     });
-    const addBtn=el('distAddStop'); if(addBtn) addBtn.onclick=()=>{ stops.splice(stops.length-1,0,''); renderStops(); };
+    const addBtn=el('distAddStop'); if(addBtn) addBtn.onclick=()=>{ stops.splice(stops.length-1,0,{v:'',dwell:''}); renderStops(); };
     const calcBtn=el('distCalc'); if(calcBtn) calcBtn.onclick=calculate;
     const mpgEl=el('distMpg'), priceEl=el('distFuelPrice');
     if(mpgEl) mpgEl.addEventListener('input',calcFuelCost);

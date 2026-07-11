@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','loancalc','costperfoot','casecalc','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','loancalc','costperfoot','casecalc','axleweight','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -733,6 +733,49 @@
     annualRate.addEventListener('input',calc); sqFt.addEventListener('input',calc);
   }
 
+  // ---------- Axle Weight Check ----------
+  function initAxleWeight(){
+    const steer=el('awSteer'), steerLim=el('awSteerLimit');
+    const drive=el('awDrive'), driveLim=el('awDriveLimit');
+    const trailer=el('awTrailer'), trailerLim=el('awTrailerLimit');
+    const gross=el('awGross'), grossLim=el('awGrossLimit');
+    const results=el('awResults'), overall=el('awOverall');
+    if(!steer) return;
+    function row(label,val,lim){
+      if(!val && val!==0) return '';
+      const over=val>lim;
+      const color=over?'var(--bad)':'var(--good)';
+      const diff=Math.abs(val-lim).toLocaleString();
+      const status=over?`OVER by ${diff} lb`:`OK — ${diff} lb under`;
+      return `<div class="result-card" style="border-left:4px solid ${color}"><div><b>${label}</b></div><div>${val.toLocaleString()} lb / ${lim.toLocaleString()} lb limit</div><div style="color:${color};font-weight:700">${status}</div></div>`;
+    }
+    function calc(){
+      const s=parseFloat(steer.value)||0, sL=parseFloat(steerLim.value)||12000;
+      const d=parseFloat(drive.value)||0, dL=parseFloat(driveLim.value)||34000;
+      const t=parseFloat(trailer.value)||0, tL=parseFloat(trailerLim.value)||34000;
+      const g=parseFloat(gross.value)||0, gL=parseFloat(grossLim.value)||80000;
+
+      const rows=[
+        steer.value?row('Steer Axle',s,sL):'',
+        drive.value?row('Drive Axle(s)',d,dL):'',
+        trailer.value?row('Trailer Axle(s)',t,tL):'',
+        gross.value?row('Gross Vehicle Weight',g,gL):''
+      ].filter(Boolean);
+      results.innerHTML=rows.join('');
+
+      const checks=[];
+      if(steer.value) checks.push(s<=sL);
+      if(drive.value) checks.push(d<=dL);
+      if(trailer.value) checks.push(t<=tL);
+      if(gross.value) checks.push(g<=gL);
+      if(!checks.length){ overall.textContent='—'; overall.style.color=''; return; }
+      const allOk=checks.every(Boolean);
+      overall.textContent=allOk?'Legal':'Overweight — adjust load';
+      overall.style.color=allOk?'var(--good)':'var(--bad)';
+    }
+    [steer,steerLim,drive,driveLim,trailer,trailerLim,gross,grossLim].forEach(f=>f.addEventListener('input',calc));
+  }
+
   // ---------- Case / Layer / Pallet Counter ----------
   function initCaseCalc(){
     const upc=el('ccUnitsPerCase'), cpl=el('ccCasesPerLayer'), lpp=el('ccLayersPerPallet'), upp=el('ccUnitsPerPallet'), uppDetail=el('ccUnitsDetail');
@@ -963,5 +1006,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initCaseCalc(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initCaseCalc(); initAxleWeight(); initHealth(); initRevenue(); initTranslate(); });
 })();
