@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.30.1
+- **Item Summary now shows pallet counts, not just quantity** — each Lot line shows "units / pallets" (one row = one pallet/LWH ID), rolled up into a Bay Total column and an Item Total, so a picker knows how many pallets to expect, not just a quantity number.
+- **Pick List: generated output (Pick List or Item Summary) now displays above the individual result cards** instead of below them, so you see the print-ready result first without scrolling past the raw row list.
+
 ## v1.30.0
 - **New: App Shortcuts** — long-press (or right-click, on desktop) the installed app icon for quick jumps straight to Master Lookup, Pick List, Bill of Lading, or Warehouse Tools, skipping the Home screen. Android and desktop Chrome/Edge; not supported on iOS.
 - **New: Share Target** — the installed app now shows up in the device's share sheet for text and links (e.g. sharing an address or a note from another app). Shared content lands in Warehouse Tools → Notepad automatically. File/photo sharing (e.g. straight into Doc Scanner) is a possible future add — more involved since it needs a service-worker-level handler, not added yet.

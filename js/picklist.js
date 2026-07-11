@@ -52,9 +52,10 @@
     const sumBtn=el('plSummaryBtn'); if(sumBtn) sumBtn.onclick=()=>generateSummaryPrintable(list);
   }
 
-  // Groups matching rows by Item → Bay → Lot, summing quantity within each
-  // Lot group — e.g. "Bay X: 20 @ Lot 8000, 1 @ Lot 6250" — so a picker gets
-  // one compact instruction per bay instead of a long row-by-row table.
+  // Groups matching rows by Item → Bay → Lot, summing quantity AND counting
+  // rows (pallets) within each Lot group — e.g. "Bay X: 20 units / 1 pallet
+  // @ Lot 8000" — so a picker gets both how much and how many pallets to
+  // expect, not just a quantity number.
   function buildSummary(list){
     const byItem={};
     list.forEach(r=>{
@@ -66,7 +67,9 @@
       const bayKey=r.bay||'(no bay)';
       if(!ig.byBay[bayKey]) ig.byBay[bayKey]={};
       const lotKey=r.lot||'(no lot)';
-      ig.byBay[bayKey][lotKey]=(ig.byBay[bayKey][lotKey]||0)+(parseFloat(r.qty)||0);
+      if(!ig.byBay[bayKey][lotKey]) ig.byBay[bayKey][lotKey]={qty:0,pallets:0};
+      ig.byBay[bayKey][lotKey].qty+=(parseFloat(r.qty)||0);
+      ig.byBay[bayKey][lotKey].pallets+=1; // one row = one pallet/LWH ID
     });
     return byItem;
   }
@@ -80,29 +83,31 @@
     const itemsHtml=itemKeys.map(itemKey=>{
       const ig=summary[itemKey];
       const bayKeys=Object.keys(ig.byBay).sort();
-      let itemTotal=0;
+      let itemQty=0, itemPallets=0;
       const bayLines=bayKeys.map(bayKey=>{
         const lots=ig.byBay[bayKey];
         const lotKeys=Object.keys(lots);
+        let bayQty=0, bayPallets=0;
         const lotParts=lotKeys.map(lotKey=>{
-          const qty=lots[lotKey];
-          itemTotal+=qty;
-          return `${qty.toLocaleString()} @ Lot ${safe(lotKey)}`;
+          const {qty,pallets}=lots[lotKey];
+          itemQty+=qty; itemPallets+=pallets; bayQty+=qty; bayPallets+=pallets;
+          return `${qty.toLocaleString()} unit${qty===1?'':'s'} / ${pallets.toLocaleString()} pallet${pallets===1?'':'s'} @ Lot ${safe(lotKey)}`;
         });
-        return `<tr><td class="pls-bay">${safe(bayKey)}</td><td>${lotParts.join(', ')}</td></tr>`;
+        return `<tr><td class="pls-bay">${safe(bayKey)}</td><td>${lotParts.join('<br>')}</td><td class="pls-baytotal">${bayQty.toLocaleString()} / ${bayPallets.toLocaleString()} plt</td></tr>`;
       }).join('');
       const custLine=[...ig.customers].filter(Boolean).join(', ');
       return `<div class="pls-item-block">
         <div class="pls-item-head"><b>Item ${safe(itemKey)}</b>${ig.desc?` — ${safe(ig.desc)}`:''}${custLine?` <span class="pls-cust">(${safe(custLine)})</span>`:''}</div>
-        <table class="pls-table"><thead><tr><th>Bay</th><th>Quantity by Lot</th></tr></thead><tbody>${bayLines}</tbody></table>
-        <div class="pls-item-total">Item Total: ${itemTotal.toLocaleString()}</div>
+        <table class="pls-table"><thead><tr><th>Bay</th><th>Quantity by Lot</th><th>Bay Total</th></tr></thead><tbody>${bayLines}</tbody></table>
+        <div class="pls-item-total">Item Total: ${itemQty.toLocaleString()} units / ${itemPallets.toLocaleString()} pallets</div>
       </div>`;
     }).join('');
 
-    const grandTotal=list.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+    const grandQty=list.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+    const grandPallets=list.length;
     out.innerHTML=`<div class="picklist-summary-page">
       <h1 class="pl-title">Item Summary — Picking Reference</h1>
-      <p class="pl-meta">Generated ${new Date().toLocaleString()} · ${itemKeys.length} item(s) · Grand Total Qty ${grandTotal.toLocaleString()}</p>
+      <p class="pl-meta">Generated ${new Date().toLocaleString()} · ${itemKeys.length} item(s) · Grand Total ${grandQty.toLocaleString()} units / ${grandPallets.toLocaleString()} pallets</p>
       ${itemsHtml}
     </div>`;
     if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
