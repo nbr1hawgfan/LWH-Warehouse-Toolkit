@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.25.0
+- **New: Bill of Lading** — fillable form matching the standard short-form BOL layout (Ship From/To, Third Party Bill To, Freight Terms, Customer Order Information and Carrier Information as dynamic add/remove-row tables, COD/fee terms, trailer-loaded/freight-counted, and the standard DOT liability/certification legal text). Company logo prints automatically in the header (Settings → App Settings). Drawable Shipper and Carrier signatures using the same Pointer Events approach as the Trailer Checklist — works with finger, stylus, or mouse, embeds directly into the printed page if drawn, falls back to a blank line for pen-and-paper signing otherwise. Full page, 8.5×11.
+
 ## v1.24.0
 - **New: read results aloud.** When a Master Lookup search returns exactly one match, the browser's own built-in text-to-speech reads back Item, Bay, and Quantity — no external service, no API, no network call, works offline. Defaults on (Settings → App Settings → "Read Master Lookup results aloud"), easy for anyone to turn off individually. Only triggers on a single clean match, not broad multi-result searches.
 
