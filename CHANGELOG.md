@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.31.1
+- **Fixed a real mislabeling bug on printed pallet labels:** the box labeled "Item Description" was actually showing the raw Unique8 value, not a real description — because the sheet never had a true description column until now. Added support for the new "Item Desc" column (recognized by name, works regardless of where it sits in the sheet); pallet labels now show the real description, and Unique8 is correctly labeled "Unique8" instead of masquerading as the description.
+- **Added Unique2 to pallet labels** — shows on the label when present, per request for your larger customer.
+- **Fixed the Lot value wrapping onto two lines** on pallet labels — it now auto-shrinks just enough to stay on one line at the largest size that fits, instead of wrapping. Qty gets the same treatment for consistency.
+- Master Lookup search, results, and "Copy Result" all pick up the new Item Description field automatically — no separate change needed there.
+
 ## v1.31.0
 - **New app icon and favicon** — toolbox + "LWH" on the brand maroon background, replacing the old plain icon. Requires everyone to uninstall and reinstall the app to see it (icon updates don't push automatically).
 - **Each App Shortcut now has its own distinct icon** instead of all four sharing the main app icon — magnifying glass (Master Lookup), clipboard (Pick List), toolbox (Warehouse Tools), document (Bill of Lading).

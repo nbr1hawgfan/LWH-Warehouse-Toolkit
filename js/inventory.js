@@ -55,6 +55,7 @@
       lotnum:'lotNum', lot:'lotNum', lotnumber:'lotNum',
       qty:'qty', quantity:'qty', location:'location', comments:'comments', vendor:'vendor',
       unique2:'unique2', unique3:'unique3', unique5:'unique5', unique6:'unique6', unique7:'unique7', unique8:'unique8',
+      itemdesc:'itemDesc', itemdescription:'itemDesc',
       warehouse:'warehouse', bayname:'bayName', bay:'bayName', stillininventory:'stillInInventory', currentbay:'currentBay'
     };
     const idx={}; head.forEach((h,i)=>{ if(map[h] && idx[map[h]]===undefined) idx[map[h]]=i; });
@@ -63,11 +64,11 @@
     const data=Object.keys(idx).length>=3?lines:[rawHead,...lines];
     function val(r,key,fallback){ const i=idx[key]; return (i!==undefined ? r[i] : r[fallback]) || ''; }
     return data.map(r=>({
-      controlNumber:val(r,'controlNumber',0), invReceipt:val(r,'invReceipt',1), subCustNm:val(r,'subCustNm',2), itemNm:val(r,'itemNm',3), lotNum:val(r,'lotNum',4), qty:val(r,'qty',5), location:val(r,'location',6), comments:val(r,'comments',7), vendor:val(r,'vendor',8), unique2:val(r,'unique2',9), unique3:val(r,'unique3',10), unique5:val(r,'unique5',11), unique6:val(r,'unique6',12), unique7:val(r,'unique7',13), unique8:val(r,'unique8',14), warehouse:val(r,'warehouse',15), bayName:val(r,'bayName',16), stillInInventory:val(r,'stillInInventory',17), currentBay:val(r,'currentBay',18)
+      controlNumber:val(r,'controlNumber',0), invReceipt:val(r,'invReceipt',1), subCustNm:val(r,'subCustNm',2), itemNm:val(r,'itemNm',3), lotNum:val(r,'lotNum',4), qty:val(r,'qty',5), location:val(r,'location',6), comments:val(r,'comments',7), vendor:val(r,'vendor',8), unique2:val(r,'unique2',9), unique3:val(r,'unique3',10), unique5:val(r,'unique5',11), unique6:val(r,'unique6',12), unique7:val(r,'unique7',13), unique8:val(r,'unique8',14), itemDesc:val(r,'itemDesc'), warehouse:val(r,'warehouse',15), bayName:val(r,'bayName',16), stillInInventory:val(r,'stillInInventory',17), currentBay:val(r,'currentBay',18)
     })).filter(r=>Object.values(r).some(Boolean));
   }
 
-  function parseCustomerJson(data){ const arr=Array.isArray(data)?data:(data&&(data.rows||data.data))||[]; return arr.map(x=>({controlNumber:x.ControlNumber||x.controlNumber||'',invReceipt:x.INV_Receipt||x.InvRec||x.invReceipt||'',subCustNm:x.SubCustNm||x.Customer||'',itemNm:x.ItemNm||'',lotNum:x.LotNum||'',qty:x.Qty||'',location:x.Location||'',comments:x.Comments||'',vendor:x.Vendor||'',unique2:x.Unique2||'',unique3:x.Unique3||'',unique5:x.Unique5||'',unique6:x.Unique6||'',unique7:x.Unique7||'',unique8:x.Unique8||'',warehouse:x.Warehouse||'',bayName:x.BayName||'',stillInInventory:x.Still_In_Inventory||'',currentBay:x.CurrentBay||''})); }
+  function parseCustomerJson(data){ const arr=Array.isArray(data)?data:(data&&(data.rows||data.data))||[]; return arr.map(x=>({controlNumber:x.ControlNumber||x.controlNumber||'',invReceipt:x.INV_Receipt||x.InvRec||x.invReceipt||'',subCustNm:x.SubCustNm||x.Customer||'',itemNm:x.ItemNm||'',lotNum:x.LotNum||'',qty:x.Qty||'',location:x.Location||'',comments:x.Comments||'',vendor:x.Vendor||'',unique2:x.Unique2||'',unique3:x.Unique3||'',unique5:x.Unique5||'',unique6:x.Unique6||'',unique7:x.Unique7||'',unique8:x.Unique8||'',itemDesc:x.ItemDesc||x['Item Desc']||'',warehouse:x.Warehouse||'',bayName:x.BayName||'',stillInInventory:x.Still_In_Inventory||'',currentBay:x.CurrentBay||''})); }
 
   async function fetchText(url){
     const bust=(url.includes('?')?'&':'?')+'_=' + Date.now();
@@ -87,8 +88,8 @@
   function loadCached(){ customerRows=LWHStorage.get('customerLookupRows',[]); setCustomerCurrentUrl(LWHStorage.get('customerLookupUrl',CUSTOMER_DEFAULT_URL)||CUSTOMER_DEFAULT_URL); customerStatus(customerRows.length?`Using ${customerRows.length} cached row(s) while auto-load refreshes.`:'Master Lookup data not loaded yet. Auto-load will try to refresh.'); }
   function resetCustomerSource(){ LWHStorage.set('customerLookupUrl',CUSTOMER_DEFAULT_URL); const input=el('setCustomerLookupUrl'); if(input) input.value=CUSTOMER_DEFAULT_URL; setCustomerCurrentUrl(CUSTOMER_DEFAULT_URL); customerStatus('Source reset. Click Load / Refresh Data.'); }
 
-  const customerFieldOrder=['controlNumber','invReceipt','subCustNm','itemNm','lotNum','qty','location','comments','vendor','unique2','unique3','unique5','unique6','unique7','unique8','warehouse','bayName','stillInInventory','currentBay'];
-  const customerDefaultLabels={controlNumber:'LWH ID / Control #',invReceipt:'INV Receipt',subCustNm:'Customer',itemNm:'Item #',lotNum:'Lot #',qty:'Qty',location:'Location',comments:'Comments / Customer ID',vendor:'Vendor',unique2:'Unique2',unique3:'Unique3',unique5:'Unique5',unique6:'Unique6',unique7:'Unique7',unique8:'Item Description',warehouse:'Warehouse',bayName:'Bay Name',stillInInventory:'Still In Inventory',currentBay:'Current Bay'};
+  const customerFieldOrder=['controlNumber','invReceipt','subCustNm','itemNm','lotNum','qty','location','comments','vendor','unique2','unique3','unique5','unique6','unique7','unique8','itemDesc','warehouse','bayName','stillInInventory','currentBay'];
+  const customerDefaultLabels={controlNumber:'LWH ID / Control #',invReceipt:'INV Receipt',subCustNm:'Customer',itemNm:'Item #',lotNum:'Lot #',qty:'Qty',location:'Location',comments:'Comments / Customer ID',vendor:'Vendor',unique2:'Unique2',unique3:'Unique3',unique5:'Unique5',unique6:'Unique6',unique7:'Unique7',unique8:'Unique8',itemDesc:'Item Description',warehouse:'Warehouse',bayName:'Bay Name',stillInInventory:'Still In Inventory',currentBay:'Current Bay'};
   function customerLabels(){ return Object.assign({},customerDefaultLabels,LWHStorage.get('customerFieldLabels',{})||{}); }
   function saveCustomerLabelsFromSettings(){ const labels={}; customerFieldOrder.forEach(k=>{ const input=el('custLabel_'+k); if(input) labels[k]=input.value||customerDefaultLabels[k]; }); LWHStorage.set('customerFieldLabels',labels); LWHUI.toast('Customer lookup labels saved'); }
   function loadCustomerLabelsToSettings(){ const labels=customerLabels(); customerFieldOrder.forEach(k=>{ const input=el('custLabel_'+k); if(input) input.value=labels[k]||customerDefaultLabels[k]; }); }
@@ -115,7 +116,7 @@
   // "NULL" rather than truly empty — without this, that text would show up
   // on printed labels as if it were real data (e.g. Customer ID: "NULL").
   function cleanVal(v){ const s=String(v??'').trim(); return (!s||/^null$/i.test(s))?'':s; }
-  function customerToPalletRow(r){ return {location:cleanVal(r.location||r.warehouse),lwhid:cleanVal(r.controlNumber),custId:cleanVal(r.comments),customer:cleanVal(r.subCustNm),invRec:cleanVal(r.invReceipt),billToRef:'',item:cleanVal(r.itemNm),desc:'',lot:cleanVal(r.lotNum),qty:cleanVal(r.qty),units:'',bay:cleanVal(r.currentBay||r.bayName),dateReceived:'',vendor:cleanVal(r.vendor),unique8:cleanVal(r.unique8)}; }
+  function customerToPalletRow(r){ return {location:cleanVal(r.location||r.warehouse),lwhid:cleanVal(r.controlNumber),custId:cleanVal(r.comments),customer:cleanVal(r.subCustNm),invRec:cleanVal(r.invReceipt),billToRef:'',item:cleanVal(r.itemNm),desc:cleanVal(r.itemDesc),lot:cleanVal(r.lotNum),qty:cleanVal(r.qty),units:'',bay:cleanVal(r.currentBay||r.bayName),dateReceived:'',vendor:cleanVal(r.vendor),unique2:cleanVal(r.unique2),unique8:cleanVal(r.unique8)}; }
   function copyCustomerResult(r){ const labels=customerLabels(); const text=customerFieldOrder.map(k=>`${labels[k]||k}: ${r[k]||''}`).join('\n'); navigator.clipboard?.writeText(text).then(()=>LWHUI.toast('Result copied')).catch(()=>alert(text)); }
   // Read-aloud: uses the browser's own built-in text-to-speech (window.speechSynthesis)
   // — no external service, no API, no network call, works offline. Feature-detected,

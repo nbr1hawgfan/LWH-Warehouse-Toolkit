@@ -79,19 +79,31 @@ function palletDataFromBulk(){
   const ix=k=>idx[k]!==undefined?idx[k]:fallback[k];
   return data.map(r=>({location:r[ix('location')]||'',lwhid:r[ix('lwhid')]||'',custId:r[ix('custId')]||'',customer:r[ix('customer')]||'',invRec:r[ix('invRec')]||'',billToRef:r[ix('billToRef')]||'',item:r[ix('item')]||'',desc:r[ix('desc')]||'',lot:r[ix('lot')]||'',qty:r[ix('qty')]||'',units:r[ix('units')]||'',bay:r[ix('bay')]||'',date:r[ix('date')]||''})).filter(r=>Object.values(r).some(Boolean));
 }
-function normalizePalletRow(r){return{location:r.location||r.Location||'',lwhid:r.lwhid||r.LWH_ID||r.LWHID||'',custId:r.custId||r.Customer_ID||'',customer:r.customer||r.Customer||'',invRec:r.invRec||r.InvRec||'',billToRef:r.billToRef||r.BillToRef||'',item:r.item||r.ItemNm||'',desc:r.desc||r.ItemDesc||'',lot:r.lot||r.LotNum||'',qty:r.qty||r.Qty||'',units:r.units||r.Units||'',bay:r.bay||r.BayName||'',date:r.date||r.dateReceived||r.DateReceived||'',vendor:r.vendor||r.Vendor||'',unique8:r.unique8||r.Unique8||''}}
+function normalizePalletRow(r){return{location:r.location||r.Location||'',lwhid:r.lwhid||r.LWH_ID||r.LWHID||'',custId:r.custId||r.Customer_ID||'',customer:r.customer||r.Customer||'',invRec:r.invRec||r.InvRec||'',billToRef:r.billToRef||r.BillToRef||'',item:r.item||r.ItemNm||'',desc:r.desc||r.ItemDesc||'',lot:r.lot||r.LotNum||'',qty:r.qty||r.Qty||'',units:r.units||r.Units||'',bay:r.bay||r.BayName||'',date:r.date||r.dateReceived||r.DateReceived||'',vendor:r.vendor||r.Vendor||'',unique2:r.unique2||r.Unique2||'',unique8:r.unique8||r.Unique8||''}}
 function palletLabelHtml(r){
   r=normalizePalletRow(r);
   const code=r.lwhid||r.bay||r.item||'PALLET';
   const custQr=(r.custId||'').trim();
   const includeItemCode=window.palItemCode&&palItemCode.checked;
-  return `<div class="pallet-head"><div><div class="pallet-title">${safeAttr(r.customer||'PALLET LABEL')}</div></div><div class="pallet-lwh">${safeAttr(r.lwhid||'')}</div></div>${r.custId?`<div class="pallet-custid">${safeAttr(r.custId)}</div>`:''}<div class="pallet-info-row"><div class="pallet-grid"><div><b>Location</b><br>${safeAttr(r.location)}</div><div><b>Bay</b><br>${safeAttr(r.bay)}</div>${r.invRec?`<div><b>InvRec</b><br>${safeAttr(r.invRec)}</div>`:''}${r.billToRef?`<div><b>BillToRef</b><br>${safeAttr(r.billToRef)}</div>`:''}${r.vendor?`<div><b>Vendor</b><br>${safeAttr(r.vendor)}</div>`:''}${r.unique8?`<div><b>${(window.LWHInventory&&LWHInventory.customerLabels)?safeAttr(LWHInventory.customerLabels().unique8):'Item Description'}</b><br>${safeAttr(r.unique8)}</div>`:''}${r.date?`<div><b>Date Received</b><br>${safeAttr(r.date)}</div>`:''}${r.desc?`<div class="wide"><b>Description</b><br>${safeAttr(r.desc)}</div>`:''}</div>${custQr&&palCustQR.checked?`<div class="pallet-qr-side"><div class="qr-heading">CUSTOMER ID</div><div class="qrbox" data-qr="${safeAttr(custQr)}" data-size="90"></div><div class="cust-qr-value">${safeAttr(custQr)}</div></div>`:''}</div>${r.item?`<div class="pallet-item-big">${safeAttr(r.item)}</div>`:''}${includeItemCode&&r.item?`<div class="pallet-item-code"><svg data-barcode="${safeAttr(r.item)}" data-height="26" data-width="1.1"></svg></div>`:''}<div class="pallet-codes">${r.qty?`<div class="pallet-code-side"><div class="pcs-label">Qty</div><div class="pcs-value">${safeAttr(r.qty)}</div></div>`:''}${palBarcode.checked?`<div class="barcode-wrap lwh-code"><svg data-barcode="${safeAttr(code)}" data-height="55" data-width="2.3"></svg><div class="barcode-text">LWH ${safeAttr(code)}</div></div>`:''}${r.lot?`<div class="pallet-code-side"><div class="pcs-label">Lot</div><div class="pcs-value">${safeAttr(r.lot)}</div></div>`:''}</div>`;
+  return `<div class="pallet-head"><div><div class="pallet-title">${safeAttr(r.customer||'PALLET LABEL')}</div></div><div class="pallet-lwh">${safeAttr(r.lwhid||'')}</div></div>${r.custId?`<div class="pallet-custid">${safeAttr(r.custId)}</div>`:''}<div class="pallet-info-row"><div class="pallet-grid"><div><b>Location</b><br>${safeAttr(r.location)}</div><div><b>Bay</b><br>${safeAttr(r.bay)}</div>${r.invRec?`<div><b>InvRec</b><br>${safeAttr(r.invRec)}</div>`:''}${r.billToRef?`<div><b>BillToRef</b><br>${safeAttr(r.billToRef)}</div>`:''}${r.vendor?`<div><b>Vendor</b><br>${safeAttr(r.vendor)}</div>`:''}${r.unique2?`<div><b>${(window.LWHInventory&&LWHInventory.customerLabels)?safeAttr(LWHInventory.customerLabels().unique2):'Unique2'}</b><br>${safeAttr(r.unique2)}</div>`:''}${r.unique8?`<div><b>${(window.LWHInventory&&LWHInventory.customerLabels)?safeAttr(LWHInventory.customerLabels().unique8):'Unique8'}</b><br>${safeAttr(r.unique8)}</div>`:''}${r.date?`<div><b>Date Received</b><br>${safeAttr(r.date)}</div>`:''}${r.desc?`<div class="wide"><b>Description</b><br>${safeAttr(r.desc)}</div>`:''}</div>${custQr&&palCustQR.checked?`<div class="pallet-qr-side"><div class="qr-heading">CUSTOMER ID</div><div class="qrbox" data-qr="${safeAttr(custQr)}" data-size="90"></div><div class="cust-qr-value">${safeAttr(custQr)}</div></div>`:''}</div>${r.item?`<div class="pallet-item-big">${safeAttr(r.item)}</div>`:''}${includeItemCode&&r.item?`<div class="pallet-item-code"><svg data-barcode="${safeAttr(r.item)}" data-height="26" data-width="1.1"></svg></div>`:''}<div class="pallet-codes">${r.qty?`<div class="pallet-code-side"><div class="pcs-label">Qty</div><div class="pcs-value">${safeAttr(r.qty)}</div></div>`:''}${palBarcode.checked?`<div class="barcode-wrap lwh-code"><svg data-barcode="${safeAttr(code)}" data-height="55" data-width="2.3"></svg><div class="barcode-text">LWH ${safeAttr(code)}</div></div>`:''}${r.lot?`<div class="pallet-code-side"><div class="pcs-label">Lot</div><div class="pcs-value">${safeAttr(r.lot)}</div></div>`:''}</div>`;
+}
+function fitPalletCodeValues(root){
+  (root.querySelectorAll('.pallet-code-side .pcs-value')||[]).forEach(el=>{
+    el.style.whiteSpace='nowrap';
+    let size=parseFloat(getComputedStyle(el).fontSize);
+    const min=size*0.55; // don't shrink past ~55% of the base size — stays readable
+    let guard=0;
+    while(el.scrollWidth>el.clientWidth && size>min && guard<20){
+      size-=1; el.style.fontSize=size+'px'; guard++;
+    }
+  });
 }
 function generatePalletRows(rows,target){
   const out=target||palletOutput; out.innerHTML='';
   const copies=+palCopies.value||1;
   (rows||[]).map(normalizePalletRow).filter(r=>Object.values(r).some(Boolean)).forEach(r=>{for(let i=0;i<copies;i++){out.append(page('pallet-label',palletLabelHtml(r)))}});
   finishBarcodes(out);
+  fitPalletCodeValues(out);
   bindCopyToClipboard(out);
   setPrintPageSize(6,4); // force landscape 6x4 so it prints as shaped, no manual dialog fix needed
   LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+out.children.length);

@@ -202,7 +202,7 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pallet-codes .lwh-code{flex:1;max-width:100%;text-align:center}
 .pallet-code-side{flex-shrink:0;text-align:center;min-width:.8in;max-width:1.05in}
 .pallet-code-side .pcs-label{font-size:.08in;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
-.pallet-code-side .pcs-value{font-size:.28in;font-weight:900;line-height:1.02;word-break:break-word}
+.pallet-code-side .pcs-value{font-size:.28in;font-weight:900;line-height:1.02;white-space:nowrap}
 .pallet-item-big{font-size:.40in;font-weight:900;color:#000;text-align:center;margin:.05in 0 .1in;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .pallet-item-code{text-align:center;margin:0 0 .1in}
 .pallet-item-code svg{max-width:2.2in;height:auto}
