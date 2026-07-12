@@ -165,17 +165,5 @@
     const mpgEl=el('distMpg'), priceEl=el('distFuelPrice');
     if(mpgEl) mpgEl.addEventListener('input',calcFuelCost);
     if(priceEl) priceEl.addEventListener('input',calcFuelCost);
-
-    window.LWHToolClear=window.LWHToolClear||{};
-    window.LWHToolClear.distance=()=>{
-      stops=[{v:'',dwell:''},{v:'',dwell:''}];
-      renderStops();
-      if(mpgEl) mpgEl.value='';
-      if(priceEl) priceEl.value='';
-      lastMiles=null;
-      const ids=['distStatus','distTotalMiles','distTotalDetail','distDayTotal','distDayDetail','distFuelCost','distFuelDetail','distLegs'];
-      ids.forEach(id=>{ const e=el(id); if(e) e.textContent = id==='distStatus' ? 'Enter at least a From and To.' : (id==='distLegs' ? '' : '—'); });
-      const mapEl=el('distMap'); if(mapEl){ mapEl.style.display='none'; mapEl.innerHTML=''; }
-    };
   });
 })();

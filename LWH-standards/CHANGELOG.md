@@ -1,9 +1,5 @@
 # Changelog
 
-## v1.35.0
-- **New: "Clear This Tool" button** in Warehouse Tools — always visible next to the title, resets whichever calculator is currently open back to blank/default in one tap, instead of manually deleting each field. Works across the calculators; tools with their own dynamic rows (Distance Planner, Square Footage) get a proper full reset rather than a generic field-blank. (Every other form in the app — BOL, Pick List, Rack Labels, Trailer Checklist, etc. — already had its own Clear button; this fills the gap that was specifically in the calculators.)
-- **New: Standards Calculator** (Warehouse Tools) — Start/End time (with "= Now" quick-set buttons), pieces assembled (type it in, or "Scan to Count" to add 1 per scan), and the standard per hour off your posted list. Shows elapsed time, actual rate, and % to standard — plus how many pieces ahead or behind pace, not just a percentage.
-
 ## v1.34.0
 - **New: Square Footage Calculator** (Warehouse Tools) — for sizing up a new location. Add one row per building (Length × Width auto-computes Sq Ft), handles joined/multiple buildings, sums to a Total Square Footage.
 - **Built-in Cost/Margin section** — enter your cost ($/sq ft/yr) and a target margin %, and it works out the rate you'd need to charge to hit it, using the Total Square Footage from the building list above it.

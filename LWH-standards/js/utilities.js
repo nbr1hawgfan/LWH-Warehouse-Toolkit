@@ -1,10 +1,6 @@
 (function(){
   function el(id){ return document.getElementById(id); }
   function round(n,d){ return Math.round(n*Math.pow(10,d))/Math.pow(10,d); }
-  // Tools with dynamically-rendered rows (Distance, Square Footage) register a
-  // proper reset function here instead of relying on the generic DOM sweep,
-  // which can't cleanly reset rows that were built from JS array state.
-  window.LWHToolClear = window.LWHToolClear || {};
 
   // ---------- Tab switching ----------
   function initTabs(){
@@ -12,35 +8,12 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','standards','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
       if(b.dataset.util!=='scanner') stopScannerCamera();
     });
-  }
-
-  // ---------- Clear This Tool (resets whichever calculator is currently open) ----------
-  function initClearActiveTool(){
-    const btn=el('utilClearActive'); if(!btn) return;
-    btn.onclick=()=>{
-      const activeSeg=document.querySelector('#utilTabs .seg.active');
-      const name=activeSeg?activeSeg.dataset.util:null;
-      if(name && window.LWHToolClear[name]){
-        window.LWHToolClear[name]();
-        LWHUI.toast('Cleared');
-        return;
-      }
-      const panel=name?el('util'+name.charAt(0).toUpperCase()+name.slice(1)):null;
-      if(!panel) return;
-      panel.querySelectorAll('input,select,textarea').forEach(f=>{
-        if(f.type==='checkbox'||f.type==='radio'){ f.checked=f.defaultChecked; }
-        else { f.value=f.defaultValue; }
-        f.dispatchEvent(new Event('input',{bubbles:true}));
-        f.dispatchEvent(new Event('change',{bubbles:true}));
-      });
-      LWHUI.toast('Cleared');
-    };
   }
 
   // ---------- Calculator (classic four-function, left-to-right like a desk calculator) ----------
@@ -95,7 +68,6 @@
       else if(['+','-','*','/'].includes(v)) calcApplyOp(v);
       else calcDigit(v);
     });
-    window.LWHToolClear.calc=calcClear;
     calcRender();
   }
 
@@ -367,7 +339,6 @@
     el('scanShareAll').onclick=shareAllPages;
     const pdfBtn=el('scanDownloadPdf'); if(pdfBtn) pdfBtn.onclick=downloadAsPdf;
     el('scanClearAll').onclick=()=>{ scanPagesData.length=0; renderScanPages(); };
-    window.LWHToolClear.scanner=()=>{ scanPagesData.length=0; renderScanPages(); };
   }
 
   // ---------- Ad-hoc QR/Barcode generator ----------
@@ -913,61 +884,6 @@
 
     renderRows();
     calcAll();
-    window.LWHToolClear.sqftcalc=()=>{
-      rows=[{label:'Building 1',length:'',width:''}];
-      costRate.value=''; marginEl.value='';
-      renderRows(); calcAll();
-      if(printOutput) printOutput.innerHTML='';
-    };
-  }
-
-  // ---------- Standards Calculator (production pace vs. posted standard) ----------
-  function initStandardsCalc(){
-    const startEl=el('stStart'), endEl=el('stEnd'), startNowBtn=el('stStartNow'), endNowBtn=el('stEndNow');
-    const pieces=el('stPieces'), standard=el('stStandard'), scanBtn=el('stScanBtn');
-    const elapsedOut=el('stElapsed'), rateOut=el('stActualRate'), pctOut=el('stPct'), pctDetail=el('stPctDetail');
-    if(!startEl) return;
-
-    function nowHHMM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-    if(startNowBtn) startNowBtn.onclick=()=>{ startEl.value=nowHHMM(); calc(); };
-    if(endNowBtn) endNowBtn.onclick=()=>{ endEl.value=nowHHMM(); calc(); };
-    if(!endEl.value) endEl.value=nowHHMM();
-
-    function toMinutes(hhmm){ if(!hhmm) return null; const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
-
-    function calc(){
-      const sMin=toMinutes(startEl.value), eMin=toMinutes(endEl.value);
-      const p=parseFloat(pieces.value)||0, std=parseFloat(standard.value)||0;
-      if(sMin===null || eMin===null){ elapsedOut.textContent='—'; rateOut.textContent='—'; pctOut.textContent='—'; pctDetail.textContent='—'; return; }
-      let elapsedMin=eMin-sMin;
-      if(elapsedMin<0) elapsedMin+=1440; // assume an overnight wrap rather than a negative shift
-      const elapsedHours=elapsedMin/60;
-      elapsedOut.textContent=`${Math.floor(elapsedMin/60)}h ${elapsedMin%60}m`;
-
-      if(elapsedHours<=0 || !std){
-        rateOut.textContent='—'; pctOut.textContent='—'; pctDetail.textContent=!std?'Enter the standard for this job':'—';
-        return;
-      }
-      const actualRate=p/elapsedHours;
-      rateOut.textContent=actualRate.toLocaleString(undefined,{maximumFractionDigits:1})+' /hr';
-      const pct=(actualRate/std)*100;
-      pctOut.textContent=pct.toFixed(0)+'%';
-      pctOut.style.color=pct>=100?'var(--good)':(pct>=90?'#b8860b':'var(--bad)');
-      const paceNeeded=std*elapsedHours;
-      const diff=p-paceNeeded;
-      pctDetail.textContent=`${p} done vs. ${paceNeeded.toFixed(0)} needed for pace — ${diff>=0?'+':''}${diff.toFixed(0)} ${diff>=0?'ahead':'behind'}`;
-    }
-    [startEl,endEl,pieces,standard].forEach(f=>f.addEventListener('input',calc));
-
-    if(scanBtn) scanBtn.onclick=()=>{
-      if(!window.LWHScanner){ alert('Scanner not available.'); return; }
-      LWHScanner.start(()=>{
-        pieces.value=(parseFloat(pieces.value)||0)+1;
-        calc();
-        LWHUI.toast('Count: '+pieces.value);
-      });
-    };
-    calc();
   }
 
   // ---------- Axle Weight Check ----------
@@ -1307,5 +1223,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
 })();
