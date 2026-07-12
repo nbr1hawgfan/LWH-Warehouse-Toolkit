@@ -183,6 +183,11 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .sign-subtitle{font-size:.38in;font-weight:700;margin-bottom:.25in}
 .sign-codes{display:flex;justify-content:center;align-items:center;gap:.7in}
 .pallet-label{width:6in;height:4in;padding:.13in .16in;border:2px solid #000;position:relative}
+.code-label{width:6in;height:4in;padding:.3in;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25in;box-sizing:border-box}
+.code-label .code-print-code{max-width:100%;max-height:2.6in;display:flex;align-items:center;justify-content:center}
+.code-label .code-print-code svg{max-width:100%;height:auto}
+.code-label .code-print-code .qrbox canvas,.code-label .code-print-code .qrbox img{max-width:2.6in!important;max-height:2.6in!important}
+.code-label .code-print-text{font-size:.3in;font-weight:900;text-align:center;word-break:break-word;line-height:1.15;max-width:100%}
 .pallet-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:.02in}
 .pallet-title{font-size:.34in;font-weight:900;max-width:3.55in;white-space:nowrap;overflow:hidden;text-overflow:clip}
 .pallet-lwh{font-size:.38in;font-weight:900;white-space:nowrap}

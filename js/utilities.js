@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','generate','scancode','message','trailercube','datecalc','loancalc','costperfoot','casecalc','axleweight','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','casecalc','axleweight','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -343,7 +343,7 @@
 
   // ---------- Ad-hoc QR/Barcode generator ----------
   function initGenerate(){
-    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel'), shareBtn=el('genShareBtn'), downloadBtn=el('genDownloadBtn');
+    const text=el('genText'), tabs=el('genTypeTabs'), qrBox=el('genQrBox'), barcodeSvg=el('genBarcodeSvg'), label=el('genTextLabel'), shareBtn=el('genShareBtn'), downloadBtn=el('genDownloadBtn'), printBtn=el('genPrintBtn'), printOutput=el('genPrintOutput');
     if(!text) return;
     let mode='qr';
     function render(){
@@ -416,9 +416,42 @@
       const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name; document.body.append(a); a.click(); a.remove();
       LWHUI.toast('Downloaded');
     };
+    if(printBtn) printBtn.onclick=()=>{
+      const v=text.value.trim();
+      if(!v){ alert('Type something first to generate a code.'); return; }
+      if(!printOutput || !window.LWHLabels){ return; }
+      printOutput.innerHTML='';
+      const codeHtml = mode==='qr'
+        ? `<div class="qrbox" data-qr="${v.replace(/"/g,'&quot;')}" data-size="220"></div>`
+        : `<div class="barcode-wrap"><svg data-barcode="${v.replace(/"/g,'&quot;')}" data-height="120" data-width="3"></svg></div>`;
+      const html = `<div class="code-print-code">${codeHtml}</div><div class="code-print-text">${v.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</div>`;
+      const pageEl=document.createElement('div');
+      pageEl.className='label-page code-label';
+      pageEl.innerHTML=html;
+      printOutput.append(pageEl);
+      // finishBarcodes lives in labels.js and turns the data-qr/data-barcode
+      // placeholders above into the actual rendered code — same helper every
+      // other printable label in the app already uses.
+      if(window.finishBarcodes) finishBarcodes(printOutput);
+      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(6,4);
+      LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+1);
+      setTimeout(()=>window.print(),50);
+    };
   }
 
   // ---------- Scan Code (dedicated barcode/QR reader, separate from the generator) ----------
+  function looksLikeUrl(v){ return /^(https?:\/\/|www\.)\S+$/i.test(v.trim()); }
+  function toHref(v){ v=v.trim(); return /^https?:\/\//i.test(v) ? v : 'https://'+v; }
+  function renderScanResult(el,value){
+    if(looksLikeUrl(value)){
+      const a=document.createElement('a');
+      a.href=toHref(value); a.target='_blank'; a.rel='noopener noreferrer';
+      a.textContent=value;
+      el.innerHTML=''; el.append(a);
+    } else {
+      el.textContent=value;
+    }
+  }
   function initScanCode(){
     const btn=el('scReadBtn'), resultCard=el('scResultCard'), resultText=el('scResultText');
     const copyBtn=el('scCopyBtn'), notesBtn=el('scNotesBtn'), emailBtn=el('scEmailBtn');
@@ -428,7 +461,7 @@
       if(!window.LWHScanner){ alert('Scanner not available.'); return; }
       LWHScanner.start(value=>{
         lastValue=value;
-        resultText.textContent=value;
+        renderScanResult(resultText,value);
         resultCard.hidden=false;
       });
     };

@@ -37,7 +37,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.31.1</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.32.0</div></div></div>
     <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -55,6 +55,8 @@
       <button class="nav-btn" data-view="contact"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c0-1.7 1.5-3 3-3s3 1.3 3 3M14 9h4M14 13h4"/></svg>Contact QR</button>
       <button class="nav-btn" data-view="visitor"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg>Visitor Badges</button>
       <button class="nav-btn" data-view="empbadge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h5M13 14h3"/></svg>Employee Badges</button>
+      <button class="nav-btn" data-view="generate"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>Generate Code</button>
+      <button class="nav-btn" data-view="scancode"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><path d="M4 12h16"/></svg>Scan Code</button>
       <button class="nav-btn" data-view="utilities"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg>Warehouse Tools</button>
       <button class="nav-btn" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.4-2-3.4-2.3.8a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.3-.8-2 3.4 2 1.4a7.6 7.6 0 0 0 0 3l-2 1.4 2 3.4 2.3-.8a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.8 2-3.4z"/></svg>Settings</button>
       <button class="nav-btn" data-view="about"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>About</button>
@@ -74,8 +76,10 @@
         <button class="module-card" data-view="bol"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg></div><b>Bill of Lading</b><span>Fillable, printable BOL with your logo and drawable signatures.</span></button>
         <button class="module-card" data-view="visitor"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg></div><b>Visitor Badges</b><span>Visitor, vendor, contractor badges with optional photo.</span></button>
         <button class="module-card" data-view="empbadge"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h5M13 14h3"/></svg></div><b>Employee Badges</b><span>Timecard scan badge or full front/back company ID badge — CR80 card size.</span></button>
+        <button class="module-card" data-view="generate"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg></div><b>Generate Code</b><span>Turn any text or number into a QR code or barcode — download, share, or print at 4x6 with the text underneath.</span></button>
+        <button class="module-card" data-view="scancode"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><path d="M4 12h16"/></svg></div><b>Scan Code</b><span>Quick camera scan of any barcode or QR — copy, add to notes, email, or open a link straight from the result.</span></button>
         <button class="module-card" data-view="settings"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.4-2-3.4-2.3.8a7.6 7.6 0 0 0-2.6-1.5L14 2h-4l-.5 2.5a7.6 7.6 0 0 0-2.6 1.5l-2.3-.8-2 3.4 2 1.4a7.6 7.6 0 0 0 0 3l-2 1.4 2 3.4 2.3-.8a7.6 7.6 0 0 0 2.6 1.5L10 22h4l.5-2.5a7.6 7.6 0 0 0 2.6-1.5l2.3.8 2-3.4z"/></svg></div><b>Settings</b><span>Logo, colors, calibration, and source data.</span></button>
-        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, QR/barcode generator + reader, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
+        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
       </div>
 
       <div id="quickLinksHome" class="card no-print" style="margin-top:16px" hidden>
@@ -279,16 +283,53 @@
       </div>
     </section>
 
+    <section id="generate" class="view">
+      <div class="tool-layout">
+        <form class="panel no-print" id="genForm" onsubmit="return false">
+          <h2>Generate Code</h2>
+          <label>Text or Number to Encode<input id="genText" placeholder="Type or paste anything..." autocomplete="off" /></label>
+          <div class="segmented" id="genTypeTabs">
+            <button type="button" class="seg active" data-gentype="qr">QR Code</button>
+            <button type="button" class="seg" data-gentype="barcode">Barcode (1D)</button>
+          </div>
+          <div class="actions" style="margin-top:14px">
+            <button type="button" id="genPrintBtn">Print 4x6</button>
+            <button type="button" id="genDownloadBtn" class="ghost">Download</button>
+            <button type="button" id="genShareBtn" class="ghost">Share</button>
+          </div>
+        </form>
+        <div>
+          <div id="genOutput" class="card no-print" style="text-align:center;padding:24px 10px">
+            <div id="genQrBox"></div>
+            <svg id="genBarcodeSvg" style="max-width:100%;display:none"></svg>
+            <div id="genTextLabel" style="font-weight:900;font-size:1.3em;margin-top:10px;word-break:break-all"></div>
+          </div>
+          <div id="genPrintOutput" class="print-area"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="scancode" class="view no-print">
+      <div class="card">
+        <h2>Scan Code</h2>
+        <p class="hint">Scan any barcode or QR code — same scanner already used in Master Lookup and Pallet Labels. If a scanned QR code contains a web link, it shows up below as a clickable link, just like a phone camera's built-in scanner.</p>
+        <div class="actions"><button type="button" id="scReadBtn">Start Scanning</button></div>
+        <div class="card" style="margin-top:14px;text-align:center;background:var(--bg)" id="scResultCard" hidden>
+          <div class="hint">Last Scanned</div>
+          <div id="scResultText" style="font-size:1.6em;font-weight:900;color:var(--brand);word-break:break-all"></div>
+          <div class="actions" style="justify-content:center;margin-top:10px"><button type="button" id="scCopyBtn" class="ghost">Copy</button><button type="button" id="scNotesBtn" class="ghost">Add to Notes</button><button type="button" id="scEmailBtn" class="ghost">Email</button></div>
+        </div>
+      </div>
+    </section>
+
     <section id="utilities" class="view">
-      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools</h2><p class="hint">Calculator, unit converter, pallet footprint, age/loan/cost-per-foot calculators, scratch notepad, document scanner, and a QR/barcode generator — no need to leave the app.</p>
+      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools</h2><p class="hint">Calculator, unit converter, pallet footprint, age/loan/cost-per-foot calculators, scratch notepad, and document scanner — no need to leave the app. (Generate Code and Scan Code have their own tabs now.)</p>
         <div class="segmented" id="utilTabs">
           <button type="button" class="seg active" data-util="calc">Calculator</button>
           <button type="button" class="seg" data-util="convert">Converter</button>
           <button type="button" class="seg" data-util="pallet">Pallet Footprint</button>
           <button type="button" class="seg" data-util="notepad">Notepad</button>
           <button type="button" class="seg" data-util="scanner">Doc Scanner</button>
-          <button type="button" class="seg" data-util="generate">Generate Code</button>
-          <button type="button" class="seg" data-util="scancode">Scan Code</button>
           <button type="button" class="seg" data-util="message">Quick Message</button>
           <button type="button" class="seg" data-util="trailercube">Trailer Cube</button>
           <button type="button" class="seg" data-util="datecalc">Date Calc</button>
@@ -377,32 +418,6 @@
         </div>
         <div id="scanPages" class="cust-grid" style="margin-top:14px"></div>
         <div class="actions" id="scanBulkActions" hidden><button type="button" id="scanDownloadPdf">Download as PDF</button><button type="button" id="scanShareAll" class="ghost">Share All Pages</button><button type="button" id="scanClearAll" class="ghost">Clear All</button></div>
-      </div>
-
-      <div id="utilGenerate" class="card util-panel" hidden>
-        <div class="no-print">
-          <label>Text or Number to Encode<input id="genText" placeholder="Type or paste anything..." autocomplete="off" /></label>
-          <div class="segmented" id="genTypeTabs">
-            <button type="button" class="seg active" data-gentype="qr">QR Code</button>
-            <button type="button" class="seg" data-gentype="barcode">Barcode (1D)</button>
-          </div>
-        </div>
-        <div id="genOutput" style="text-align:center;padding:24px 10px">
-          <div id="genQrBox"></div>
-          <svg id="genBarcodeSvg" style="max-width:100%;display:none"></svg>
-          <div id="genTextLabel" style="font-weight:900;font-size:1.3em;margin-top:10px;word-break:break-all"></div>
-        </div>
-        <div class="actions no-print" style="justify-content:center"><button type="button" id="genDownloadBtn" class="ghost">Download</button><button type="button" id="genShareBtn" class="ghost">Share</button></div>
-      </div>
-
-      <div id="utilScancode" class="card util-panel no-print" hidden>
-        <p class="hint">Scan any barcode or QR code — same scanner already used in Master Lookup and Pallet Labels — and do something with the result.</p>
-        <div class="actions"><button type="button" id="scReadBtn">Start Scanning</button></div>
-        <div class="card" style="margin-top:14px;text-align:center;background:var(--bg)" id="scResultCard" hidden>
-          <div class="hint">Last Scanned</div>
-          <div id="scResultText" style="font-size:1.6em;font-weight:900;color:var(--brand);word-break:break-all"></div>
-          <div class="actions" style="justify-content:center;margin-top:10px"><button type="button" id="scCopyBtn" class="ghost">Copy</button><button type="button" id="scNotesBtn" class="ghost">Add to Notes</button><button type="button" id="scEmailBtn" class="ghost">Email</button></div>
-        </div>
       </div>
 
       <div id="utilMessage" class="card util-panel no-print" hidden>
@@ -591,7 +606,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><label>Primary color<input id="setColor" type="color" value="#0f4a45" /></label><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one sheet now. Auto-loads fresh every time the app opens.</p><label>CSV / Google Sheet export URL<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.31.1</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Warehouse Tools (including Age, Loan, Cost-per-Foot, and Axle Weight calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.32.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Warehouse Tools (including Age, Loan, Cost-per-Foot, and Axle Weight calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.32.0
+- **Generate Code and Scan Code are now their own top-level tabs**, pulled out of Warehouse Tools — same spot in the nav as Contact QR, plus Home screen quick-launch cards for both. Warehouse Tools keeps everything else.
+- **Generate Code: new "Print 4x6" button** — prints the QR/barcode formatted on a 6x4 label with the encoded text shown underneath, same print pattern as Rack Labels and Pallet Labels.
+- **Scan Code: scanned links are now clickable** — if a scanned QR code contains a web address, the result shows as a tappable link (opens in a new tab) instead of plain text, matching how a phone's built-in camera scanner behaves.
+
 ## v1.31.1
 - **Fixed a real mislabeling bug on printed pallet labels:** the box labeled "Item Description" was actually showing the raw Unique8 value, not a real description — because the sheet never had a true description column until now. Added support for the new "Item Desc" column (recognized by name, works regardless of where it sits in the sheet); pallet labels now show the real description, and Unique8 is correctly labeled "Unique8" instead of masquerading as the description.
 - **Added Unique2 to pallet labels** — shows on the label when present, per request for your larger customer.
