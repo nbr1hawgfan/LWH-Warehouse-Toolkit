@@ -37,7 +37,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.32.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.33.0</div></div></div>
     <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -337,6 +337,8 @@
           <button type="button" class="seg" data-util="costperfoot">Cost / Ft</button>
           <button type="button" class="seg" data-util="casecalc">Case/Pallet Count</button>
           <button type="button" class="seg" data-util="axleweight">Axle Weight</button>
+          <button type="button" class="seg" data-util="margincalc">Margin Calc</button>
+          <button type="button" class="seg" data-util="pwgen">Password Gen</button>
           <button type="button" class="seg" data-util="health">Health</button>
           <button type="button" class="seg" data-util="revenue">Storage Revenue</button>
           <button type="button" class="seg" data-util="distance">Distance</button>
@@ -545,6 +547,40 @@
         <div class="card" style="margin-top:10px;text-align:center;background:var(--bg)"><div class="hint">Overall</div><div id="awOverall" style="font-size:1.6em;font-weight:900">—</div></div>
       </div>
 
+      <div id="utilMargincalc" class="card util-panel no-print" hidden>
+        <h3>Margin Calculator</h3>
+        <p class="hint">Enter Revenue and Cost — Margin is profit as a % of revenue (what you actually keep), Markup is profit as a % of cost (a different, commonly confused number).</p>
+        <div class="grid-2"><label>Revenue ($)<input id="mcRevenue" inputmode="decimal" placeholder="200" /></label><label>Cost ($)<input id="mcCost" inputmode="decimal" placeholder="150" /></label></div>
+        <div class="grid-3" style="margin-top:12px">
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Margin</div><div id="mcMargin" style="font-size:1.8em;font-weight:900;color:var(--brand)">—</div></div>
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Profit</div><div id="mcProfit" style="font-size:1.8em;font-weight:900;color:var(--brand)">—</div></div>
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Markup</div><div id="mcMarkup" style="font-size:1.8em;font-weight:900;color:var(--brand)">—</div></div>
+        </div>
+
+        <h3 style="margin-top:22px">Reverse: Revenue Needed for a Target Margin</h3>
+        <p class="hint">Given your cost and the margin you want to hit, how much revenue does that take?</p>
+        <div class="grid-2"><label>Cost ($)<input id="mcRevCost" inputmode="decimal" placeholder="150" /></label><label>Target Margin (%)<input id="mcTargetMargin" inputmode="decimal" placeholder="30" /></label></div>
+        <div class="card" style="margin-top:12px;text-align:center;background:var(--bg)"><div class="hint">Revenue Needed</div><div id="mcRevNeeded" style="font-size:2.2em;font-weight:900;color:var(--brand)">—</div><div class="hint" id="mcRevNeededDetail">—</div></div>
+      </div>
+
+      <div id="utilPwgen" class="card util-panel no-print" hidden>
+        <h3>Password Generator</h3>
+        <p class="hint">Generated locally on your device using the browser's cryptographic random number generator — nothing is sent anywhere or stored.</p>
+        <label>Length: <span id="pgLengthVal">16</span><input id="pgLength" type="range" min="6" max="48" value="16" style="width:100%" /></label>
+        <div class="grid-2">
+          <label><input id="pgUpper" type="checkbox" checked /> Uppercase (A-Z)</label>
+          <label><input id="pgLower" type="checkbox" checked /> Lowercase (a-z)</label>
+          <label><input id="pgNumbers" type="checkbox" checked /> Numbers (0-9)</label>
+          <label><input id="pgSymbols" type="checkbox" checked /> Symbols (!@#$...)</label>
+        </div>
+        <label style="margin-top:6px"><input id="pgExcludeAmbiguous" type="checkbox" /> Exclude ambiguous characters (0/O, 1/l/I)</label>
+        <div class="card" style="margin-top:14px;text-align:center;background:var(--bg)">
+          <div class="hint">Generated Password</div>
+          <div id="pgResult" style="font-size:1.6em;font-weight:900;color:var(--brand);word-break:break-all;font-family:monospace">—</div>
+        </div>
+        <div class="actions" style="margin-top:10px"><button type="button" id="pgGenerateBtn">Generate</button><button type="button" id="pgCopyBtn" class="ghost">Copy</button></div>
+      </div>
+
       <div id="utilHealth" class="card util-panel no-print" hidden>
         <p class="hint">Nothing here is saved or stored anywhere, not even on this device — these numbers exist only while this screen is open, and disappear the moment you leave or close the tab.</p>
         <h3>BMI Calculator</h3>
@@ -606,7 +642,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><label>Primary color<input id="setColor" type="color" value="#0f4a45" /></label><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one sheet now. Auto-loads fresh every time the app opens.</p><label>CSV / Google Sheet export URL<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.32.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Warehouse Tools (including Age, Loan, Cost-per-Foot, and Axle Weight calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.33.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

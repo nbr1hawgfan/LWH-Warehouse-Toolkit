@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.33.0
+- **New: Margin Calculator** (Warehouse Tools) — Revenue + Cost gives Margin %, Profit $, and Markup % (the commonly-confused-with-margin number, shown separately on purpose). Reverse mode: enter Cost + a target Margin %, get the Revenue needed to hit it.
+- **New: Password Generator** (Warehouse Tools) — adjustable length, toggle uppercase/lowercase/numbers/symbols, optional exclude-ambiguous-characters (0/O, 1/l/I). Generated locally using the browser's cryptographic random source — nothing sent anywhere or stored.
+
 ## v1.32.0
 - **Generate Code and Scan Code are now their own top-level tabs**, pulled out of Warehouse Tools — same spot in the nav as Contact QR, plus Home screen quick-launch cards for both. Warehouse Tools keeps everything else.
 - **Generate Code: new "Print 4x6" button** — prints the QR/barcode formatted on a 6x4 label with the encoded text shown underneath, same print pattern as Rack Labels and Pallet Labels.

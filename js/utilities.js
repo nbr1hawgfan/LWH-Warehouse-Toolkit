@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','casecalc','axleweight','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -809,6 +809,70 @@
     [steer,steerLim,drive,driveLim,trailer,trailerLim,gross,grossLim].forEach(f=>f.addEventListener('input',calc));
   }
 
+  // ---------- Margin Calculator ----------
+  function initMarginCalc(){
+    const revenue=el('mcRevenue'), cost=el('mcCost'), marginOut=el('mcMargin'), profitOut=el('mcProfit'), markupOut=el('mcMarkup');
+    const revCost=el('mcRevCost'), targetMargin=el('mcTargetMargin'), revNeededOut=el('mcRevNeeded'), revNeededDetail=el('mcRevNeededDetail');
+    if(!revenue) return;
+    function calcForward(){
+      const r=parseFloat(revenue.value)||0, c=parseFloat(cost.value)||0;
+      if(!r){ marginOut.textContent='—'; profitOut.textContent='—'; markupOut.textContent='—'; return; }
+      const profit=r-c;
+      const margin=(profit/r)*100;
+      const markup=c>0?(profit/c)*100:0;
+      marginOut.textContent=margin.toFixed(1)+'%';
+      marginOut.style.color=margin<0?'var(--bad)':'var(--brand)';
+      profitOut.textContent='$'+profit.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      markupOut.textContent=c>0?markup.toFixed(1)+'%':'—';
+    }
+    function calcReverse(){
+      const c=parseFloat(revCost.value)||0, m=parseFloat(targetMargin.value);
+      if(!c || m===undefined || isNaN(m) || m>=100){ revNeededOut.textContent='—'; revNeededDetail.textContent=(m>=100)?'Margin must be under 100%':'—'; return; }
+      const revNeeded=c/(1-m/100);
+      const profit=revNeeded-c;
+      revNeededOut.textContent='$'+revNeeded.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      revNeededDetail.textContent=`Profit: $${profit.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+    }
+    [revenue,cost].forEach(f=>f.addEventListener('input',calcForward));
+    [revCost,targetMargin].forEach(f=>f.addEventListener('input',calcReverse));
+  }
+
+  // ---------- Password Generator ----------
+  function initPasswordGen(){
+    const lengthEl=el('pgLength'), lengthVal=el('pgLengthVal'), upper=el('pgUpper'), lower=el('pgLower'), numbers=el('pgNumbers'), symbols=el('pgSymbols'), excludeAmbiguous=el('pgExcludeAmbiguous'), result=el('pgResult'), genBtn=el('pgGenerateBtn'), copyBtn=el('pgCopyBtn');
+    if(!lengthEl) return;
+    const AMBIGUOUS=/[0O1lI]/g;
+    function charset(){
+      let upperChars='ABCDEFGHIJKLMNOPQRSTUVWXYZ', lowerChars='abcdefghijklmnopqrstuvwxyz', numberChars='0123456789', symbolChars='!@#$%^&*()-_=+[]{};:,.<>?';
+      let set='';
+      if(upper.checked) set+=upperChars;
+      if(lower.checked) set+=lowerChars;
+      if(numbers.checked) set+=numberChars;
+      if(symbols.checked) set+=symbolChars;
+      if(excludeAmbiguous.checked) set=set.replace(AMBIGUOUS,'');
+      return set;
+    }
+    function generate(){
+      const set=charset();
+      if(!set){ result.textContent='Pick at least one character type'; return; }
+      const len=+lengthEl.value;
+      const bytes=new Uint32Array(len);
+      crypto.getRandomValues(bytes);
+      let pw='';
+      for(let i=0;i<len;i++) pw+=set[bytes[i]%set.length];
+      result.textContent=pw;
+    }
+    lengthEl.addEventListener('input',()=>{ lengthVal.textContent=lengthEl.value; generate(); });
+    [upper,lower,numbers,symbols,excludeAmbiguous].forEach(cb=>cb.addEventListener('change',generate));
+    if(genBtn) genBtn.onclick=generate;
+    if(copyBtn) copyBtn.onclick=()=>{
+      const v=result.textContent;
+      if(!v || v==='—' || v==='Pick at least one character type') return;
+      navigator.clipboard?.writeText(v).then(()=>LWHUI.toast('Password copied')).catch(()=>{});
+    };
+    generate();
+  }
+
   // ---------- Case / Layer / Pallet Counter ----------
   function initCaseCalc(){
     const upc=el('ccUnitsPerCase'), cpl=el('ccCasesPerLayer'), lpp=el('ccLayersPerPallet'), upp=el('ccUnitsPerPallet'), uppDetail=el('ccUnitsDetail');
@@ -1039,5 +1103,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initCaseCalc(); initAxleWeight(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
 })();
