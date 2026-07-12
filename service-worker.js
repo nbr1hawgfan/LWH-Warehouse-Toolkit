@@ -1,17 +1,15 @@
-# LWH Warehouse Toolkit v1.5.0
-
-Internal Logistics Warehouse PWA for lookup, labels, receiving print, signs, contact QR cards, and visitor badges.
-
-## v1.5.0 focus
-- New **Warehouse Tools** section: calculator, unit converter, pallet footprint, notepad, basic document scanner.
-
-## v1.4.0 focus
-- **One data source.** Receiving/InvRec Print now reads from the same master sheet as Master Lookup, matching InvRec against the `INV_Receipt` column. No more keeping two CSVs in sync — see `docs/GOOGLE_SHEET_SETUP.md`.
-- Removed the now-unused legacy Inventory Lookup screen and Receiving Print Source setting.
-- Pallet labels: dropped the Details QR (per forklift driver feedback — it wasn't reliably scannable), widened the 1D barcode into that space, and added a large, high-contrast Item number for faster floor identification.
-- Added Vendor and Unique 8 to the printed label; Date Received/Description now only show when there's actual data for them.
-- Mobile nav collapses behind a menu button on phones; search results populate live as you type/scan.
-- Auto-print after generating labels from search results — no separate trip to a Print button.
-
-## Deployment
-Upload the full unzipped contents to the GitHub Pages repository root and hard refresh after deployment.
+const CACHE_NAME='lwh-toolkit-v1-31-0';
+const ASSETS=['./','./index.html','./manifest.json','./css/app.css','./css/print.css','./js/storage.js','./js/qr.js','./js/barcode.js','./js/ui.js','./js/labels.js','./js/visitors.js','./js/empbadge.js','./js/distance.js','./js/trailer.js','./js/picklist.js','./js/bol.js','./js/inventory.js','./js/scanner.js','./js/utilities.js','./js/app.js','./icons/icon-192.png','./icons/icon-512.png','./icons/favicon.png','./icons/shortcut-lookup.png','./icons/shortcut-picklist.png','./icons/shortcut-tools.png','./icons/shortcut-bol.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  const url=new URL(e.request.url);
+  if(url.origin!==location.origin){ e.respondWith(fetch(e.request,{cache:'no-store'})); return; }
+  const networkFirst=/\.(html|js|css)$/.test(url.pathname) || url.pathname.endsWith('/');
+  if(networkFirst){
+    e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone(); caches.open(CACHE_NAME).then(c=>c.put(e.request,copy)); return r;}).catch(()=>caches.match(e.request)));
+    return;
+  }
+  e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(r=>{const copy=r.clone(); caches.open(CACHE_NAME).then(c=>c.put(e.request,copy)); return r;})));
+});

@@ -1,53 +1,13 @@
-{
-  "name": "LWH Warehouse Toolkit",
-  "short_name": "LWH Toolkit",
-  "description": "Warehouse labels, signs, visitor badges, and inventory lookup for Logistics Warehouse.",
-  "start_url": "./index.html",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f4a45",
-  "icons": [
-    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ],
-  "shortcuts": [
-    {
-      "name": "Master Lookup",
-      "short_name": "Lookup",
-      "description": "Search inventory by LWH ID, item, customer, or bay",
-      "url": "./index.html?view=customerLookup",
-      "icons": [{ "src": "./icons/shortcut-lookup.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Pick List",
-      "short_name": "Pick List",
-      "description": "Filter and print a pick list or item summary",
-      "url": "./index.html?view=picklist",
-      "icons": [{ "src": "./icons/shortcut-picklist.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Warehouse Tools",
-      "short_name": "Tools",
-      "description": "Calculators, QR/barcode generator, and more",
-      "url": "./index.html?view=utilities",
-      "icons": [{ "src": "./icons/shortcut-tools.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Bill of Lading",
-      "short_name": "BOL",
-      "description": "Fill out and print a Bill of Lading",
-      "url": "./index.html?view=bol",
-      "icons": [{ "src": "./icons/shortcut-bol.png", "sizes": "192x192", "type": "image/png" }]
-    }
-  ],
-  "share_target": {
-    "action": "./index.html",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  }
-}
+# LWH Warehouse Toolkit v1.3.0
+
+## Biggest fix
+Master Lookup now actually auto-loads when the app opens. Before this release, only the Receiving CSV was fetched on startup — the Master Lookup screen (the one everyone searches) depended on whatever was cached from the last manual "Load / Refresh Data" click. Settings also had no field to view or change the Master Lookup source at all. Both are fixed: each source loads independently on open, and Settings now has a dedicated Master Lookup Source card.
+
+## Redesign
+New teal-based look and feel — spacing, type, and cards were cleaned up across every screen. Logo and color customization from Settings still work exactly as before; the default color is now a deep teal instead of maroon. Emoji in navigation and Quick Actions were replaced with a small custom icon set. Label, sign, and badge print output was not touched.
+
+## Camera scanning
+The camera scanner now uses the same approach proven reliable on iPhone in LWH_Master-Lookup (the html5-qrcode library), replacing the previous implementation.
+
+## Why
+Same goal as before: fewer wrong clicks, less confusion on the floor, fewer calls saying the app "isn't working" when it's really just waiting on stale data.
