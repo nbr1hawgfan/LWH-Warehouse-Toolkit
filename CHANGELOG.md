@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.34.0
+- **New: Square Footage Calculator** (Warehouse Tools) — for sizing up a new location. Add one row per building (Length × Width auto-computes Sq Ft), handles joined/multiple buildings, sums to a Total Square Footage.
+- **Built-in Cost/Margin section** — enter your cost ($/sq ft/yr) and a target margin %, and it works out the rate you'd need to charge to hit it, using the Total Square Footage from the building list above it.
+- **Export**: Copy Summary (plain text), Print Summary (formatted printable page), or Download CSV (building list + total, ready to paste into a spreadsheet or email).
+
 ## v1.33.0
 - **New: Margin Calculator** (Warehouse Tools) — Revenue + Cost gives Margin %, Profit $, and Markup % (the commonly-confused-with-margin number, shown separately on purpose). Reverse mode: enter Cost + a target Margin %, get the Revenue needed to hit it.
 - **New: Password Generator** (Warehouse Tools) — adjustable length, toggle uppercase/lowercase/numbers/symbols, optional exclude-ambiguous-characters (0/O, 1/l/I). Generated locally using the browser's cryptographic random source — nothing sent anywhere or stored.

@@ -8,7 +8,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -766,6 +766,126 @@
     annualRate.addEventListener('input',calc); sqFt.addEventListener('input',calc);
   }
 
+  // ---------- Square Footage Calculator (new-location sizing, cost/margin, export) ----------
+  function initSqftCalc(){
+    const rowsWrap=el('sqftRows'), addBtn=el('sqftAddRow');
+    const totalOut=el('sqftTotal'), totalDetail=el('sqftTotalDetail');
+    const costRate=el('sqftCostRate'), marginEl=el('sqftMargin');
+    const totalCostOut=el('sqftTotalCost'), revNeededOut=el('sqftRevNeeded'), rateNeededOut=el('sqftRateNeeded'), rateNeededDetail=el('sqftRateNeededDetail');
+    const copyBtn=el('sqftCopyBtn'), printBtn=el('sqftPrintBtn'), csvBtn=el('sqftCsvBtn'), printOutput=el('sqftPrintOutput');
+    if(!rowsWrap) return;
+
+    let rows=[{label:'Building 1',length:'',width:''}];
+
+    function rowSqFt(r){ const l=parseFloat(r.length)||0, w=parseFloat(r.width)||0; return l*w; }
+
+    function renderRows(){
+      rowsWrap.innerHTML=rows.map((r,i)=>{
+        const sqft=rowSqFt(r);
+        return `<div class="sqft-row" style="align-items:center;margin-bottom:8px">
+          <input data-sqft-field="label" data-sqft-idx="${i}" value="${String(r.label||'').replace(/"/g,'&quot;')}" placeholder="Building name" />
+          <input data-sqft-field="length" data-sqft-idx="${i}" value="${String(r.length||'').replace(/"/g,'&quot;')}" placeholder="Length (ft)" inputmode="decimal" />
+          <input data-sqft-field="width" data-sqft-idx="${i}" value="${String(r.width||'').replace(/"/g,'&quot;')}" placeholder="Width (ft)" inputmode="decimal" />
+        </div>
+        <div class="hint" style="margin:-4px 0 10px 2px">${sqft?sqft.toLocaleString()+' sq ft':'—'}${rows.length>1?` &nbsp;·&nbsp; <button type="button" class="ghost" data-sqft-remove="${i}" style="padding:2px 8px;font-size:.85em">Remove</button>`:''}</div>`;
+      }).join('');
+    }
+
+    function totalSqFt(){ return rows.reduce((s,r)=>s+rowSqFt(r),0); }
+
+    function calcAll(){
+      const total=totalSqFt();
+      totalOut.textContent=total.toLocaleString();
+      const withArea=rows.filter(r=>rowSqFt(r)>0).length;
+      totalDetail.textContent=withArea?`${withArea} building${withArea===1?'':'s'}`:'—';
+
+      const rate=parseFloat(costRate.value)||0;
+      const margin=parseFloat(marginEl.value);
+      if(!total || !rate){
+        totalCostOut.textContent='—'; revNeededOut.textContent='—'; rateNeededOut.textContent='—'; rateNeededDetail.textContent='—';
+        return;
+      }
+      const totalCost=rate*total;
+      totalCostOut.textContent='$'+totalCost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(margin===undefined || isNaN(margin) || margin>=100){
+        revNeededOut.textContent='—'; rateNeededOut.textContent='—'; rateNeededDetail.textContent=(margin>=100)?'Margin must be under 100%':'Enter a target margin';
+        return;
+      }
+      const revNeeded=totalCost/(1-margin/100);
+      const rateNeeded=revNeeded/total;
+      revNeededOut.textContent='$'+revNeeded.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      rateNeededOut.textContent='$'+rateNeeded.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+' / sq ft / yr';
+      rateNeededDetail.textContent='$'+(rateNeeded/12).toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4})+' / sq ft / mo';
+    }
+
+    rowsWrap.addEventListener('input',e=>{
+      const t=e.target; if(t.dataset.sqftIdx===undefined) return;
+      rows[+t.dataset.sqftIdx][t.dataset.sqftField]=t.value;
+      // Re-render just the sq-ft-per-row hint line without losing focus on every keystroke
+      const sqft=rowSqFt(rows[+t.dataset.sqftIdx]);
+      const hintLine=t.closest('.sqft-row').nextElementSibling;
+      if(hintLine) hintLine.innerHTML=`${sqft?sqft.toLocaleString()+' sq ft':'—'}${rows.length>1?` &nbsp;·&nbsp; <button type="button" class="ghost" data-sqft-remove="${t.dataset.sqftIdx}" style="padding:2px 8px;font-size:.85em">Remove</button>`:''}`;
+      calcAll();
+    });
+    rowsWrap.addEventListener('click',e=>{
+      const b=e.target.closest('[data-sqft-remove]'); if(!b) return;
+      rows.splice(+b.dataset.sqftRemove,1);
+      renderRows(); calcAll();
+    });
+    if(addBtn) addBtn.onclick=()=>{ rows.push({label:'Building '+(rows.length+1),length:'',width:''}); renderRows(); calcAll(); };
+    [costRate,marginEl].forEach(f=>f.addEventListener('input',calcAll));
+
+    function summaryLines(){
+      const lines=rows.filter(r=>rowSqFt(r)>0).map(r=>`${r.label||'(unnamed)'}: ${r.length}' x ${r.width}' = ${rowSqFt(r).toLocaleString()} sq ft`);
+      lines.push(`Total: ${totalSqFt().toLocaleString()} sq ft`);
+      if(totalCostOut.textContent!=='—'){
+        lines.push('');
+        lines.push(`Cost: $${costRate.value}/sq ft/yr → Total Annual Cost: ${totalCostOut.textContent}`);
+        if(rateNeededOut.textContent!=='—'){
+          lines.push(`Target Margin: ${marginEl.value}% → Revenue Needed: ${revNeededOut.textContent} → Rate to Charge: ${rateNeededOut.textContent} (${rateNeededDetail.textContent})`);
+        }
+      }
+      return lines;
+    }
+
+    if(copyBtn) copyBtn.onclick=()=>{
+      const text=summaryLines().join('\n');
+      navigator.clipboard?.writeText(text).then(()=>LWHUI.toast('Summary copied')).catch(()=>{});
+    };
+
+    if(printBtn) printBtn.onclick=()=>{
+      if(!printOutput) return;
+      const total=totalSqFt();
+      const rowsHtml=rows.filter(r=>rowSqFt(r)>0).map(r=>`<tr><td>${(r.label||'(unnamed)').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</td><td>${r.length}'</td><td>${r.width}'</td><td>${rowSqFt(r).toLocaleString()}</td></tr>`).join('');
+      const costRow = totalCostOut.textContent!=='—' ? `<p><b>Cost:</b> $${costRate.value}/sq ft/yr &nbsp; <b>Total Annual Cost:</b> ${totalCostOut.textContent}</p>` : '';
+      const marginRow = rateNeededOut.textContent!=='—' ? `<p><b>Target Margin:</b> ${marginEl.value}% &nbsp; <b>Revenue Needed:</b> ${revNeededOut.textContent} &nbsp; <b>Rate to Charge:</b> ${rateNeededOut.textContent} (${rateNeededDetail.textContent})</p>` : '';
+      printOutput.innerHTML='';
+      const pageEl=document.createElement('div');
+      pageEl.className='checklist-page';
+      pageEl.innerHTML=`<h1 style="font-size:20px;margin-bottom:4px">Square Footage Summary</h1><p style="color:#555;font-size:12px;margin-bottom:14px">Generated ${new Date().toLocaleString()}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Building</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Length</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Width</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Sq Ft</th></tr></thead>
+        <tbody>${rowsHtml}</tbody></table>
+        <p style="font-size:18px;font-weight:900;margin-top:12px">Total: ${total.toLocaleString()} sq ft</p>
+        ${costRow}${marginRow}`;
+      printOutput.append(pageEl);
+      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+      setTimeout(()=>window.print(),50);
+    };
+
+    if(csvBtn) csvBtn.onclick=()=>{
+      const csvRows=[['Building','Length (ft)','Width (ft)','Sq Ft']];
+      rows.filter(r=>rowSqFt(r)>0).forEach(r=>csvRows.push([r.label,r.length,r.width,rowSqFt(r)]));
+      csvRows.push(['Total','','',totalSqFt()]);
+      const csv=csvRows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='square-footage.csv'; document.body.append(a); a.click(); a.remove();
+      LWHUI.toast('CSV downloaded');
+    };
+
+    renderRows();
+    calcAll();
+  }
+
   // ---------- Axle Weight Check ----------
   function initAxleWeight(){
     const steer=el('awSteer'), steerLim=el('awSteerLimit');
@@ -1103,5 +1223,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
 })();
