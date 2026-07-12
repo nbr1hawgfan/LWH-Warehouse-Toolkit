@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.35.1
+- **Warehouse Tools moved up in the nav** — now sits right below Master Lookup, both in the top nav bar and on the Home screen quick-launch grid.
+- **8.5x11 Bay/Aisle Signs now has Smart Batch numbering**, same as Rack Labels — enter a Start (e.g. "MR201"), an End (e.g. "MR232"), and a pad width, hit Generate Batch, and it fills the sign list for you. Pasting your own list in still works exactly as before — Smart Batch just fills the same textarea, so you can still hand-edit before generating.
+
 ## v1.35.0
 - **New: "Clear This Tool" button** in Warehouse Tools — always visible next to the title, resets whichever calculator is currently open back to blank/default in one tap, instead of manually deleting each field. Works across the calculators; tools with their own dynamic rows (Distance Planner, Square Footage) get a proper full reset rather than a generic field-blank. (Every other form in the app — BOL, Pick List, Rack Labels, Trailer Checklist, etc. — already had its own Clear button; this fills the gap that was specifically in the calculators.)
 - **New: Standards Calculator** (Warehouse Tools) — Start/End time (with "= Now" quick-set buttons), pieces assembled (type it in, or "Scan to Count" to add 1 per scan), and the standard per hour off your posted list. Shows elapsed time, actual rate, and % to standard — plus how many pieces ahead or behind pace, not just a percentage.
