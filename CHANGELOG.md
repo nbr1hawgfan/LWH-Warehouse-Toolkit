@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.36.4
+- **Contact QR: office landline (479-410-2611) is now automatically included on every card** — both in the vCard data (as a separate "Work" number, distinct from the person's cell) and printed visibly on the card itself, so it shows whether someone scans it or just reads the card.
+- **Website field now defaults to https://logistics-warehouse.com** — one less thing to type; still editable if a card ever needs something different.
+- **Email field auto-completes the domain** — type just the username and tab/click away, and it fills in "@logistics-warehouse.com" automatically. Typing a full email with its own "@" is left alone.
+- Phone field relabeled "Cell Phone" for clarity now that the office line is automatic.
+
 ## v1.36.3
 - **Fixed Employee ID badge barcode not scanning** — the ID badge back is a portrait card (2.125in wide), too narrow for an 11+ character barcode to render at a scannable width; it was very likely getting clipped by the card's overflow boundary. The barcode now rotates 90° to run along the card's 3.375in height instead, which is plenty of room.
 - **Fixed Contact QR cards not splitting address into separate fields on import** — the whole typed address was being jammed into a single vCard field, so phones importing the contact only ever got one address line instead of separate Street/City/State/Zip. Contact QR now has dedicated Street/City/State/Zip fields that map correctly into the vCard, so it imports properly split on the receiving phone.

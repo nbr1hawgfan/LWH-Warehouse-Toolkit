@@ -314,7 +314,8 @@ if(window.palScanPrint){palScanPrint.onclick=()=>LWHScanner.start(value=>{
   if(!row){ LWHUI.toast(`No exact match for "${value}" — try Master Lookup`); return; }
   LWHInventory.printRows([row],palletOutput);
 });}
-conGenerate.onclick=()=>{LWHLabels.generateContact();applySettings()}; conSample.onclick=()=>{conName.value='Tim Jennings';conTitle.value='Operations';conCompany.value='Logistics Warehouse';conPhone.value='';conEmail.value='tjennings@logistics-warehouse.com';conWebsite.value='';conStreet.value='';conCity.value='';conState.value='';conZip.value=''};
+conGenerate.onclick=()=>{LWHLabels.generateContact();applySettings()}; conSample.onclick=()=>{conName.value='Tim Jennings';conTitle.value='Operations';conCompany.value='Logistics Warehouse';conPhone.value='';conEmail.value='tjennings@logistics-warehouse.com';conWebsite.value='https://logistics-warehouse.com';conStreet.value='';conCity.value='';conState.value='';conZip.value=''};
+conEmail.addEventListener('blur',()=>{ const v=conEmail.value.trim(); if(v && !v.includes('@')) conEmail.value=v+'@logistics-warehouse.com'; });
 visGenerate.onclick=()=>{LWHVisitors.generateVisitor();setTimeout(applySettings,100)}; visLogBtn.onclick=LWHVisitors.showVisitorLog;
 if(window.custScanBtn){custScanBtn.onclick=()=>LWHScanner.start(value=>{custSearch.value=value; custSearchBtn.click();});}
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
