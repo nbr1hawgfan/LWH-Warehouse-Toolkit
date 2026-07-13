@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.36.5
+- **Employee ID badge barcode: rewired the rotation to not depend on CSS transforms at all.** The previous fix rotated the barcode visually with a CSS transform, which looks right on screen but some mobile print/PDF pipelines are known to not reliably honor at actual print time — likely why it still weren't scanning. Now the rotation is baked directly into the barcode's own SVG content (its actual width/height/viewBox reflect the rotated shape), which is standard SVG rendering with no print-pipeline dependency. Verified the math directly: rotated, the barcode only needs about 0.44in × 2.05in — comfortably inside the 2.125in × 3.375in card.
+- **ID badge front now shows the company name as text if no logo has been uploaded yet** — previously showed nothing at all without a logo image. Note: Settings (including your logo) are stored per-device/browser, not synced — if the logo was set up on a different computer or browser than the one generating this badge, that's why it wasn't showing.
+
 ## v1.36.4
 - **Contact QR: office landline (479-410-2611) is now automatically included on every card** — both in the vCard data (as a separate "Work" number, distinct from the person's cell) and printed visibly on the card itself, so it shows whether someone scans it or just reads the card.
 - **Website field now defaults to https://logistics-warehouse.com** — one less thing to type; still editable if a card ever needs something different.

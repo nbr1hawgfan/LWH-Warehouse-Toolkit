@@ -18,7 +18,31 @@
   }
 
   function finishCodes(root){
-    root.querySelectorAll('.eb-barcode').forEach(svg=>{ if(window.LWHBarcode){ try{ LWHBarcode.make(svg,svg.dataset.barcode,{height:+svg.dataset.height||42,width:+svg.dataset.width||1.6}); }catch(e){} } });
+    root.querySelectorAll('.eb-barcode').forEach(svg=>{
+      if(!window.LWHBarcode) return;
+      try{
+        LWHBarcode.make(svg,svg.dataset.barcode,{height:+svg.dataset.height||42,width:+svg.dataset.width||1.6});
+        // The ID badge back is only 2.125in wide — too narrow for an 11+ char
+        // barcode at a scannable bar width. Rather than rotate it visually with
+        // a CSS transform (which some mobile print/PDF pipelines don't reliably
+        // honor at actual print time, even though it looks right on screen),
+        // rotate the SVG's own drawn content and swap its width/height/viewBox
+        // so the rotation is baked into the SVG itself — this is standard SVG
+        // rendering, not dependent on any print engine's CSS transform support.
+        if(svg.closest('.eb-barcode-rotated')){
+          const w=parseFloat(svg.getAttribute('width'))||0, h=parseFloat(svg.getAttribute('height'))||0;
+          if(w&&h){
+            const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+            while(svg.firstChild) g.appendChild(svg.firstChild);
+            g.setAttribute('transform',`translate(${h/2},${w/2}) rotate(90) translate(${-w/2},${-h/2})`);
+            svg.appendChild(g);
+            svg.setAttribute('width',h);
+            svg.setAttribute('height',w);
+            svg.setAttribute('viewBox',`0 0 ${h} ${w}`);
+          }
+        }
+      }catch(e){}
+    });
     root.querySelectorAll('.eb-qr').forEach(q=>{ if(window.LWHQR) LWHQR.make(q,q.dataset.qr,+q.dataset.size||90); });
   }
   function codeBlockHtml(id,codeType,qrSize){
@@ -42,9 +66,10 @@
   function idFrontHtml(name,dept,photo){
     const logo=LWHStorage.get('companyLogo','');
     const tagline=LWHStorage.get('companyTagline','');
+    const companyName=LWHStorage.get('companyName','Logistics Warehouse');
     const brand=LWHStorage.get('primaryColor','#0f4a45');
     return `<div class="employee-badge id-badge-card">
-      ${logo?`<img class="id-logo" src="${logo}" />`:''}
+      ${logo?`<img class="id-logo" src="${logo}" />`:`<div class="id-company-name" style="color:${safe(brand)}">${safe(companyName)}</div>`}
       ${tagline?`<div class="id-tagline" style="color:${safe(brand)}">${safe(tagline)}</div>`:''}
       ${photo?`<img class="id-photo" src="${photo}" />`:'<div class="id-photo id-photo-placeholder"></div>'}
       <div class="id-name">${safe(name)}</div>
