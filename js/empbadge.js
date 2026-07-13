@@ -52,7 +52,13 @@
     </div>`;
   }
   function idBackHtml(id,codeType){
-    return `<div class="employee-badge id-badge-card">${codeBlockHtml(id,codeType,110)}<div class="eb-id">${safe(id)}</div></div>`;
+    const code=codeBlockHtml(id,codeType,110);
+    // Barcode (not QR) gets rotated 90° here specifically — the ID badge back
+    // is a portrait card (2.125in wide), too narrow for an 11+ character
+    // barcode to render at a scannable bar width. Turning it sideways lets it
+    // use the card's 3.375in height instead, which is plenty of room.
+    const codeBlock = codeType==='qr' ? code : `<div class="eb-barcode-rotated">${code}</div>`;
+    return `<div class="employee-badge id-badge-card">${codeBlock}<div class="eb-id">${safe(id)}</div></div>`;
   }
 
   function generate(mode){

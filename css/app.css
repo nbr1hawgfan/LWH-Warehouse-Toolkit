@@ -302,6 +302,8 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .eb-code{margin-top:.03in}
 .eb-code svg{max-width:90%;height:auto}
 .eb-code .qrbox{width:1in;height:1in;margin:0 auto}
+.eb-barcode-rotated{width:1in;height:2.8in;position:relative;margin:0 auto}
+.eb-barcode-rotated svg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(90deg);transform-origin:center center}
 .eb-id{font-size:.12in;font-weight:700;margin-top:.03in}
 
 /* =========================================================================

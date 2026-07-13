@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.36.3
+- **Fixed Employee ID badge barcode not scanning** — the ID badge back is a portrait card (2.125in wide), too narrow for an 11+ character barcode to render at a scannable width; it was very likely getting clipped by the card's overflow boundary. The barcode now rotates 90° to run along the card's 3.375in height instead, which is plenty of room.
+- **Fixed Contact QR cards not splitting address into separate fields on import** — the whole typed address was being jammed into a single vCard field, so phones importing the contact only ever got one address line instead of separate Street/City/State/Zip. Contact QR now has dedicated Street/City/State/Zip fields that map correctly into the vCard, so it imports properly split on the receiving phone.
+
 ## v1.36.2
 - **Translate: expanded Quick Phrases** from 6 to 13 — added driver license request, driver info form, signature request, dock backing instruction, paperwork return, restroom location, and "I don't understand, please repeat" — reordered to follow a natural arrival-to-departure flow at the dock.
 
