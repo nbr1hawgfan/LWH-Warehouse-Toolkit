@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.35.2
+- **Converter: added Area (sq ft ↔ sq m) and Temperature (°C ↔ °F)** — same live two-way pattern as the existing Weight/Length/Volume sections. Area pairs naturally with the Square Footage Calculator for reading overseas landlord/manufacturer quotes.
+
 ## v1.35.1
 - **Warehouse Tools moved up in the nav** — now sits right below Master Lookup, both in the top nav bar and on the Home screen quick-launch grid.
 - **8.5x11 Bay/Aisle Signs now has Smart Batch numbering**, same as Rack Labels — enter a Start (e.g. "MR201"), an End (e.g. "MR232"), and a pad width, hit Generate Batch, and it fills the sign list for you. Pasting your own list in still works exactly as before — Smart Batch just fills the same textarea, so you can still hand-edit before generating.

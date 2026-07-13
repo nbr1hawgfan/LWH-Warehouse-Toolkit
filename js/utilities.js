@@ -102,10 +102,11 @@
   // ---------- Unit converter (linked fields — type into any one, others update) ----------
   function initConvert(){
     const kg=el('cvKg'), lb=el('cvLb'), oz=el('cvOz'), inch=el('cvIn'), ft=el('cvFt'), cm=el('cvCm'), m=el('cvM');
+    const sqft=el('cvSqft'), sqm=el('cvSqm'), cTemp=el('cvC'), fTemp=el('cvF');
     const gal=el('cvGal'), liter=el('cvLiter'), qt=el('cvQt'), floz=el('cvFloz');
     const lwGal=el('lwGal'), lwDensity=el('lwDensity'), lwLb=el('lwLb');
     if(!kg) return;
-    const KG_LB=2.2046226218, IN_CM=2.54, GAL_L=3.785411784;
+    const KG_LB=2.2046226218, IN_CM=2.54, GAL_L=3.785411784, SQM_SQFT=10.7639104167;
 
     // Weight: kg / lb / oz, any field drives the other two
     kg.addEventListener('input',()=>{ const v=parseFloat(kg.value); if(isNaN(v)){lb.value=oz.value='';return;} const l=v*KG_LB; lb.value=round(l,3); oz.value=round(l*16,2); });
@@ -117,6 +118,14 @@
     ft.addEventListener('input',()=>{ const v=parseFloat(ft.value); if(isNaN(v)){inch.value=cm.value=m.value='';return;} inch.value=round(v*12,3); cm.value=round(v*12*IN_CM,3); m.value=round(v*12*IN_CM/100,4); });
     cm.addEventListener('input',()=>{ const v=parseFloat(cm.value); if(isNaN(v)){inch.value=ft.value=m.value='';return;} const i=v/IN_CM; inch.value=round(i,3); ft.value=round(i/12,3); m.value=round(v/100,4); });
     m.addEventListener('input',()=>{ const v=parseFloat(m.value); if(isNaN(v)){inch.value=ft.value=cm.value='';return;} const i=(v*100)/IN_CM; inch.value=round(i,3); ft.value=round(i/12,3); cm.value=round(v*100,3); });
+
+    // Area: sq ft / sq m
+    sqft.addEventListener('input',()=>{ const v=parseFloat(sqft.value); if(isNaN(v)){sqm.value='';return;} sqm.value=round(v/SQM_SQFT,3); });
+    sqm.addEventListener('input',()=>{ const v=parseFloat(sqm.value); if(isNaN(v)){sqft.value='';return;} sqft.value=round(v*SQM_SQFT,3); });
+
+    // Temperature: C / F
+    cTemp.addEventListener('input',()=>{ const v=parseFloat(cTemp.value); if(isNaN(v)){fTemp.value='';return;} fTemp.value=round(v*9/5+32,2); });
+    fTemp.addEventListener('input',()=>{ const v=parseFloat(fTemp.value); if(isNaN(v)){cTemp.value='';return;} cTemp.value=round((v-32)*5/9,2); });
 
     // Volume: gal / L / qt / fl oz
     gal.addEventListener('input',()=>{ const v=parseFloat(gal.value); if(isNaN(v)){liter.value=qt.value=floz.value='';return;} liter.value=round(v*GAL_L,3); qt.value=round(v*4,3); floz.value=round(v*128,2); });
