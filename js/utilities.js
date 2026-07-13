@@ -12,7 +12,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','standards','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -930,6 +930,99 @@
     };
   }
 
+  // ---------- Rack Capacity Calculator ----------
+  function initRackCap(){
+    const rowsWrap=el('rackcapRows'), addBtn=el('rackcapAddRow');
+    const totalOut=el('rackcapTotal'), totalDetail=el('rackcapTotalDetail');
+    const copyBtn=el('rackcapCopyBtn'), printBtn=el('rackcapPrintBtn'), csvBtn=el('rackcapCsvBtn'), printOutput=el('rackcapPrintOutput');
+    if(!rowsWrap) return;
+
+    let rows=[{label:'Racking Type 1',units:'',levels:'',sections:''}];
+
+    function rowSpots(r){ const u=parseFloat(r.units)||0, l=parseFloat(r.levels)||0, s=parseFloat(r.sections)||0; return u*l*s; }
+
+    function renderRows(){
+      rowsWrap.innerHTML=rows.map((r,i)=>{
+        const spots=rowSpots(r);
+        return `<div class="rackcap-row" style="align-items:center;margin-bottom:8px">
+          <input data-rc-field="label" data-rc-idx="${i}" value="${String(r.label||'').replace(/"/g,'&quot;')}" placeholder="Racking type name" />
+          <input data-rc-field="units" data-rc-idx="${i}" value="${String(r.units||'').replace(/"/g,'&quot;')}" placeholder="Units/layer" inputmode="numeric" />
+          <input data-rc-field="levels" data-rc-idx="${i}" value="${String(r.levels||'').replace(/"/g,'&quot;')}" placeholder="Levels (w/ ground)" inputmode="numeric" />
+          <input data-rc-field="sections" data-rc-idx="${i}" value="${String(r.sections||'').replace(/"/g,'&quot;')}" placeholder="Sections" inputmode="numeric" />
+        </div>
+        <div class="hint" style="margin:-4px 0 10px 2px">${spots?spots.toLocaleString()+' pallet spots':'—'}${rows.length>1?` &nbsp;·&nbsp; <button type="button" class="ghost" data-rc-remove="${i}" style="padding:2px 8px;font-size:.85em">Remove</button>`:''}</div>`;
+      }).join('');
+    }
+
+    function totalSpots(){ return rows.reduce((s,r)=>s+rowSpots(r),0); }
+
+    function calcAll(){
+      const total=totalSpots();
+      totalOut.textContent=total.toLocaleString();
+      const withSpots=rows.filter(r=>rowSpots(r)>0).length;
+      totalDetail.textContent=withSpots?`${withSpots} racking type${withSpots===1?'':'s'}`:'—';
+    }
+
+    rowsWrap.addEventListener('input',e=>{
+      const t=e.target; if(t.dataset.rcIdx===undefined) return;
+      rows[+t.dataset.rcIdx][t.dataset.rcField]=t.value;
+      const spots=rowSpots(rows[+t.dataset.rcIdx]);
+      const hintLine=t.closest('.rackcap-row').nextElementSibling;
+      if(hintLine) hintLine.innerHTML=`${spots?spots.toLocaleString()+' pallet spots':'—'}${rows.length>1?` &nbsp;·&nbsp; <button type="button" class="ghost" data-rc-remove="${t.dataset.rcIdx}" style="padding:2px 8px;font-size:.85em">Remove</button>`:''}`;
+      calcAll();
+    });
+    rowsWrap.addEventListener('click',e=>{
+      const b=e.target.closest('[data-rc-remove]'); if(!b) return;
+      rows.splice(+b.dataset.rcRemove,1);
+      renderRows(); calcAll();
+    });
+    if(addBtn) addBtn.onclick=()=>{ rows.push({label:'Racking Type '+(rows.length+1),units:'',levels:'',sections:''}); renderRows(); calcAll(); };
+
+    function summaryLines(){
+      const lines=rows.filter(r=>rowSpots(r)>0).map(r=>`${r.label||'(unnamed)'}: ${r.units} units/layer x ${r.levels} levels x ${r.sections} sections = ${rowSpots(r).toLocaleString()} pallet spots`);
+      lines.push(`Total: ${totalSpots().toLocaleString()} pallet spots`);
+      return lines;
+    }
+
+    if(copyBtn) copyBtn.onclick=()=>{
+      navigator.clipboard?.writeText(summaryLines().join('\n')).then(()=>LWHUI.toast('Summary copied')).catch(()=>{});
+    };
+
+    if(printBtn) printBtn.onclick=()=>{
+      if(!printOutput) return;
+      const total=totalSpots();
+      const rowsHtml=rows.filter(r=>rowSpots(r)>0).map(r=>`<tr><td>${(r.label||'(unnamed)').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</td><td>${r.units}</td><td>${r.levels}</td><td>${r.sections}</td><td>${rowSpots(r).toLocaleString()}</td></tr>`).join('');
+      printOutput.innerHTML='';
+      const pageEl=document.createElement('div');
+      pageEl.className='checklist-page';
+      pageEl.innerHTML=`<h1 style="font-size:20px;margin-bottom:4px">Rack Capacity Summary</h1><p style="color:#555;font-size:12px;margin-bottom:14px">Generated ${new Date().toLocaleString()}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Racking Type</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Units/Layer</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Levels</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Sections</th><th style="text-align:left;border-bottom:2px solid #000;padding:4px">Pallet Spots</th></tr></thead>
+        <tbody>${rowsHtml}</tbody></table>
+        <p style="font-size:18px;font-weight:900;margin-top:12px">Total: ${total.toLocaleString()} pallet spots</p>`;
+      printOutput.append(pageEl);
+      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+      setTimeout(()=>window.print(),50);
+    };
+
+    if(csvBtn) csvBtn.onclick=()=>{
+      const csvRows=[['Racking Type','Units/Layer','Levels','Sections','Pallet Spots']];
+      rows.filter(r=>rowSpots(r)>0).forEach(r=>csvRows.push([r.label,r.units,r.levels,r.sections,rowSpots(r)]));
+      csvRows.push(['Total','','','',totalSpots()]);
+      const csv=csvRows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='rack-capacity.csv'; document.body.append(a); a.click(); a.remove();
+      LWHUI.toast('CSV downloaded');
+    };
+
+    renderRows();
+    calcAll();
+    window.LWHToolClear.rackcap=()=>{
+      rows=[{label:'Racking Type 1',units:'',levels:'',sections:''}];
+      renderRows(); calcAll();
+      if(printOutput) printOutput.innerHTML='';
+    };
+  }
+
   // ---------- Standards Calculator (production pace vs. posted standard) ----------
   function initStandardsCalc(){
     const startEl=el('stStart'), endEl=el('stEnd'), startNowBtn=el('stStartNow'), endNowBtn=el('stEndNow');
@@ -1316,5 +1409,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initRackCap(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
 })();

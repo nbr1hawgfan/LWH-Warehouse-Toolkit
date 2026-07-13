@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.36.0
+- **New: Rack Capacity Calculator** (Warehouse Tools) — Units per Layer × Levels (including ground) × Sections gives pallet spots, fast enough for a live customer conversation. Add a row per racking type if a facility mixes configurations (some runs 4-tier, some 5-tier), summed to a Total Pallet Spots. Same export options as Square Footage: Copy Summary, Print Summary, Download CSV.
+
 ## v1.35.2
 - **Converter: added Area (sq ft ↔ sq m) and Temperature (°C ↔ °F)** — same live two-way pattern as the existing Weight/Length/Volume sections. Area pairs naturally with the Square Footage Calculator for reading overseas landlord/manufacturer quotes.
 
