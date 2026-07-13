@@ -1363,15 +1363,36 @@
   const TRANSLATE_QUICK_PHRASES=[
     'I need your paperwork.',
     'What is your pickup or delivery number?',
-    'Please go to the dock number posted.',
-    'Please wait here.',
     'Do you have your Bill of Lading?',
+    'Please back into dock 5.',
+    'Please go to the dock number posted.',
+    'Please fill out this form with your driver information, including your phone number.',
+    "I need a copy of your driver's license, please.",
+    'Please sign here.',
+    'Please wait here.',
+    'We will bring your paperwork out when we are done.',
+    'The restroom is across from our shipping/receiving office.',
+    "I don't understand. Please repeat that.",
     'Thank you, have a safe trip.'
   ];
   const SPEECH_LANG_MAP={en:'en-US',es:'es-ES',ru:'ru-RU',fr:'fr-FR',pt:'pt-PT',zh:'zh-CN',ar:'ar-SA',vi:'vi-VN'};
   function initTranslate(){
     const from=el('trFrom'), to=el('trTo'), input=el('trInput'), result=el('trResult'), goBtn=el('trGo'), swapBtn=el('trSwap'), voiceBtn=el('trVoiceBtn'), phrasesWrap=el('trQuickPhrases');
+    const speakBtn=el('trSpeakBtn'), autoSpeak=el('trAutoSpeak');
     if(!input) return;
+
+    const speechOk='speechSynthesis' in window;
+    if(speechOk && speakBtn) speakBtn.hidden=false;
+    let lastSpokenText='', lastSpokenLang='en-US';
+    function speak(text,langCode){
+      if(!speechOk || !text) return;
+      window.speechSynthesis.cancel(); // stop anything already playing before starting the new one
+      const u=new SpeechSynthesisUtterance(text);
+      u.lang=SPEECH_LANG_MAP[langCode]||'en-US';
+      lastSpokenText=text; lastSpokenLang=u.lang;
+      window.speechSynthesis.speak(u);
+    }
+    if(speakBtn) speakBtn.onclick=()=>speak(lastSpokenText||result.textContent,to.value);
 
     async function translate(text){
       if(!text||!text.trim()){ result.textContent='Type, paste, or speak something first.'; return; }
@@ -1384,6 +1405,7 @@
         const translated=data && data.responseData && data.responseData.translatedText;
         if(!translated) throw new Error('No translation returned');
         result.textContent=translated;
+        if(autoSpeak && autoSpeak.checked) speak(translated,to.value);
       }catch(e){
         result.textContent='Translation failed: '+e.message+' — check your connection and try again';
       }
@@ -1391,6 +1413,7 @@
 
     goBtn.onclick=()=>translate(input.value);
     swapBtn.onclick=()=>{
+      if(speechOk) window.speechSynthesis.cancel();
       const f=from.value; from.value=to.value; to.value=f;
       const prevResult=result.textContent;
       if(prevResult && prevResult!=='—' && !prevResult.startsWith('Translation failed') && !prevResult.startsWith('Type')){

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.36.2
+- **Translate: expanded Quick Phrases** from 6 to 13 — added driver license request, driver info form, signature request, dock backing instruction, paperwork return, restroom location, and "I don't understand, please repeat" — reordered to follow a natural arrival-to-departure flow at the dock.
+
+## v1.36.1
+- **Translate tool now speaks the translation aloud** — using the browser's built-in text-to-speech (no account, no API, works offline once the page is loaded). Auto-plays right after translating (toggle-able), plus a "Play Aloud" button to replay it without re-translating. Uses the same language-code mapping already set up for voice input, so it speaks in the right accent/language automatically.
+
 ## v1.36.0
 - **New: Rack Capacity Calculator** (Warehouse Tools) — Units per Layer × Levels (including ground) × Sections gives pallet spots, fast enough for a live customer conversation. Add a row per racking type if a facility mixes configurations (some runs 4-tier, some 5-tier), summed to a Total Pallet Spots. Same export options as Square Footage: Copy Summary, Print Summary, Download CSV.
 
