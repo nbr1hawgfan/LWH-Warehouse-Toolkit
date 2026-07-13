@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.37.0
+- **Pallet Footprint: new "Storage Revenue vs. Cost" section**, extending the existing "Reverse: How Many Pallets Fit?" calculation — enter a customer storage fee ($ per pallet/unit per month), and it shows potential monthly revenue from the pallet capacity already calculated, against the cost of that same footprint (using the existing Rate field), plus profit and margin %. Built for sizing up a bid on the spot: pallet size in, available space in, revenue vs. cost out.
+
 ## v1.36.5
 - **Employee ID badge barcode: rewired the rotation to not depend on CSS transforms at all.** The previous fix rotated the barcode visually with a CSS transform, which looks right on screen but some mobile print/PDF pipelines are known to not reliably honor at actual print time — likely why it still weren't scanning. Now the rotation is baked directly into the barcode's own SVG content (its actual width/height/viewBox reflect the rotated shape), which is standard SVG rendering with no print-pipeline dependency. Verified the math directly: rotated, the barcode only needs about 0.44in × 2.05in — comfortably inside the 2.125in × 3.375in card.
 - **ID badge front now shows the company name as text if no logo has been uploaded yet** — previously showed nothing at all without a logo image. Note: Settings (including your logo) are stored per-device/browser, not synced — if the logo was set up on a different computer or browser than the one generating this badge, that's why it wasn't showing.

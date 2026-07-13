@@ -194,12 +194,32 @@
     function calcReverseCapacity(){
       const avail=parseFloat(availSqFt.value)||0, s=Math.max(1,parseFloat(stack.value)||1), a=parseFloat(aisle.value)||0;
       const pFt=palletSqFt();
-      if(!avail||!pFt){ seCapacity.textContent='0 pallets'; seCapacityDetail.textContent='—'; return; }
+      if(!avail||!pFt){ seCapacity.textContent='0 pallets'; seCapacityDetail.textContent='—'; calcRevenueVsCost(0,avail); return; }
       const usable=avail/(1+a/100);
       const positions=Math.floor(usable/pFt);
       const capacity=positions*s;
       seCapacity.textContent=capacity.toLocaleString()+' pallets';
       seCapacityDetail.textContent=`${positions.toLocaleString()} floor position(s) × stack of ${s}`;
+      calcRevenueVsCost(capacity,avail);
+    }
+    // Revenue side: capacity × customer fee per pallet/unit per month.
+    // Cost side: the same footprint (avail sq ft) × the Rate field above, so both
+    // sides of the comparison share one assumed $/sq ft cost basis.
+    function calcRevenueVsCost(capacity,avail){
+      const feeEl=el('seFeePerPallet'), revOut=el('seRevenue'), costOut=el('seFootprintCost'), profitOut=el('seProfit'), profitDetail=el('seProfitDetail');
+      if(!feeEl) return;
+      const fee=parseFloat(feeEl.value)||0, r=parseFloat(rate.value)||0;
+      if(!capacity||!fee){ revOut.textContent='—'; costOut.textContent='—'; profitOut.textContent='—'; profitDetail.textContent='—'; return; }
+      const revenue=capacity*fee;
+      const cost=avail*r;
+      revOut.textContent='$'+revenue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      costOut.textContent=r?'$'+cost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'Enter a Rate above';
+      if(!r){ profitOut.textContent='—'; profitDetail.textContent='Enter a Rate above to compare against cost'; return; }
+      const profit=revenue-cost;
+      const margin=revenue?(profit/revenue)*100:0;
+      profitOut.textContent='$'+profit.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      profitOut.style.color=profit>=0?'var(--good)':'var(--bad)';
+      profitDetail.textContent=`${margin.toFixed(0)}% margin — ${capacity.toLocaleString()} pallets × $${fee}/mo`;
     }
     function recalcAll(){ calcSingleFootprint(); calcStorageSpace(); calcReverseCapacity(); }
 
@@ -217,8 +237,10 @@
     stack.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); });
     aisle.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); });
     aisle.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); });
-    if(rate){ rate.addEventListener('input',calcStorageSpace); rate.addEventListener('change',calcStorageSpace); }
+    if(rate){ rate.addEventListener('input',()=>{ calcStorageSpace(); calcReverseCapacity(); }); rate.addEventListener('change',()=>{ calcStorageSpace(); calcReverseCapacity(); }); }
     availSqFt.addEventListener('input',calcReverseCapacity); availSqFt.addEventListener('change',calcReverseCapacity);
+    const feeEl=el('seFeePerPallet');
+    if(feeEl){ feeEl.addEventListener('input',calcReverseCapacity); feeEl.addEventListener('change',calcReverseCapacity); }
 
     recalcAll();
   }
