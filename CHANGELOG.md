@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.37.1
+- **Pallet Footprint: added a 52.17×44.49 quick preset** for the new project, alongside the existing Standard/Bulk/Euro/Small presets.
+
 ## v1.37.0
 - **Pallet Footprint: new "Storage Revenue vs. Cost" section**, extending the existing "Reverse: How Many Pallets Fit?" calculation — enter a customer storage fee ($ per pallet/unit per month), and it shows potential monthly revenue from the pallet capacity already calculated, against the cost of that same footprint (using the existing Rate field), plus profit and margin %. Built for sizing up a bid on the spot: pallet size in, available space in, revenue vs. cost out.
 
