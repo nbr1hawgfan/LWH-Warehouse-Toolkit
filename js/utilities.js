@@ -266,7 +266,7 @@
 
   // ---------- Basic document scanner ----------
   let scanStream=null;
-  const scanPagesData=[]; // {canvas, enhanced}
+  const scanPagesData=[]; // {canvas}
   function stopScannerCamera(){
     if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
     const wrap=el('scanCameraWrap'), openBtn=el('scanCaptureBtn'), closeBtn=el('scanCloseBtn');
@@ -277,6 +277,7 @@
       scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
       const video=el('scanVideo'); video.srcObject=scanStream;
       try{ await video.play(); }catch(playErr){ /* some browsers auto-play once metadata loads; ignore */ }
+      const editWrap=el('scanEditWrap'); if(editWrap) editWrap.hidden=true;
       el('scanCameraWrap').hidden=false; el('scanCaptureBtn').hidden=true; el('scanCloseBtn').hidden=false;
     }catch(e){ alert('Could not open the camera: '+e.message+'\n\nMake sure the page is served over HTTPS and camera permission is allowed.'); }
   }
@@ -285,19 +286,149 @@
     const canvas=document.createElement('canvas');
     canvas.width=video.videoWidth; canvas.height=video.videoHeight;
     canvas.getContext('2d').drawImage(video,0,0);
-    scanPagesData.push({canvas,enhanced:false});
-    renderScanPages();
+    el('scanCameraWrap').hidden=true;
+    loadImageToScanEditor(canvas.toDataURL('image/jpeg',0.92));
   }
-  function enhanceCanvas(canvas){
-    const ctx=canvas.getContext('2d');
-    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-    const d=img.data; const contrast=1.35, mid=128;
-    for(let i=0;i<d.length;i+=4){
-      const gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-      const v=Math.max(0,Math.min(255,(gray-mid)*contrast+mid));
-      d[i]=d[i+1]=d[i+2]=v;
+
+  // ---------- Crop / rotate / filter editor ----------
+  // Ported from a companion project's document scanner (same Pointer Events
+  // technique already used by this app's own signature pads) — a lightweight
+  // canvas-based crop rect with draggable corner handles, no external library,
+  // works fully offline. Straightening/cropping happens once here, before a
+  // page is ever added to the list, rather than as an after-the-fact fix.
+  const scanEditor={rawImage:null,rotation:0,filter:'none',processedCanvas:null,scale:1,rect:null,dragMode:null,dragHandle:null,dragStart:null};
+
+  function loadImageToScanEditor(src){
+    const img=new Image();
+    img.onload=()=>{
+      scanEditor.rawImage=img; scanEditor.rotation=0; scanEditor.filter='none';
+      document.querySelectorAll('#scanEditWrap [data-filter]').forEach(c=>c.classList.toggle('active',c.dataset.filter==='none'));
+      processScanEditorBase();
+      resetScanCropRect();
+      renderScanEditor();
+      el('scanEditWrap').hidden=false;
+    };
+    img.onerror=()=>alert('Could not load that image.');
+    img.src=src;
+  }
+  function processScanEditorBase(){
+    const img=scanEditor.rawImage;
+    const MAXDIM=1400; // downsampled for smooth interactive dragging; the final crop is still taken from this resolution, which is plenty for print/OCR
+    let sw=img.width, sh=img.height;
+    const scaleDown=Math.min(1,MAXDIM/Math.max(sw,sh));
+    sw=Math.round(sw*scaleDown); sh=Math.round(sh*scaleDown);
+    const rotated=document.createElement('canvas');
+    const rot=scanEditor.rotation;
+    if(rot===90||rot===270){ rotated.width=sh; rotated.height=sw; } else { rotated.width=sw; rotated.height=sh; }
+    const rctx=rotated.getContext('2d');
+    rctx.save();
+    rctx.translate(rotated.width/2,rotated.height/2);
+    rctx.rotate(rot*Math.PI/180);
+    rctx.drawImage(img,-sw/2,-sh/2,sw,sh);
+    rctx.restore();
+    if(scanEditor.filter!=='none'){
+      const idata=rctx.getImageData(0,0,rotated.width,rotated.height);
+      const d=idata.data;
+      for(let i=0;i<d.length;i+=4){
+        let gray=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+        if(scanEditor.filter==='contrast') gray=(gray-128)*1.55+128+18; // "Sharpen" — grayscale plus a contrast/brightness push so faded text pops
+        gray=Math.max(0,Math.min(255,gray));
+        d[i]=d[i+1]=d[i+2]=gray;
+      }
+      rctx.putImageData(idata,0,0);
     }
-    ctx.putImageData(img,0,0);
+    scanEditor.processedCanvas=rotated;
+  }
+  function resetScanCropRect(){
+    const pc=scanEditor.processedCanvas, cropCanvas=el('scanCropCanvas');
+    const maxW=Math.min(600,pc.width);
+    scanEditor.scale=maxW/pc.width;
+    cropCanvas.width=maxW;
+    cropCanvas.height=Math.round(pc.height*scanEditor.scale);
+    const inset=0.06; // starts pre-cropped a bit in from the edges rather than full-bleed
+    scanEditor.rect={x:cropCanvas.width*inset,y:cropCanvas.height*inset,w:cropCanvas.width*(1-inset*2),h:cropCanvas.height*(1-inset*2)};
+  }
+  function renderScanEditor(){
+    const cropCanvas=el('scanCropCanvas'); if(!cropCanvas) return;
+    const cropCtx=cropCanvas.getContext('2d');
+    cropCtx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+    cropCtx.drawImage(scanEditor.processedCanvas,0,0,cropCanvas.width,cropCanvas.height);
+    const r=scanEditor.rect;
+    cropCtx.fillStyle='rgba(0,0,0,.55)';
+    cropCtx.fillRect(0,0,cropCanvas.width,r.y);
+    cropCtx.fillRect(0,r.y+r.h,cropCanvas.width,cropCanvas.height-r.y-r.h);
+    cropCtx.fillRect(0,r.y,r.x,r.h);
+    cropCtx.fillRect(r.x+r.w,r.y,cropCanvas.width-r.x-r.w,r.h);
+    cropCtx.strokeStyle='#2dd4bf';
+    cropCtx.lineWidth=2;
+    cropCtx.strokeRect(r.x,r.y,r.w,r.h);
+    const handles=scanCropHandlePositions();
+    cropCtx.fillStyle='#2dd4bf';
+    handles.forEach(h=>{ cropCtx.beginPath(); cropCtx.arc(h.x,h.y,8,0,Math.PI*2); cropCtx.fill(); });
+  }
+  function scanCropHandlePositions(){
+    const r=scanEditor.rect;
+    return [{x:r.x,y:r.y},{x:r.x+r.w,y:r.y},{x:r.x,y:r.y+r.h},{x:r.x+r.w,y:r.y+r.h}];
+  }
+  function scanCanvasPoint(e){
+    const cropCanvas=el('scanCropCanvas');
+    const rect=cropCanvas.getBoundingClientRect();
+    const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+    const cy=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;
+    return {x:cx*(cropCanvas.width/rect.width), y:cy*(cropCanvas.height/rect.height)};
+  }
+  function scanPointerDown(e){
+    const p=scanCanvasPoint(e);
+    const handles=scanCropHandlePositions();
+    for(let i=0;i<handles.length;i++){
+      if(Math.hypot(p.x-handles[i].x,p.y-handles[i].y)<26){ scanEditor.dragMode='handle'; scanEditor.dragHandle=i; return; }
+    }
+    const r=scanEditor.rect;
+    if(p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h){ scanEditor.dragMode='move'; scanEditor.dragStart={x:p.x-r.x,y:p.y-r.y}; }
+  }
+  function scanPointerMove(e){
+    if(!scanEditor.dragMode) return;
+    e.preventDefault();
+    const cropCanvas=el('scanCropCanvas');
+    const p=scanCanvasPoint(e);
+    const r=scanEditor.rect;
+    const minSize=40;
+    if(scanEditor.dragMode==='move'){
+      r.x=Math.max(0,Math.min(cropCanvas.width-r.w,p.x-scanEditor.dragStart.x));
+      r.y=Math.max(0,Math.min(cropCanvas.height-r.h,p.y-scanEditor.dragStart.y));
+    } else if(scanEditor.dragMode==='handle'){
+      const idx=scanEditor.dragHandle;
+      let {x,y,w,h}=r;
+      const right=x+w, bottom=y+h;
+      if(idx===0){ x=Math.min(p.x,right-minSize); y=Math.min(p.y,bottom-minSize); w=right-x; h=bottom-y; }
+      if(idx===1){ const newRight=Math.max(p.x,x+minSize); w=newRight-x; y=Math.min(p.y,bottom-minSize); h=bottom-y; }
+      if(idx===2){ x=Math.min(p.x,right-minSize); w=right-x; const newBottom=Math.max(p.y,y+minSize); h=newBottom-y; }
+      if(idx===3){ const newRight=Math.max(p.x,x+minSize); w=newRight-x; const newBottom=Math.max(p.y,y+minSize); h=newBottom-y; }
+      r.x=Math.max(0,x); r.y=Math.max(0,y);
+      r.w=Math.min(w,cropCanvas.width-r.x);
+      r.h=Math.min(h,cropCanvas.height-r.y);
+    }
+    renderScanEditor();
+  }
+  function scanPointerUp(){ scanEditor.dragMode=null; }
+
+  function useScanCrop(){
+    const r=scanEditor.rect;
+    const sx=r.x/scanEditor.scale, sy=r.y/scanEditor.scale;
+    const sw=r.w/scanEditor.scale, sh=r.h/scanEditor.scale;
+    const out=document.createElement('canvas');
+    out.width=Math.round(sw); out.height=Math.round(sh);
+    out.getContext('2d').drawImage(scanEditor.processedCanvas,sx,sy,sw,sh,0,0,out.width,out.height);
+    scanPagesData.push({canvas:out});
+    el('scanEditWrap').hidden=true;
+    renderScanPages();
+    // Keep multi-page capture fast: if the camera's still live, jump straight
+    // back to it for the next page instead of making the driver tap Open Camera again.
+    if(scanStream){ el('scanCameraWrap').hidden=false; } else { el('scanCaptureBtn').hidden=false; }
+  }
+  function retakeScan(){
+    el('scanEditWrap').hidden=true;
+    if(scanStream){ el('scanCameraWrap').hidden=false; } else { el('scanCaptureBtn').hidden=false; }
   }
   function renderScanPages(){
     const wrap=el('scanPages'); if(!wrap) return;
@@ -308,17 +439,13 @@
       div.append(img);
       const label=document.createElement('div'); label.innerHTML=`<b>Page ${i+1}</b>`; div.append(label);
       const actions=document.createElement('div'); actions.className='actions';
-      const enhanceBtn=document.createElement('button'); enhanceBtn.type='button'; enhanceBtn.className='ghost';
-      enhanceBtn.textContent=p.enhanced?'Enhanced':'Enhance';
-      enhanceBtn.disabled=p.enhanced;
-      enhanceBtn.onclick=()=>{ enhanceCanvas(p.canvas); p.enhanced=true; renderScanPages(); };
       const ocrBtn=document.createElement('button'); ocrBtn.type='button'; ocrBtn.className='ghost';
       ocrBtn.textContent=p.ocrRunning?'Extracting…':'Extract Text';
       ocrBtn.disabled=!!p.ocrRunning;
       ocrBtn.onclick=()=>extractText(p);
       const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.className='ghost'; removeBtn.textContent='Remove';
       removeBtn.onclick=()=>{ scanPagesData.splice(i,1); renderScanPages(); };
-      actions.append(enhanceBtn,ocrBtn,removeBtn);
+      actions.append(ocrBtn,removeBtn);
       div.append(actions);
       if(p.ocrText!=null){
         const ta=document.createElement('textarea'); ta.rows=4; ta.style.marginTop='8px'; ta.value=p.ocrText;
@@ -398,7 +525,48 @@
     el('scanShareAll').onclick=shareAllPages;
     const pdfBtn=el('scanDownloadPdf'); if(pdfBtn) pdfBtn.onclick=downloadAsPdf;
     el('scanClearAll').onclick=()=>{ scanPagesData.length=0; renderScanPages(); };
-    window.LWHToolClear.scanner=()=>{ scanPagesData.length=0; renderScanPages(); };
+    window.LWHToolClear.scanner=()=>{
+      scanPagesData.length=0; renderScanPages();
+      const editWrap=el('scanEditWrap'); if(editWrap) editWrap.hidden=true;
+      stopScannerCamera();
+    };
+
+    const uploadBtn=el('scanUploadBtn'), fileInput=el('scanFileInput');
+    if(uploadBtn&&fileInput){
+      uploadBtn.onclick=()=>fileInput.click();
+      fileInput.addEventListener('change',e=>{
+        const file=e.target.files[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=()=>loadImageToScanEditor(reader.result);
+        reader.readAsDataURL(file);
+        e.target.value='';
+      });
+    }
+
+    const cropCanvas=el('scanCropCanvas');
+    if(cropCanvas){
+      cropCanvas.addEventListener('pointerdown',scanPointerDown);
+      cropCanvas.addEventListener('pointermove',scanPointerMove);
+      window.addEventListener('pointerup',scanPointerUp);
+    }
+    const rotateBtn=el('scanRotateBtn');
+    if(rotateBtn) rotateBtn.onclick=()=>{
+      scanEditor.rotation=(scanEditor.rotation+90)%360;
+      processScanEditorBase();
+      resetScanCropRect();
+      renderScanEditor();
+    };
+    document.querySelectorAll('#scanEditWrap [data-filter]').forEach(chip=>{
+      chip.addEventListener('click',()=>{
+        scanEditor.filter=chip.dataset.filter;
+        document.querySelectorAll('#scanEditWrap [data-filter]').forEach(c=>c.classList.remove('active'));
+        chip.classList.add('active');
+        processScanEditorBase();
+        renderScanEditor();
+      });
+    });
+    const useBtn=el('scanUseCropBtn'); if(useBtn) useBtn.onclick=useScanCrop;
+    const retakeBtn=el('scanRetakeBtn'); if(retakeBtn) retakeBtn.onclick=retakeScan;
   }
 
   // ---------- Ad-hoc QR/Barcode generator ----------
