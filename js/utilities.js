@@ -486,8 +486,8 @@
       // top, code underneath — reusing those exact classes/helpers so this
       // stays visually and behaviorally consistent with Rack Labels.
       const codeHtml = mode==='qr'
-        ? `<div class="qrbox" data-qr="${v.replace(/"/g,'&quot;')}" data-size="230"></div>`
-        : `<div class="barcode-wrap"><svg data-barcode="${v.replace(/"/g,'&quot;')}" data-height="140" data-width="3.2"></svg><div class="barcode-text">${escaped}</div></div>`;
+        ? `<div class="qrbox" data-qr="${v.replace(/"/g,'&quot;')}" data-size="126"></div>`
+        : `<div class="barcode-wrap"><svg data-barcode="${v.replace(/"/g,'&quot;')}" data-height="105" data-width="3"></svg><div class="barcode-text">${escaped}</div></div>`;
       const html = `<div class="rack-title">${escaped}</div><div class="rack-code-row" style="justify-content:center">${codeHtml}</div>`;
       const pageEl=document.createElement('div');
       pageEl.className='label-page rack-label rack-normal';

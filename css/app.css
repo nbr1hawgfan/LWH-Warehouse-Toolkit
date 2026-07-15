@@ -236,6 +236,7 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .rack-code-row .barcode-wrap{width:3.55in}
 .rack-code-row svg{max-width:100%}
 .rack-code-row .qrbox{width:1.35in;height:1.35in}
+.rack-code-row .qrbox canvas,.rack-code-row .qrbox img{max-width:100%!important;max-height:100%!important}
 
 @media(max-width:900px){
   .print-area{overflow:auto}

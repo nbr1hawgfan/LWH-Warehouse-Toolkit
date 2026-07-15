@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.37.3
+- **Fixed Generate Code's Print 4x6 rendering the QR code (and barcode) oversized, causing it to overlap the text box above it.** The QR was being generated at 2.4in while its container box is only 1.35in, so it bled outward in every direction with nothing to clip it, including up into the title box. Now sized to match Rack Labels' own actual defaults exactly. Also added a safety clamp so a QR/barcode can never visually overflow its box like this again, regardless of size setting.
+
 ## v1.37.2
 - **Generate Code: Print 4x6 now matches the Rack Labels layout** — large bordered auto-fit text box on top (same as Rack Labels, shrinks to fit long text automatically), QR or barcode below. Built for relabeling product that doesn't carry your barcode, where inventory needs to read the text at a glance rather than squint at small print.
 
