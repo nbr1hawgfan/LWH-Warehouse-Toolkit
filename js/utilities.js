@@ -481,18 +481,23 @@
       if(!v){ alert('Type something first to generate a code.'); return; }
       if(!printOutput || !window.LWHLabels){ return; }
       printOutput.innerHTML='';
+      const escaped=v.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      // Same layout as the 4x6 Rack Labels: large bordered auto-fit text box on
+      // top, code underneath — reusing those exact classes/helpers so this
+      // stays visually and behaviorally consistent with Rack Labels.
       const codeHtml = mode==='qr'
-        ? `<div class="qrbox" data-qr="${v.replace(/"/g,'&quot;')}" data-size="220"></div>`
-        : `<div class="barcode-wrap"><svg data-barcode="${v.replace(/"/g,'&quot;')}" data-height="120" data-width="3"></svg></div>`;
-      const html = `<div class="code-print-code">${codeHtml}</div><div class="code-print-text">${v.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</div>`;
+        ? `<div class="qrbox" data-qr="${v.replace(/"/g,'&quot;')}" data-size="230"></div>`
+        : `<div class="barcode-wrap"><svg data-barcode="${v.replace(/"/g,'&quot;')}" data-height="140" data-width="3.2"></svg><div class="barcode-text">${escaped}</div></div>`;
+      const html = `<div class="rack-title">${escaped}</div><div class="rack-code-row" style="justify-content:center">${codeHtml}</div>`;
       const pageEl=document.createElement('div');
-      pageEl.className='label-page code-label';
+      pageEl.className='label-page rack-label rack-normal';
       pageEl.innerHTML=html;
       printOutput.append(pageEl);
       // finishBarcodes lives in labels.js and turns the data-qr/data-barcode
       // placeholders above into the actual rendered code — same helper every
       // other printable label in the app already uses.
       if(window.finishBarcodes) finishBarcodes(printOutput);
+      if(window.autoFitRackTitles) autoFitRackTitles(printOutput);
       if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(6,4);
       LWHStorage.set('printJobs',(+LWHStorage.get('printJobs',0))+1);
       setTimeout(()=>window.print(),50);

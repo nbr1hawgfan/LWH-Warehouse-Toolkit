@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.37.2
+- **Generate Code: Print 4x6 now matches the Rack Labels layout** — large bordered auto-fit text box on top (same as Rack Labels, shrinks to fit long text automatically), QR or barcode below. Built for relabeling product that doesn't carry your barcode, where inventory needs to read the text at a glance rather than squint at small print.
+
 ## v1.37.1
 - **Pallet Footprint: added a 52.17×44.49 quick preset** for the new project, alongside the existing Standard/Bulk/Euro/Small presets.
 
