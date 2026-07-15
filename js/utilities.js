@@ -12,7 +12,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','scanner','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -439,13 +439,17 @@
       div.append(img);
       const label=document.createElement('div'); label.innerHTML=`<b>Page ${i+1}</b>`; div.append(label);
       const actions=document.createElement('div'); actions.className='actions';
+      const upBtn=document.createElement('button'); upBtn.type='button'; upBtn.className='ghost'; upBtn.textContent='↑ Move Up'; upBtn.disabled=(i===0);
+      upBtn.onclick=()=>{ [scanPagesData[i-1],scanPagesData[i]]=[scanPagesData[i],scanPagesData[i-1]]; renderScanPages(); };
+      const downBtn=document.createElement('button'); downBtn.type='button'; downBtn.className='ghost'; downBtn.textContent='↓ Move Down'; downBtn.disabled=(i===scanPagesData.length-1);
+      downBtn.onclick=()=>{ [scanPagesData[i+1],scanPagesData[i]]=[scanPagesData[i],scanPagesData[i+1]]; renderScanPages(); };
       const ocrBtn=document.createElement('button'); ocrBtn.type='button'; ocrBtn.className='ghost';
       ocrBtn.textContent=p.ocrRunning?'Extracting…':'Extract Text';
       ocrBtn.disabled=!!p.ocrRunning;
       ocrBtn.onclick=()=>extractText(p);
       const removeBtn=document.createElement('button'); removeBtn.type='button'; removeBtn.className='ghost'; removeBtn.textContent='Remove';
       removeBtn.onclick=()=>{ scanPagesData.splice(i,1); renderScanPages(); };
-      actions.append(ocrBtn,removeBtn);
+      actions.append(upBtn,downBtn,ocrBtn,removeBtn);
       div.append(actions);
       if(p.ocrText!=null){
         const ta=document.createElement('textarea'); ta.rows=4; ta.style.marginTop='8px'; ta.value=p.ocrText;
@@ -514,7 +518,10 @@
       if(h>maxH){ h=maxH; w=h*ratio; }
       doc.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
     });
-    doc.save('scanned-document.pdf');
+    const nameEl=el('scanPdfName');
+    let filename=(nameEl&&nameEl.value.trim())||'';
+    filename=filename.replace(/[^a-z0-9\-_ ]/gi,'').trim()||'scanned-document';
+    doc.save(filename+'.pdf');
     LWHUI.toast('PDF downloaded');
   }
   function initScanner(){

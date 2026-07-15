@@ -37,7 +37,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.38.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo" hidden></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.39.0</div></div></div>
     <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
@@ -46,6 +46,7 @@
       <button class="nav-btn active" data-view="home"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button>
       <button class="nav-btn" data-view="customerLookup"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>Master Lookup</button>
       <button class="nav-btn" data-view="utilities"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg>Warehouse Tools</button>
+      <button class="nav-btn" data-view="docscan"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Doc Scanner</button>
       <button class="nav-btn" data-view="rack"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>4x6 Rack Labels</button>
       <button class="nav-btn" data-view="signs"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>8.5x11 Signs</button>
       <button class="nav-btn" data-view="pallet"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Pallet Labels</button>
@@ -67,7 +68,8 @@
       <h3>Quick Actions</h3>
       <div class="module-grid">
         <button class="module-card" data-view="customerLookup"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></div><b>Master Lookup</b><span>Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.</span></button>
-        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, document scanner, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
+        <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
+        <button class="module-card" data-view="docscan"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><b>Doc Scanner</b><span>Scan paperwork, crop and straighten it, extract text, and share or download as a PDF — multi-page.</span></button>
         <button class="module-card" data-view="rack"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><b>Rack Labels</b><span>4x6 bay tags with 1D barcode and QR.</span></button>
         <button class="module-card" data-view="signs"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg></div><b>Bay Signs</b><span>8.5x11 warehouse signage with barcode.</span></button>
         <button class="module-card" data-view="pallet"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></div><b>Pallet Labels</b><span>Simple entry, bulk paste, and print from lookup.</span></button>
@@ -323,13 +325,12 @@
     </section>
 
     <section id="utilities" class="view">
-      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools <button type="button" id="utilClearActive" class="ghost" style="font-size:.6em;vertical-align:middle;margin-left:10px">Clear This Tool</button></h2><p class="hint">Calculator, unit converter, pallet footprint, age/loan/cost-per-foot calculators, scratch notepad, and document scanner — no need to leave the app. (Generate Code and Scan Code have their own tabs now.) "Clear This Tool" resets whichever calculator is currently open back to blank/default — handy between employees, trucks, or locations.</p>
+      <div class="card no-print" style="margin-bottom:16px"><h2>Warehouse Tools <button type="button" id="utilClearActive" class="ghost" style="font-size:.6em;vertical-align:middle;margin-left:10px">Clear This Tool</button></h2><p class="hint">Calculator, unit converter, pallet footprint, age/loan/cost-per-foot calculators, and scratch notepad — no need to leave the app. (Generate Code, Scan Code, and Doc Scanner have their own tabs now.) "Clear This Tool" resets whichever calculator is currently open back to blank/default — handy between employees, trucks, or locations.</p>
         <div class="segmented" id="utilTabs">
           <button type="button" class="seg active" data-util="calc">Calculator</button>
           <button type="button" class="seg" data-util="convert">Converter</button>
           <button type="button" class="seg" data-util="pallet">Pallet Footprint</button>
           <button type="button" class="seg" data-util="notepad">Notepad</button>
-          <button type="button" class="seg" data-util="scanner">Doc Scanner</button>
           <button type="button" class="seg" data-util="message">Quick Message</button>
           <button type="button" class="seg" data-util="trailercube">Trailer Cube</button>
           <button type="button" class="seg" data-util="datecalc">Date Calc</button>
@@ -427,30 +428,6 @@
       <div id="utilNotepad" class="card util-panel no-print" hidden>
         <label>Notes<textarea id="notepadText" rows="12" placeholder="Quick notes... saved automatically on this device."></textarea></label>
         <div class="actions"><button type="button" id="notepadScanBtn" class="ghost">Scan to Notes</button><button type="button" id="notepadCopy">Copy to Clipboard</button><button type="button" id="notepadEmail" class="ghost">Email This</button><button type="button" id="notepadClear" class="ghost">Clear</button></div>
-      </div>
-
-      <div id="utilScanner" class="card util-panel no-print" hidden>
-        <p class="hint">Snap photos of paperwork, crop and straighten them, extract the text to copy elsewhere, or share/download as a PDF. Supports multiple pages. Text extraction works best on printed text — it's not meant for handwriting.</p>
-        <div class="actions"><button type="button" id="scanCaptureBtn">Open Camera</button><button type="button" id="scanCloseBtn" class="ghost" hidden>Close Camera</button><button type="button" id="scanUploadBtn" class="ghost">Choose Photo</button><input type="file" id="scanFileInput" accept="image/*" hidden /></div>
-        <div id="scanCameraWrap" hidden style="margin-top:12px">
-          <video id="scanVideo" playsinline muted autoplay></video>
-          <div class="actions"><button type="button" id="scanSnapBtn">Capture Page</button></div>
-        </div>
-
-        <div id="scanEditWrap" hidden style="margin-top:14px">
-          <p class="hint">Drag the corner handles to crop, straighten, and cut out anything that isn't the document.</p>
-          <canvas id="scanCropCanvas" style="max-width:100%;touch-action:none;border-radius:8px;border:1px solid var(--line);display:block;margin:0 auto"></canvas>
-          <div class="actions" style="margin-top:10px;justify-content:center">
-            <button type="button" id="scanRotateBtn" class="ghost">Rotate 90°</button>
-            <button type="button" id="scanFilterNone" class="seg active" data-filter="none">Original</button>
-            <button type="button" id="scanFilterBw" class="seg" data-filter="bw">B&amp;W</button>
-            <button type="button" id="scanFilterSharp" class="seg" data-filter="contrast">Sharpen</button>
-          </div>
-          <div class="actions" style="margin-top:10px"><button type="button" id="scanUseCropBtn">Use This Scan</button><button type="button" id="scanRetakeBtn" class="ghost">Retake</button></div>
-        </div>
-
-        <div id="scanPages" class="cust-grid" style="margin-top:14px"></div>
-        <div class="actions" id="scanBulkActions" hidden><button type="button" id="scanDownloadPdf">Download as PDF</button><button type="button" id="scanShareAll" class="ghost">Share All Pages</button><button type="button" id="scanClearAll" class="ghost">Clear All</button></div>
       </div>
 
       <div id="utilMessage" class="card util-panel no-print" hidden>
@@ -731,9 +708,42 @@
       </div>
     </section>
 
+    <section id="docscan" class="view no-print">
+      <div class="card">
+        <h2>Doc Scanner</h2>
+        <p class="hint">Snap photos of paperwork, crop and straighten them, extract the text to copy elsewhere, or share/download as a PDF. Supports multiple pages. Text extraction works best on printed text — it's not meant for handwriting.</p>
+        <div class="actions"><button type="button" id="scanCaptureBtn">Open Camera</button><button type="button" id="scanCloseBtn" class="ghost" hidden>Close Camera</button><button type="button" id="scanUploadBtn" class="ghost">Choose Photo</button><input type="file" id="scanFileInput" accept="image/*" hidden /></div>
+        <div id="scanCameraWrap" hidden style="margin-top:12px">
+          <div style="position:relative;display:inline-block">
+            <video id="scanVideo" playsinline muted autoplay></video>
+            <div style="position:absolute;inset:6%;border:3px dashed rgba(255,255,255,.85);border-radius:8px;pointer-events:none;box-shadow:0 0 0 2000px rgba(0,0,0,.15)"></div>
+          </div>
+          <div class="actions"><button type="button" id="scanSnapBtn">Capture Page</button></div>
+        </div>
+
+        <div id="scanEditWrap" hidden style="margin-top:14px">
+          <p class="hint">Drag the corner handles to crop, straighten, and cut out anything that isn't the document.</p>
+          <canvas id="scanCropCanvas" style="max-width:100%;touch-action:none;border-radius:8px;border:1px solid var(--line);display:block;margin:0 auto"></canvas>
+          <div class="actions" style="margin-top:10px;justify-content:center">
+            <button type="button" id="scanRotateBtn" class="ghost">Rotate 90°</button>
+            <button type="button" id="scanFilterNone" class="seg active" data-filter="none">Original</button>
+            <button type="button" id="scanFilterBw" class="seg" data-filter="bw">B&amp;W</button>
+            <button type="button" id="scanFilterSharp" class="seg" data-filter="contrast">Sharpen</button>
+          </div>
+          <div class="actions" style="margin-top:10px"><button type="button" id="scanUseCropBtn">Use This Scan</button><button type="button" id="scanRetakeBtn" class="ghost">Retake</button></div>
+        </div>
+
+        <div id="scanPages" class="cust-grid" style="margin-top:14px"></div>
+        <div id="scanBulkActions" hidden style="margin-top:10px">
+          <label>PDF filename (optional)<input type="text" id="scanPdfName" placeholder="scanned-document" /></label>
+          <div class="actions"><button type="button" id="scanDownloadPdf">Download as PDF</button><button type="button" id="scanShareAll" class="ghost">Share All Pages</button><button type="button" id="scanClearAll" class="ghost">Clear All</button></div>
+        </div>
+      </div>
+    </section>
+
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><label>Primary color<input id="setColor" type="color" value="#0f4a45" /></label><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one sheet now. Auto-loads fresh every time the app opens.</p><label>CSV / Google Sheet export URL<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default CSV</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.38.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.39.0</p><p>Built for Logistics Warehouse Operations.</p><h3>Modules</h3><p>Master Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Doc Scanner, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

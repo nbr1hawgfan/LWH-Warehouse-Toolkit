@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.39.0
+- **Doc Scanner promoted to its own top-level tab**, right below Warehouse Tools in the nav bar and on the Home screen — no longer buried inside Warehouse Tools.
+- **New: framing guide overlay** on the camera view — a dashed guide with a dimmed surround to help line the document up before tapping the shutter.
+- **New: Move Up / Move Down per page** — fix a page that got captured out of order without needing to retake anything.
+- **New: optional PDF filename field** — name the export (e.g. a BOL or PO number) instead of always getting "scanned-document.pdf".
+
 ## v1.38.0
 - **Doc Scanner: real crop/rotate/filter editor**, ported from a companion project's document scanner (same Pointer Events technique already used by this app's own signature pads — proven to work well across devices). After capturing a page, drag the four corner handles to crop out anything that isn't the document, rotate in 90° steps, and pick Original/B&W/Sharpen — all before the page ever lands in your list, rather than fixing it after.
 - **New: Choose Photo** — pick an existing photo instead of shooting through the in-app camera, for anyone who already snapped it with their regular camera app.
