@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.38.0
+- **Doc Scanner: real crop/rotate/filter editor**, ported from a companion project's document scanner (same Pointer Events technique already used by this app's own signature pads — proven to work well across devices). After capturing a page, drag the four corner handles to crop out anything that isn't the document, rotate in 90° steps, and pick Original/B&W/Sharpen — all before the page ever lands in your list, rather than fixing it after.
+- **New: Choose Photo** — pick an existing photo instead of shooting through the in-app camera, for anyone who already snapped it with their regular camera app.
+- Multi-page capture stays fast: after finishing a page, it jumps straight back to a still-live camera for the next one instead of requiring another tap to reopen it.
+- Removed the old per-page "Enhance" button — filtering now happens during the crop step, before a page is saved, not as an after-the-fact fix.
+
 ## v1.37.3
 - **Fixed Generate Code's Print 4x6 rendering the QR code (and barcode) oversized, causing it to overlap the text box above it.** The QR was being generated at 2.4in while its container box is only 1.35in, so it bled outward in every direction with nothing to clip it, including up into the title box. Now sized to match Rack Labels' own actual defaults exactly. Also added a safety clamp so a QR/barcode can never visually overflow its box like this again, regardless of size setting.
 
