@@ -99,7 +99,10 @@ textarea{resize:vertical}
 
 .scan-page{display:flex;flex-direction:column;gap:8px}
 .scan-thumb{width:100%;border-radius:8px;border:1px solid var(--line)}
-#scanVideo{width:100%;border-radius:12px;background:#000;max-height:60vh}
+#scanVideo{width:100%;border-radius:12px;background:#000;max-height:60vh;object-fit:contain;display:block}
+.scan-loupe{position:absolute;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;z-index:10}
+#scanSnapBtn.armed{background:var(--good);animation:scan-capture-pulse .6s ease-in-out infinite}
+@keyframes scan-capture-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 #tcLicenseVideo{width:100%;border-radius:12px;background:#000;max-height:60vh}
 #genQrBox{display:inline-block}
 .panel details{margin-top:10px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px;background:var(--bg)}

@@ -267,7 +267,10 @@
   // ---------- Basic document scanner ----------
   let scanStream=null;
   const scanPagesData=[]; // {canvas}
+  let scanLiveTimer=null, scanLiveBusy=false, scanStabilityHistory=[], scanAutoCaptureArmed=false;
+
   function stopScannerCamera(){
+    stopScanLiveDetection();
     if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
     const wrap=el('scanCameraWrap'), openBtn=el('scanCaptureBtn'), closeBtn=el('scanCloseBtn');
     if(wrap) wrap.hidden=true; if(openBtn) openBtn.hidden=false; if(closeBtn) closeBtn.hidden=true;
@@ -279,10 +282,12 @@
       try{ await video.play(); }catch(playErr){ /* some browsers auto-play once metadata loads; ignore */ }
       const editWrap=el('scanEditWrap'); if(editWrap) editWrap.hidden=true;
       el('scanCameraWrap').hidden=false; el('scanCaptureBtn').hidden=true; el('scanCloseBtn').hidden=false;
+      startScanLiveDetection();
     }catch(e){ alert('Could not open the camera: '+e.message+'\n\nMake sure the page is served over HTTPS and camera permission is allowed.'); }
   }
   function capturePage(){
     const video=el('scanVideo'); if(!video||!video.videoWidth) return;
+    stopScanLiveDetection();
     const canvas=document.createElement('canvas');
     canvas.width=video.videoWidth; canvas.height=video.videoHeight;
     canvas.getContext('2d').drawImage(video,0,0);
@@ -290,13 +295,120 @@
     loadImageToScanEditor(canvas.toDataURL('image/jpeg',0.92));
   }
 
-  // ---------- Crop / rotate / filter editor ----------
-  // Ported from a companion project's document scanner (same Pointer Events
-  // technique already used by this app's own signature pads) — a lightweight
-  // canvas-based crop rect with draggable corner handles, no external library,
-  // works fully offline. Straightening/cropping happens once here, before a
-  // page is ever added to the list, rather than as an after-the-fact fix.
-  const scanEditor={rawImage:null,rotation:0,filter:'none',processedCanvas:null,scale:1,rect:null,dragMode:null,dragHandle:null,dragStart:null};
+  // ---------- Live edge detection (camera preview) ----------
+  // Runs a lightweight auto-detect pass on the live feed every ~450ms and
+  // draws the found outline as an overlay. When it holds steady across a
+  // few consecutive checks, it captures on its own — tapping Capture Page
+  // always still works too, any time.
+  function startScanLiveDetection(){
+    stopScanLiveDetection();
+    scanStabilityHistory=[]; scanAutoCaptureArmed=false;
+    const snapBtn=el('scanSnapBtn'); if(snapBtn) snapBtn.classList.remove('armed');
+    scanLiveTimer=setInterval(scanLiveDetectTick,450);
+  }
+  function stopScanLiveDetection(){
+    if(scanLiveTimer){ clearInterval(scanLiveTimer); scanLiveTimer=null; }
+    scanStabilityHistory=[]; scanAutoCaptureArmed=false;
+    const snapBtn=el('scanSnapBtn'); if(snapBtn) snapBtn.classList.remove('armed');
+    const overlay=el('scanLiveOverlay');
+    if(overlay) overlay.getContext('2d').clearRect(0,0,overlay.width,overlay.height);
+  }
+  function scanLiveDetectTick(){
+    if(scanLiveBusy||!scanStream) return;
+    const video=el('scanVideo'); if(!video||!video.videoWidth||!video.videoHeight) return;
+    if(!window.DocAutoDetect||!DocAutoDetect.isReady()){ drawScanDefaultGuide(); return; }
+    scanLiveBusy=true;
+    try{
+      const targetW=420;
+      const scale=targetW/video.videoWidth;
+      const ds=document.createElement('canvas');
+      ds.width=Math.round(video.videoWidth*scale); ds.height=Math.round(video.videoHeight*scale);
+      ds.getContext('2d').drawImage(video,0,0,ds.width,ds.height);
+      const detected=DocAutoDetect.detectCorners(ds);
+      if(detected){
+        const norm=detected.map(p=>({x:p.x/ds.width,y:p.y/ds.height}));
+        const stable=trackScanStability(norm);
+        drawScanLiveOverlay(norm,stable);
+        if(stable&&!scanAutoCaptureArmed){
+          scanAutoCaptureArmed=true;
+          const snapBtn=el('scanSnapBtn'); if(snapBtn) snapBtn.classList.add('armed');
+          setTimeout(()=>{ if(scanLiveTimer) capturePage(); },350);
+        }
+      } else {
+        scanStabilityHistory=[];
+        if(scanAutoCaptureArmed){ scanAutoCaptureArmed=false; const snapBtn=el('scanSnapBtn'); if(snapBtn) snapBtn.classList.remove('armed'); }
+        drawScanDefaultGuide();
+      }
+    }catch(err){ console.error('Live detect error:',err); }
+    finally{ scanLiveBusy=false; }
+  }
+  function trackScanStability(norm){
+    const cx=(norm[0].x+norm[1].x+norm[2].x+norm[3].x)/4;
+    const cy=(norm[0].y+norm[1].y+norm[2].y+norm[3].y)/4;
+    const area=Math.abs(scanShoelaceArea(norm));
+    scanStabilityHistory.push({cx,cy,area});
+    if(scanStabilityHistory.length>4) scanStabilityHistory.shift();
+    if(scanStabilityHistory.length<4) return false;
+    if(area<0.12) return false;
+    const spread=arr=>Math.max(...arr)-Math.min(...arr);
+    return spread(scanStabilityHistory.map(h=>h.cx))<0.025
+        && spread(scanStabilityHistory.map(h=>h.cy))<0.025
+        && spread(scanStabilityHistory.map(h=>h.area))<0.06;
+  }
+  function scanShoelaceArea(pts){
+    let sum=0;
+    for(let i=0;i<pts.length;i++){ const a=pts[i],b=pts[(i+1)%pts.length]; sum+=a.x*b.y-b.x*a.y; }
+    return sum/2;
+  }
+  // Maps the video's raw frame coords onto its displayed box (object-fit:
+  // contain letterboxes rather than crops) so the overlay lines up with what
+  // the driver actually sees.
+  function scanVideoDisplayRect(){
+    const video=el('scanVideo');
+    const containerW=video.clientWidth, containerH=video.clientHeight;
+    const videoRatio=video.videoWidth/video.videoHeight;
+    const containerRatio=containerW/containerH;
+    let dispW,dispH,offX,offY;
+    if(videoRatio>containerRatio){ dispW=containerW; dispH=containerW/videoRatio; offX=0; offY=(containerH-dispH)/2; }
+    else { dispH=containerH; dispW=containerH*videoRatio; offY=0; offX=(containerW-dispW)/2; }
+    return {dispW,dispH,offX,offY,containerW,containerH};
+  }
+  function scanSyncOverlaySize(){
+    const canvas=el('scanLiveOverlay'); const rect=scanVideoDisplayRect();
+    if(canvas.width!==rect.containerW) canvas.width=rect.containerW;
+    if(canvas.height!==rect.containerH) canvas.height=rect.containerH;
+    return rect;
+  }
+  function drawScanDefaultGuide(){
+    const canvas=el('scanLiveOverlay'); const rect=scanSyncOverlaySize();
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.setLineDash([8,8]); ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=3;
+    const pad=24;
+    ctx.strokeRect(rect.offX+pad,rect.offY+pad,rect.dispW-pad*2,rect.dispH-pad*2);
+    ctx.setLineDash([]);
+  }
+  function drawScanLiveOverlay(normPoints,stable){
+    const canvas=el('scanLiveOverlay'); const rect=scanSyncOverlaySize();
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const pts=normPoints.map(p=>({x:rect.offX+p.x*rect.dispW,y:rect.offY+p.y*rect.dispH}));
+    ctx.strokeStyle=stable?'#1a7a1a':'#0f4a45';
+    ctx.fillStyle=stable?'rgba(26,122,26,.18)':'rgba(15,74,69,.18)';
+    ctx.lineWidth=stable?4:3;
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y)); ctx.closePath();
+    ctx.stroke(); ctx.fill();
+  }
+
+  // ---------- Crop / straighten / filter editor ----------
+  // Rebuilt from a simple axis-aligned crop rectangle to a full four-corner
+  // perspective editor: OpenCV.js auto-detects the document's corners (see
+  // js/doc-auto-detect.js) and shows them as draggable handles so a driver
+  // can nudge them if lighting or an odd angle threw off the auto-detect.
+  // "Use This Scan" then perspective-warps to those corners rather than a
+  // plain rectangular crop, which is what actually straightens a page shot
+  // at an angle instead of just cropping around it.
+  const scanEditor={rawImage:null,rotation:0,filter:'none',processedCanvas:null,scale:1,corners:null,dragIndex:-1};
 
   function loadImageToScanEditor(src){
     const img=new Image();
@@ -304,7 +416,7 @@
       scanEditor.rawImage=img; scanEditor.rotation=0; scanEditor.filter='none';
       document.querySelectorAll('#scanEditWrap [data-filter]').forEach(c=>c.classList.toggle('active',c.dataset.filter==='none'));
       processScanEditorBase();
-      resetScanCropRect();
+      resetScanCropCorners();
       renderScanEditor();
       el('scanEditWrap').hidden=false;
     };
@@ -339,36 +451,77 @@
     }
     scanEditor.processedCanvas=rotated;
   }
-  function resetScanCropRect(){
+  // Auto-detects the document's corners on the processed (rotated/filtered)
+  // canvas. If OpenCV isn't warmed up yet, falls back to a default inset box
+  // immediately and re-detects once it's ready, so the driver never has to
+  // wait on a blank editor.
+  function resetScanCropCorners(){
     const pc=scanEditor.processedCanvas, cropCanvas=el('scanCropCanvas');
     const maxW=Math.min(600,pc.width);
     scanEditor.scale=maxW/pc.width;
     cropCanvas.width=maxW;
     cropCanvas.height=Math.round(pc.height*scanEditor.scale);
-    const inset=0.06; // starts pre-cropped a bit in from the edges rather than full-bleed
-    scanEditor.rect={x:cropCanvas.width*inset,y:cropCanvas.height*inset,w:cropCanvas.width*(1-inset*2),h:cropCanvas.height*(1-inset*2)};
+
+    const hint=el('scanEditHint');
+    const applyDetected=(detected)=>{
+      scanEditor.corners=detected
+        ? DocAutoDetect.clampCorners(detected,pc.width,pc.height)
+        : DocAutoDetect.defaultCorners(pc.width,pc.height);
+      if(hint) hint.textContent=detected
+        ? 'Edges found — drag any corner if it needs adjusting.'
+        : "Couldn't find clean edges automatically — drag the corners to match the document.";
+      renderScanEditor();
+    };
+
+    if(window.DocAutoDetect && DocAutoDetect.isReady()){
+      let detected=null;
+      try{ detected=DocAutoDetect.detectCorners(pc); }catch(err){ console.error('Detection failed',err); }
+      applyDetected(detected);
+    } else {
+      scanEditor.corners=window.DocAutoDetect ? DocAutoDetect.defaultCorners(pc.width,pc.height) : [
+        {x:pc.width*0.06,y:pc.height*0.06},{x:pc.width*0.94,y:pc.height*0.06},
+        {x:pc.width*0.94,y:pc.height*0.94},{x:pc.width*0.06,y:pc.height*0.94}
+      ];
+      if(hint) hint.textContent='Finding the document edges…';
+      if(window.DocAutoDetect){
+        DocAutoDetect.whenReady(()=>{
+          if(scanEditor.processedCanvas!==pc) return; // a newer page was loaded meanwhile
+          let detected=null;
+          try{ detected=DocAutoDetect.detectCorners(pc); }catch(err){ console.error('Detection failed',err); }
+          applyDetected(detected);
+        });
+      }
+    }
+  }
+  function redetectScanCropCorners(){
+    const pc=scanEditor.processedCanvas; if(!pc) return;
+    const hint=el('scanEditHint'); if(hint) hint.textContent='Re-scanning…';
+    if(!window.DocAutoDetect||!DocAutoDetect.isReady()){ if(hint) hint.textContent="Still loading the edge-detection engine — try again in a moment."; return; }
+    let detected=null;
+    try{ detected=DocAutoDetect.detectCorners(pc); }catch(err){ console.error('Detection failed',err); }
+    scanEditor.corners=detected
+      ? DocAutoDetect.clampCorners(detected,pc.width,pc.height)
+      : DocAutoDetect.defaultCorners(pc.width,pc.height);
+    if(hint) hint.textContent=detected
+      ? 'Edges found — drag any corner if it needs adjusting.'
+      : "Still couldn't find clean edges — drag the corners to match the document.";
+    renderScanEditor();
   }
   function renderScanEditor(){
     const cropCanvas=el('scanCropCanvas'); if(!cropCanvas) return;
     const cropCtx=cropCanvas.getContext('2d');
     cropCtx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
     cropCtx.drawImage(scanEditor.processedCanvas,0,0,cropCanvas.width,cropCanvas.height);
-    const r=scanEditor.rect;
-    cropCtx.fillStyle='rgba(0,0,0,.55)';
-    cropCtx.fillRect(0,0,cropCanvas.width,r.y);
-    cropCtx.fillRect(0,r.y+r.h,cropCanvas.width,cropCanvas.height-r.y-r.h);
-    cropCtx.fillRect(0,r.y,r.x,r.h);
-    cropCtx.fillRect(r.x+r.w,r.y,cropCanvas.width-r.x-r.w,r.h);
-    cropCtx.strokeStyle='#2dd4bf';
-    cropCtx.lineWidth=2;
-    cropCtx.strokeRect(r.x,r.y,r.w,r.h);
-    const handles=scanCropHandlePositions();
-    cropCtx.fillStyle='#2dd4bf';
-    handles.forEach(h=>{ cropCtx.beginPath(); cropCtx.arc(h.x,h.y,8,0,Math.PI*2); cropCtx.fill(); });
-  }
-  function scanCropHandlePositions(){
-    const r=scanEditor.rect;
-    return [{x:r.x,y:r.y},{x:r.x+r.w,y:r.y},{x:r.x,y:r.y+r.h},{x:r.x+r.w,y:r.y+r.h}];
+    if(!scanEditor.corners) return;
+    const disp=scanEditor.corners.map(p=>({x:p.x*scanEditor.scale,y:p.y*scanEditor.scale}));
+    cropCtx.strokeStyle='#0f4a45'; cropCtx.lineWidth=3;
+    cropCtx.beginPath(); cropCtx.moveTo(disp[0].x,disp[0].y); disp.slice(1).forEach(p=>cropCtx.lineTo(p.x,p.y)); cropCtx.closePath();
+    cropCtx.stroke();
+    cropCtx.fillStyle='rgba(15,74,69,.14)'; cropCtx.fill();
+    disp.forEach(p=>{
+      cropCtx.beginPath(); cropCtx.arc(p.x,p.y,14,0,Math.PI*2); cropCtx.fillStyle='#ffffff'; cropCtx.fill();
+      cropCtx.lineWidth=3; cropCtx.strokeStyle='#0f4a45'; cropCtx.stroke();
+    });
   }
   function scanCanvasPoint(e){
     const cropCanvas=el('scanCropCanvas');
@@ -378,57 +531,77 @@
     return {x:cx*(cropCanvas.width/rect.width), y:cy*(cropCanvas.height/rect.height)};
   }
   function scanPointerDown(e){
+    if(!scanEditor.corners) return;
     const p=scanCanvasPoint(e);
-    const handles=scanCropHandlePositions();
-    for(let i=0;i<handles.length;i++){
-      if(Math.hypot(p.x-handles[i].x,p.y-handles[i].y)<26){ scanEditor.dragMode='handle'; scanEditor.dragHandle=i; return; }
-    }
-    const r=scanEditor.rect;
-    if(p.x>r.x&&p.x<r.x+r.w&&p.y>r.y&&p.y<r.y+r.h){ scanEditor.dragMode='move'; scanEditor.dragStart={x:p.x-r.x,y:p.y-r.y}; }
+    let closest=-1, closestDist=Infinity;
+    scanEditor.corners.forEach((c,i)=>{
+      const d=Math.hypot(c.x*scanEditor.scale-p.x, c.y*scanEditor.scale-p.y);
+      if(d<closestDist){ closestDist=d; closest=i; }
+    });
+    if(closestDist<40){ scanEditor.dragIndex=closest; e.preventDefault(); scanUpdateLoupe(p); }
   }
   function scanPointerMove(e){
-    if(!scanEditor.dragMode) return;
+    if(scanEditor.dragIndex===-1) return;
     e.preventDefault();
-    const cropCanvas=el('scanCropCanvas');
     const p=scanCanvasPoint(e);
-    const r=scanEditor.rect;
-    const minSize=40;
-    if(scanEditor.dragMode==='move'){
-      r.x=Math.max(0,Math.min(cropCanvas.width-r.w,p.x-scanEditor.dragStart.x));
-      r.y=Math.max(0,Math.min(cropCanvas.height-r.h,p.y-scanEditor.dragStart.y));
-    } else if(scanEditor.dragMode==='handle'){
-      const idx=scanEditor.dragHandle;
-      let {x,y,w,h}=r;
-      const right=x+w, bottom=y+h;
-      if(idx===0){ x=Math.min(p.x,right-minSize); y=Math.min(p.y,bottom-minSize); w=right-x; h=bottom-y; }
-      if(idx===1){ const newRight=Math.max(p.x,x+minSize); w=newRight-x; y=Math.min(p.y,bottom-minSize); h=bottom-y; }
-      if(idx===2){ x=Math.min(p.x,right-minSize); w=right-x; const newBottom=Math.max(p.y,y+minSize); h=newBottom-y; }
-      if(idx===3){ const newRight=Math.max(p.x,x+minSize); w=newRight-x; const newBottom=Math.max(p.y,y+minSize); h=newBottom-y; }
-      r.x=Math.max(0,x); r.y=Math.max(0,y);
-      r.w=Math.min(w,cropCanvas.width-r.x);
-      r.h=Math.min(h,cropCanvas.height-r.y);
-    }
+    const pc=scanEditor.processedCanvas;
+    scanEditor.corners[scanEditor.dragIndex]={
+      x:Math.min(Math.max(p.x/scanEditor.scale,0),pc.width),
+      y:Math.min(Math.max(p.y/scanEditor.scale,0),pc.height)
+    };
     renderScanEditor();
+    scanUpdateLoupe(p);
   }
-  function scanPointerUp(){ scanEditor.dragMode=null; }
+  function scanPointerUp(){
+    scanEditor.dragIndex=-1;
+    const loupe=el('scanCropLoupe'); if(loupe) loupe.hidden=true;
+  }
+  // Zoomed circular preview above the fingertip while dragging a corner —
+  // a fingertip covers far more screen than the pixel accuracy a perspective
+  // warp actually needs, and this closes that gap. Same trick as most phone
+  // scanner apps.
+  function scanUpdateLoupe(displayPoint){
+    const loupe=el('scanCropLoupe'); const wrap=el('scanCropCanvas').parentElement; const canvas=el('scanCropCanvas');
+    if(!loupe||!wrap||!canvas) return;
+    const ZOOM=3; const SRC_SIZE=loupe.width/ZOOM;
+    const ctx=loupe.getContext('2d');
+    ctx.clearRect(0,0,loupe.width,loupe.height);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(loupe.width/2,loupe.height/2,loupe.width/2,0,Math.PI*2); ctx.clip();
+    const sx=Math.max(0,Math.min(canvas.width-SRC_SIZE,displayPoint.x-SRC_SIZE/2));
+    const sy=Math.max(0,Math.min(canvas.height-SRC_SIZE,displayPoint.y-SRC_SIZE/2));
+    ctx.drawImage(canvas,sx,sy,SRC_SIZE,SRC_SIZE,0,0,loupe.width,loupe.height);
+    ctx.strokeStyle='#0f4a45'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(loupe.width/2-12,loupe.height/2); ctx.lineTo(loupe.width/2+12,loupe.height/2);
+    ctx.moveTo(loupe.width/2,loupe.height/2-12); ctx.lineTo(loupe.width/2,loupe.height/2+12);
+    ctx.stroke();
+    ctx.restore();
+    const wrapRect=wrap.getBoundingClientRect(); const canvasRect=canvas.getBoundingClientRect();
+    const offX=canvasRect.left-wrapRect.left, offY=canvasRect.top-wrapRect.top;
+    let left=offX+displayPoint.x-loupe.width/2;
+    let top=offY+displayPoint.y-loupe.height-30;
+    if(top<0) top=offY+displayPoint.y+30;
+    loupe.style.left=left+'px'; loupe.style.top=top+'px';
+    loupe.hidden=false;
+  }
 
   function useScanCrop(){
-    const r=scanEditor.rect;
-    const sx=r.x/scanEditor.scale, sy=r.y/scanEditor.scale;
-    const sw=r.w/scanEditor.scale, sh=r.h/scanEditor.scale;
-    const out=document.createElement('canvas');
-    out.width=Math.round(sw); out.height=Math.round(sh);
-    out.getContext('2d').drawImage(scanEditor.processedCanvas,sx,sy,sw,sh,0,0,out.width,out.height);
+    if(!window.DocAutoDetect || !scanEditor.corners){
+      LWHUI.toast && LWHUI.toast('Edge detection not ready — try again in a moment.');
+      return;
+    }
+    const out=DocAutoDetect.warpToCanvas(scanEditor.processedCanvas, scanEditor.corners);
     scanPagesData.push({canvas:out});
     el('scanEditWrap').hidden=true;
     renderScanPages();
     // Keep multi-page capture fast: if the camera's still live, jump straight
     // back to it for the next page instead of making the driver tap Open Camera again.
-    if(scanStream){ el('scanCameraWrap').hidden=false; } else { el('scanCaptureBtn').hidden=false; }
+    if(scanStream){ el('scanCameraWrap').hidden=false; startScanLiveDetection(); } else { el('scanCaptureBtn').hidden=false; }
   }
   function retakeScan(){
     el('scanEditWrap').hidden=true;
-    if(scanStream){ el('scanCameraWrap').hidden=false; } else { el('scanCaptureBtn').hidden=false; }
+    if(scanStream){ el('scanCameraWrap').hidden=false; startScanLiveDetection(); } else { el('scanCaptureBtn').hidden=false; }
   }
   function renderScanPages(){
     const wrap=el('scanPages'); if(!wrap) return;
@@ -556,11 +729,13 @@
       cropCanvas.addEventListener('pointermove',scanPointerMove);
       window.addEventListener('pointerup',scanPointerUp);
     }
+    const redetectBtn=el('scanRedetectBtn');
+    if(redetectBtn) redetectBtn.onclick=redetectScanCropCorners;
     const rotateBtn=el('scanRotateBtn');
     if(rotateBtn) rotateBtn.onclick=()=>{
       scanEditor.rotation=(scanEditor.rotation+90)%360;
       processScanEditorBase();
-      resetScanCropRect();
+      resetScanCropCorners();
       renderScanEditor();
     };
     document.querySelectorAll('#scanEditWrap [data-filter]').forEach(chip=>{
@@ -575,6 +750,7 @@
     const useBtn=el('scanUseCropBtn'); if(useBtn) useBtn.onclick=useScanCrop;
     const retakeBtn=el('scanRetakeBtn'); if(retakeBtn) retakeBtn.onclick=retakeScan;
   }
+
 
   // ---------- Ad-hoc QR/Barcode generator ----------
   function initGenerate(){
