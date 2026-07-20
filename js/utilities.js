@@ -274,6 +274,7 @@
     if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
     const wrap=el('scanCameraWrap'), openBtn=el('scanCaptureBtn'), closeBtn=el('scanCloseBtn');
     if(wrap) wrap.hidden=true; if(openBtn) openBtn.hidden=false; if(closeBtn) closeBtn.hidden=true;
+    document.body.style.overflow='';
   }
   async function openScannerCamera(){
     try{
@@ -282,6 +283,7 @@
       try{ await video.play(); }catch(playErr){ /* some browsers auto-play once metadata loads; ignore */ }
       const editWrap=el('scanEditWrap'); if(editWrap) editWrap.hidden=true;
       el('scanCameraWrap').hidden=false; el('scanCaptureBtn').hidden=true; el('scanCloseBtn').hidden=false;
+      document.body.style.overflow='hidden';
       startScanLiveDetection();
     }catch(e){ alert('Could not open the camera: '+e.message+'\n\nMake sure the page is served over HTTPS and camera permission is allowed.'); }
   }
@@ -292,6 +294,7 @@
     canvas.width=video.videoWidth; canvas.height=video.videoHeight;
     canvas.getContext('2d').drawImage(video,0,0);
     el('scanCameraWrap').hidden=true;
+    document.body.style.overflow='';
     loadImageToScanEditor(canvas);
   }
 
@@ -605,11 +608,11 @@
     renderScanPages();
     // Keep multi-page capture fast: if the camera's still live, jump straight
     // back to it for the next page instead of making the driver tap Open Camera again.
-    if(scanStream){ el('scanCameraWrap').hidden=false; startScanLiveDetection(); } else { el('scanCaptureBtn').hidden=false; }
+    if(scanStream){ el('scanCameraWrap').hidden=false; document.body.style.overflow='hidden'; startScanLiveDetection(); } else { el('scanCaptureBtn').hidden=false; }
   }
   function retakeScan(){
     el('scanEditWrap').hidden=true;
-    if(scanStream){ el('scanCameraWrap').hidden=false; startScanLiveDetection(); } else { el('scanCaptureBtn').hidden=false; }
+    if(scanStream){ el('scanCameraWrap').hidden=false; document.body.style.overflow='hidden'; startScanLiveDetection(); } else { el('scanCaptureBtn').hidden=false; }
   }
   function renderScanPages(){
     const wrap=el('scanPages'); if(!wrap) return;

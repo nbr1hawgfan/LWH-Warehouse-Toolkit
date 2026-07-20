@@ -725,13 +725,14 @@
       <div class="card">
         <h2>Doc Scanner</h2>
         <p class="hint">Snap photos of paperwork, crop and straighten them, extract the text to copy elsewhere, or share/download as a PDF. Supports multiple pages. Text extraction works best on printed text — it's not meant for handwriting.</p>
-        <div class="actions"><button type="button" id="scanCaptureBtn">Open Camera</button><button type="button" id="scanCloseBtn" class="ghost" hidden>Close Camera</button><button type="button" id="scanUploadBtn" class="ghost">Choose Photo</button><input type="file" id="scanFileInput" accept="image/*" hidden /></div>
-        <div id="scanCameraWrap" hidden style="margin-top:12px">
-          <div style="position:relative;display:inline-block">
+        <div class="actions"><button type="button" id="scanCaptureBtn">Open Camera</button><button type="button" id="scanUploadBtn" class="ghost">Choose Photo</button><input type="file" id="scanFileInput" accept="image/*" hidden /></div>
+        <div id="scanCameraWrap" class="scan-camera-fullscreen" hidden>
+          <div class="scan-camera-inner">
             <video id="scanVideo" playsinline muted autoplay></video>
             <canvas id="scanLiveOverlay" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+            <button type="button" id="scanCloseBtn" class="scan-camera-close" aria-label="Close camera">&times;</button>
+            <div class="scan-camera-controls"><button type="button" id="scanSnapBtn">Capture Page</button></div>
           </div>
-          <div class="actions"><button type="button" id="scanSnapBtn">Capture Page</button></div>
         </div>
 
         <div id="scanEditWrap" hidden style="margin-top:14px">

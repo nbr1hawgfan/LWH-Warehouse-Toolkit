@@ -42,3 +42,14 @@ less accurate here than in the standalone driver app:
 - Removed a lossy JPEG re-encode + downscale step that ran before detection
   (inherited from the old manual-crop editor); the captured canvas now goes
   straight into detection at higher resolution (MAXDIM raised 1400 -> 2200).
+
+
+## Follow-up fix — camera framing
+The camera now takes over the full screen while scanning (like the
+standalone driver app) instead of a video capped at max-height:60vh stuck
+inline in the scrollable Doc Scanner page. That inline layout was the actual
+cause of needing to scroll the page and reposition the phone more just to
+fit a document in frame — a bigger, unconstrained viewfinder should feel
+much closer to the standalone app now. Close button moved to a floating X
+top-right of the camera view; Capture Page now floats at the bottom over
+the video instead of sitting as a separate button beneath it.

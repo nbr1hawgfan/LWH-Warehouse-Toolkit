@@ -99,10 +99,36 @@ textarea{resize:vertical}
 
 .scan-page{display:flex;flex-direction:column;gap:8px}
 .scan-thumb{width:100%;border-radius:8px;border:1px solid var(--line)}
-#scanVideo{width:100%;border-radius:12px;background:#000;max-height:60vh;object-fit:contain;display:block}
+#scanVideo{width:100%;height:100%;border-radius:0;background:#000;object-fit:contain;display:block}
 .scan-loupe{position:absolute;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;z-index:10}
 #scanSnapBtn.armed{background:var(--good);animation:scan-capture-pulse .6s ease-in-out infinite}
 @keyframes scan-capture-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
+/* Full-screen camera overlay — takes over the whole viewport while
+   scanning, same as the standalone driver app, instead of a small
+   height-capped video stuck inline in a scrolling page. That inline
+   approach was the actual cause of needing to scroll and reposition more
+   just to fit a document in frame. */
+.scan-camera-fullscreen{
+  position:fixed; inset:0; z-index:1000;
+  background:#000;
+}
+.scan-camera-inner{ position:relative; width:100%; height:100%; }
+.scan-camera-inner #scanVideo{ width:100%; height:100%; }
+.scan-camera-close{
+  position:absolute; top:16px; right:16px; z-index:3;
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(255,255,255,.15); color:#fff;
+  border:1px solid rgba(255,255,255,.3);
+  font-size:1.5rem; line-height:1; min-height:auto; padding:0;
+}
+.scan-camera-close:hover{ background:rgba(255,255,255,.25); }
+.scan-camera-controls{
+  position:absolute; bottom:0; left:0; right:0; z-index:2;
+  padding:22px 16px; display:flex; justify-content:center;
+  background:linear-gradient(to top, rgba(0,0,0,.75), transparent);
+}
+.scan-camera-controls button{ min-width:180px; }
 #tcLicenseVideo{width:100%;border-radius:12px;background:#000;max-height:60vh}
 #genQrBox{display:inline-block}
 .panel details{margin-top:10px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px;background:var(--bg)}
