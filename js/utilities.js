@@ -277,7 +277,7 @@
   }
   async function openScannerCamera(){
     try{
-      scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}});
       const video=el('scanVideo'); video.srcObject=scanStream;
       try{ await video.play(); }catch(playErr){ /* some browsers auto-play once metadata loads; ignore */ }
       const editWrap=el('scanEditWrap'); if(editWrap) editWrap.hidden=true;
@@ -292,7 +292,7 @@
     canvas.width=video.videoWidth; canvas.height=video.videoHeight;
     canvas.getContext('2d').drawImage(video,0,0);
     el('scanCameraWrap').hidden=true;
-    loadImageToScanEditor(canvas.toDataURL('image/jpeg',0.92));
+    loadImageToScanEditor(canvas);
   }
 
   // ---------- Live edge detection (camera preview) ----------
@@ -410,22 +410,30 @@
   // at an angle instead of just cropping around it.
   const scanEditor={rawImage:null,rotation:0,filter:'none',processedCanvas:null,scale:1,corners:null,dragIndex:-1};
 
+  // Accepts either a canvas (straight from the camera capture — used as-is,
+  // no lossy re-encode) or a data URL string (file uploads, which have no
+  // other source to read from).
   function loadImageToScanEditor(src){
-    const img=new Image();
-    img.onload=()=>{
-      scanEditor.rawImage=img; scanEditor.rotation=0; scanEditor.filter='none';
+    const useDirectly=(source)=>{
+      scanEditor.rawImage=source; scanEditor.rotation=0; scanEditor.filter='none';
       document.querySelectorAll('#scanEditWrap [data-filter]').forEach(c=>c.classList.toggle('active',c.dataset.filter==='none'));
       processScanEditorBase();
       resetScanCropCorners();
       renderScanEditor();
       el('scanEditWrap').hidden=false;
     };
+    if(src instanceof HTMLCanvasElement){
+      useDirectly(src);
+      return;
+    }
+    const img=new Image();
+    img.onload=()=>useDirectly(img);
     img.onerror=()=>alert('Could not load that image.');
     img.src=src;
   }
   function processScanEditorBase(){
     const img=scanEditor.rawImage;
-    const MAXDIM=1400; // downsampled for smooth interactive dragging; the final crop is still taken from this resolution, which is plenty for print/OCR
+    const MAXDIM=2200; // was 1400 in the old manual-crop-only editor; raised since auto-detect accuracy benefits noticeably from more detail, and 2200px is still smooth for interactive dragging on modern phones
     let sw=img.width, sh=img.height;
     const scaleDown=Math.min(1,MAXDIM/Math.max(sw,sh));
     sw=Math.round(sw*scaleDown); sh=Math.round(sh*scaleDown);

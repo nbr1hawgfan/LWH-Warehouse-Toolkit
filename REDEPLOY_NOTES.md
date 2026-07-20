@@ -32,3 +32,13 @@ verified byte-for-byte identical against the live repo before packaging.
 OpenCV.js (~8MB, loaded from docs.opencv.org, same CDN pattern as your other
 libraries) — loads async, only used by Doc Scanner. Nothing else in the app
 depends on it or waits on it.
+
+
+## Follow-up fix — detection accuracy
+Two small pre-existing gaps closed that were making auto-detect noticeably
+less accurate here than in the standalone driver app:
+- Camera now requests 1920x1080 explicitly (was requesting no resolution at
+  all, leaving it to the browser default).
+- Removed a lossy JPEG re-encode + downscale step that ran before detection
+  (inherited from the old manual-crop editor); the captured canvas now goes
+  straight into detection at higher resolution (MAXDIM raised 1400 -> 2200).
