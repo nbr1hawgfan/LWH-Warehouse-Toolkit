@@ -517,6 +517,7 @@
       ? 'Edges found — drag any corner if it needs adjusting.'
       : "Still couldn't find clean edges — drag the corners to match the document.";
     renderScanEditor();
+    LWHUI.toast && LWHUI.toast(detected ? 'Edges re-scanned' : 'No clean edges found — adjust manually');
   }
   function renderScanEditor(){
     const cropCanvas=el('scanCropCanvas'); if(!cropCanvas) return;

@@ -53,3 +53,29 @@ fit a document in frame — a bigger, unconstrained viewfinder should feel
 much closer to the standalone app now. Close button moved to a floating X
 top-right of the camera view; Capture Page now floats at the bottom over
 the video instead of sitting as a separate button beneath it.
+
+
+## Bug fix — camera CSS was overriding the hidden attribute
+The full-screen camera fix in the previous version had a real bug: the CSS
+class I put on the camera wrapper set display:flex directly, and author
+CSS rules always beat the browser's built-in [hidden]{display:none} rule
+regardless of the hidden attribute being present. Net effect: that
+full-screen black camera overlay never actually hid itself — it sat on top
+of every screen at all times, which is why the layout looked broken
+everywhere and taps on Re-scan Edges (and anything else underneath it)
+werent reaching their real targets.
+
+Fixed two ways:
+1. The camera-overlay CSS rule is now scoped with :not([hidden]), so it
+   only applies when the element is actually meant to be visible.
+2. Added a blanket [hidden]{display:none !important} rule as a permanent
+   safety net against this whole bug class recurring in any future edit.
+
+Also switched the camera sizing from a plain percentage-height chain to
+the same flex:1 + min-height:0 + overflow:hidden pattern already proven
+in the standalone driver app — percentage heights on a <video> inside a
+fixed-position box are unreliable across browsers, which was likely also
+contributing to the odd sizing.
+
+Re-scan Edges now also shows a toast confirming it ran, so its effect is
+never ambiguous even when the result looks the same as before.

@@ -1,3 +1,9 @@
+/* Defensive hardening: guarantees the hidden attribute always wins over
+   any other display rule, regardless of specificity. Prevents an entire
+   class of "invisible overlay blocking clicks" bugs like the one that hit
+   the full-screen camera view here. */
+[hidden]{ display:none !important; }
+
 /* =========================================================================
    LWH Warehouse Toolkit — App Chrome
    Screen-only styling: header, nav, cards, forms, results, settings, scanner.
@@ -109,11 +115,13 @@ textarea{resize:vertical}
    height-capped video stuck inline in a scrolling page. That inline
    approach was the actual cause of needing to scroll and reposition more
    just to fit a document in frame. */
-.scan-camera-fullscreen{
+.scan-camera-fullscreen:not([hidden]){
   position:fixed; inset:0; z-index:1000;
   background:#000;
+  display:flex;
+  flex-direction:column;
 }
-.scan-camera-inner{ position:relative; width:100%; height:100%; }
+.scan-camera-inner{ position:relative; flex:1; min-height:0; overflow:hidden; }
 .scan-camera-inner #scanVideo{ width:100%; height:100%; }
 .scan-camera-close{
   position:absolute; top:16px; right:16px; z-index:3;
