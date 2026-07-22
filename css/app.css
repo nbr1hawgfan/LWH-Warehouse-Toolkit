@@ -329,16 +329,16 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .eb-name{font-size:.20in;font-weight:900}
 .id-logo{max-width:1.5in;max-height:.55in;object-fit:contain;margin-bottom:.03in}
 .id-company-name{font-size:.16in;font-weight:900;text-transform:uppercase;letter-spacing:.02em;margin-bottom:.05in;text-align:center}
-.id-tagline{font-size:.085in;font-weight:700;font-style:italic;margin-bottom:.05in}
+.id-tagline{font-size:.095in;font-weight:800;font-style:italic;margin-bottom:.05in}
 .id-photo{width:1.15in;height:1.15in;object-fit:cover;border:2px solid #1a3a8f;border-radius:2px;margin-bottom:.05in}
 .id-photo-placeholder{background:#eee}
 .id-name{font-size:.19in;font-weight:900}
-.id-dept{font-size:.12in;font-weight:700;font-style:italic}
+.id-dept{font-size:.14in;font-weight:900;font-style:italic}
 .eb-code{margin-top:.03in}
 .eb-code svg{max-width:90%;height:auto}
 .eb-code .qrbox{width:1in;height:1in;margin:0 auto}
 .eb-barcode-rotated{width:1in;height:2.8in;display:flex;align-items:center;justify-content:center;margin:0 auto}
-.eb-id{font-size:.12in;font-weight:700;margin-top:.03in}
+.eb-id{font-size:.13in;font-weight:800;margin-top:.03in}
 
 /* =========================================================================
    PICK LIST — landscape 8.5x11 report. Page size set dynamically via
