@@ -6,7 +6,7 @@
   let customerRows=[];
 
   function el(id){ return document.getElementById(id); }
-  function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; }
+  function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; renderHomeCustomerTotals(); }
   function setCustomerCurrentUrl(url){ const u=el('custCurrentUrl'); if(u) u.textContent=url || CUSTOMER_DEFAULT_URL; }
 
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -107,6 +107,29 @@
   function customerSearch(q){ q=String(q||'').toLowerCase().trim(); if(!q) return customerRows.slice(0,50).map(r=>({row:r,match:null})); const terms=q.split(/\s+/); return customerRows.filter(r=>{const hay=customerFieldOrder.map(k=>r[k]).join(' ').toLowerCase(); return terms.every(t=>hay.includes(t));}).slice(0,100).map(r=>({row:r,match:bestMatchField(r,terms)})); }
   // Read-only accessor so other tools (Pick List) can filter the same live dataset.
   function getAllRows(){ return customerRows; }
+
+  // HOME DASHBOARD — customer totals, shown above Quick Actions. Refreshes
+  // automatically any time customerStatus() fires, which covers every data
+  // path (auto-load, manual refresh, paste, cached-on-open) with one hook.
+  function customerTotals(){
+    const groups={};
+    customerRows.forEach(r=>{
+      const name=r.subCustNm||'—';
+      if(!groups[name]) groups[name]={customer:name,pallets:0,totalQty:0};
+      groups[name].pallets++;
+      groups[name].totalQty+=parseFloat(r.qty)||0;
+    });
+    return Object.values(groups).sort((a,b)=>b.pallets-a.pallets);
+  }
+
+  function renderHomeCustomerTotals(){
+    const out=el('homeCustomerTotals'); if(!out) return;
+    if(!customerRows.length){ out.innerHTML='<p class="hint">Loading inventory by customer…</p>'; return; }
+    const totals=customerTotals();
+    if(!totals.length){ out.innerHTML='<p class="hint">No inventory data available.</p>'; return; }
+    const rows=totals.map(t=>`<tr><td>${safe(t.customer)}</td><td>${t.pallets.toLocaleString()}</td><td>${t.totalQty.toLocaleString()}</td></tr>`).join('');
+    out.innerHTML=`<table class="pls-table"><thead><tr><th>Customer</th><th>Pallets</th><th>Total Qty</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
 
   // ITEM SUMMARY — a separate, focused search, kept deliberately apart
   // from the universal search above. Groups every pallet of one item by
@@ -250,5 +273,5 @@
   }
   function toTSV(list){ const h=['Location','LWH_ID','Customer_ID','Customer','InvRec','BillToRef','ItemNm','ItemDesc','LotNum','Qty','Units','BayName','DateReceived']; const keys=['location','lwhid','custId','customer','invRec','billToRef','item','desc','lot','qty','units','bay','dateReceived']; return [h.join('\t'),...list.map(r=>keys.map(k=>String(r[k]??'').replace(/\t/g,' ')).join('\t'))].join('\n'); }
   function fillPallet(r){ if(window.palLocation) palLocation.value=r.location||''; palLwhid.value=r.lwhid||''; palCustId.value=r.custId||''; palCustomer.value=r.customer||''; palBay.value=r.bay||''; palItem.value=r.item||''; palLot.value=r.lot||''; palQty.value=r.qty||''; palDate.value=r.dateReceived||''; palDesc.value=r.desc||''; document.querySelector('[data-pallet-mode="simple"]').click(); }
-  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary};
+  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary,customerTotals,renderHomeCustomerTotals};
 })();

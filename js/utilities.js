@@ -12,7 +12,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','pwgen','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','freightclass','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -1533,6 +1533,47 @@
     [revCost,targetMargin].forEach(f=>f.addEventListener('input',calcReverse));
   }
 
+  // ---------- Freight Class Estimator ----------
+  // Standard NMFC density-based bands. Real classification also depends on
+  // the specific commodity's NMFC item number — this gives a density-only
+  // starting estimate, which is exactly what it's labeled as in the UI.
+  const FREIGHT_DENSITY_BANDS=[
+    {min:50,cls:'50'},{min:35,cls:'55'},{min:30,cls:'60'},{min:22.5,cls:'65'},
+    {min:15,cls:'70'},{min:13.5,cls:'77.5'},{min:12,cls:'85'},{min:10.5,cls:'92.5'},
+    {min:9,cls:'100'},{min:8,cls:'110'},{min:7,cls:'125'},{min:6,cls:'150'},
+    {min:5,cls:'175'},{min:4,cls:'200'},{min:3,cls:'250'},{min:2,cls:'300'},
+    {min:1,cls:'400'},{min:0,cls:'500'}
+  ];
+  function freightClassFor(density){
+    for(const band of FREIGHT_DENSITY_BANDS){ if(density>=band.min) return band.cls; }
+    return '500';
+  }
+  function initFreightClass(){
+    const length=el('fcLength'), width=el('fcWidth'), height=el('fcHeight'), weight=el('fcWeight'), pieces=el('fcPieces');
+    const cubicFtOut=el('fcCubicFt'), densityOut=el('fcDensity'), classOut=el('fcClass'), totalWeightOut=el('fcTotalWeight');
+    if(!length) return;
+    function calc(){
+      const l=parseFloat(length.value)||0, w=parseFloat(width.value)||0, h=parseFloat(height.value)||0;
+      const wt=parseFloat(weight.value)||0, pcs=parseFloat(pieces.value)||1;
+      if(!l||!w||!h||!wt){ cubicFtOut.textContent='—'; densityOut.textContent='—'; classOut.textContent='—'; totalWeightOut.textContent='—'; return; }
+      const cubicFtEach=(l*w*h)/1728;
+      const totalCubicFt=cubicFtEach*pcs;
+      const totalWeight=wt*pcs;
+      const density=totalWeight/totalCubicFt;
+      cubicFtOut.textContent=round(totalCubicFt,1).toLocaleString();
+      densityOut.textContent=round(density,2)+' lb/ft³';
+      classOut.textContent='Class '+freightClassFor(density);
+      totalWeightOut.textContent=`Total: ${totalWeight.toLocaleString()} lb across ${pcs} piece(s)`;
+    }
+    [length,width,height,weight,pieces].forEach(f=>f.addEventListener('input',calc));
+    window.LWHToolClear.freightclass=()=>{
+      [length,width,height,weight].forEach(f=>f.value='');
+      pieces.value='1';
+      cubicFtOut.textContent='—'; densityOut.textContent='—'; classOut.textContent='—'; totalWeightOut.textContent='—';
+    };
+  }
+
+
   // ---------- Password Generator ----------
   function initPasswordGen(){
     const lengthEl=el('pgLength'), lengthVal=el('pgLengthVal'), upper=el('pgUpper'), lower=el('pgLower'), numbers=el('pgNumbers'), symbols=el('pgSymbols'), excludeAmbiguous=el('pgExcludeAmbiguous'), result=el('pgResult'), genBtn=el('pgGenerateBtn'), copyBtn=el('pgCopyBtn');
@@ -1822,5 +1863,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initRackCap(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initRackCap(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initFreightClass(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
 })();
