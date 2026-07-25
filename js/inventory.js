@@ -156,7 +156,33 @@
     });
     table.append(tbody);
     out.append(table);
+
+    const actions=document.createElement('div'); actions.className='actions'; actions.style.marginTop='12px';
+    const printBtn=document.createElement('button'); printBtn.type='button'; printBtn.className='ghost'; printBtn.textContent='Print Summary';
+    const csvBtn=document.createElement('button'); csvBtn.type='button'; csvBtn.className='ghost'; csvBtn.textContent='Download CSV';
+    actions.append(printBtn,csvBtn);
+    out.append(actions);
+
+    printBtn.onclick=()=>{
+      const printOut=el('customerLookupPrintOutput');
+      if(printOut){
+        printOut.innerHTML=`<div class="checklist-page"><h2>Item Summary — ${safe(result.item)}</h2>${result.itemDesc?`<p>${safe(result.itemDesc)}</p>`:''}<p>${result.totalPallets.toLocaleString()} total pallet(s) · ${result.totalQty.toLocaleString()} total qty</p>${table.outerHTML}</div>`;
+      }
+      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+      setTimeout(()=>window.print(),50);
+    };
+
+    csvBtn.onclick=()=>{
+      const csvRows=[['Item','Item Description','Lot #','Bay','Warehouse','Pallets','Qty Each','Total Qty']];
+      result.rows.forEach(r=>csvRows.push([result.item,result.itemDesc,r.lotNum,r.bay,r.warehouse,r.pallets,r.qtyEach,r.totalQty]));
+      csvRows.push(['','','','','Total',result.totalPallets,'',result.totalQty]);
+      const csv=csvRows.map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`item-summary-${result.item}.csv`; document.body.append(a); a.click(); a.remove();
+      if(window.LWHUI) LWHUI.toast('CSV downloaded');
+    };
   }
+
 
   // Used only by the explicit "Scan to Print" action (Pallet Labels screen) —
   // deliberately separate from customerSearch/Master Lookup's scan, which is
