@@ -111,5 +111,9 @@
     out.append(wrap);
   }
 
-  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults};
+  function clearTransactionResults(){
+    const out=el('transactionResults'); if(out) out.innerHTML='';
+  }
+
+  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults};
 })();

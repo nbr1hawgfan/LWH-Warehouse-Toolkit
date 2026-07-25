@@ -341,6 +341,13 @@ async function runTransactionSearch(){
 if(window.txnSearchBtn){txnSearchBtn.onclick=()=>{runTransactionSearch();};}
 if(window.txnSearch){txnSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();txnSearchBtn.click();}};}
 if(window.txnLoadBtn){txnLoadBtn.onclick=async()=>{await LWHTransactions.loadTransactions(true); if(txnSearch.value.trim()) runTransactionSearch(); LWHUI.toast('Transaction history loaded');};}
+if(window.txnClearBtn){txnClearBtn.onclick=()=>{txnSearch.value=''; LWHTransactions.clearTransactionResults(); txnSearch.focus();};}
+
+// Item Summary: a separate, focused lookup — does not touch Master
+// Lookup's universal search or its results panel in any way.
+if(window.itemSummaryBtn){itemSummaryBtn.onclick=()=>{const result=LWHInventory.itemSummary(itemSummarySearch.value); LWHInventory.renderItemSummary(result);};}
+if(window.itemSummarySearch){itemSummarySearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();itemSummaryBtn.click();}};}
+if(window.itemSummaryClearBtn){itemSummaryClearBtn.onclick=()=>{itemSummarySearch.value=''; itemSummaryOutput.innerHTML=''; itemSummarySearch.focus();};}
 
 // Voice input: feature-detected — the mic button stays hidden entirely on
 // browsers without Web Speech API support rather than showing something

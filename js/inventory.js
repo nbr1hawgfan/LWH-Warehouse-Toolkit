@@ -107,6 +107,57 @@
   function customerSearch(q){ q=String(q||'').toLowerCase().trim(); if(!q) return customerRows.slice(0,50).map(r=>({row:r,match:null})); const terms=q.split(/\s+/); return customerRows.filter(r=>{const hay=customerFieldOrder.map(k=>r[k]).join(' ').toLowerCase(); return terms.every(t=>hay.includes(t));}).slice(0,100).map(r=>({row:r,match:bestMatchField(r,terms)})); }
   // Read-only accessor so other tools (Pick List) can filter the same live dataset.
   function getAllRows(){ return customerRows; }
+
+  // ITEM SUMMARY — a separate, focused search, kept deliberately apart
+  // from the universal search above. Groups every pallet of one item by
+  // lot + bay, so "how much of item XYZ do we have and where" is a
+  // single glance instead of scrolling through individual pallet cards.
+  function itemSummary(q){
+    q=String(q||'').trim();
+    if(!q) return null;
+    const qLower=q.toLowerCase();
+    let matches=customerRows.filter(r=>String(r.itemNm||'').toLowerCase()===qLower);
+    if(!matches.length) matches=customerRows.filter(r=>String(r.itemNm||'').toLowerCase().includes(qLower));
+    if(!matches.length) return {item:q, itemDesc:'', rows:[], totalPallets:0, totalQty:0};
+
+    const groups={};
+    matches.forEach(r=>{
+      const bay=r.currentBay||r.bayName||'—';
+      const qtyEach=r.qty||'0';
+      const key=[r.lotNum||'—', bay, qtyEach].join('|');
+      if(!groups[key]) groups[key]={lotNum:r.lotNum||'—', bay, warehouse:r.warehouse||r.location||'—', qtyEach, pallets:0};
+      groups[key].pallets++;
+    });
+    const rows=Object.values(groups).map(g=>({...g, totalQty:(parseFloat(g.qtyEach)||0)*g.pallets}));
+    rows.sort((a,b)=> a.lotNum.localeCompare(b.lotNum) || a.bay.localeCompare(b.bay) || (parseFloat(b.qtyEach)-parseFloat(a.qtyEach)));
+
+    const totalPallets=matches.length;
+    const totalQty=matches.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+    return {item:matches[0].itemNm, itemDesc:matches[0].itemDesc||'', rows, totalPallets, totalQty};
+  }
+
+  function renderItemSummary(result){
+    const out=el('itemSummaryOutput'); if(!out) return;
+    out.innerHTML='';
+    if(!result){ return; }
+    if(!result.rows.length){ out.innerHTML=`<div class="card">No pallets found for "${safe(result.item)}".</div>`; return; }
+
+    const header=document.createElement('div'); header.className='card';
+    header.innerHTML=`<b>${safe(result.item)}</b>${result.itemDesc?' — '+safe(result.itemDesc):''}<div class="hint">${result.totalPallets.toLocaleString()} total pallet(s) · ${result.totalQty.toLocaleString()} total qty</div>`;
+    out.append(header);
+
+    const table=document.createElement('table'); table.className='pls-table'; table.style.marginTop='10px';
+    table.innerHTML='<thead><tr><th>Lot #</th><th>Bay</th><th>Warehouse</th><th>Pallets</th><th>Qty Each</th><th>Total Qty</th></tr></thead>';
+    const tbody=document.createElement('tbody');
+    result.rows.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${safe(r.lotNum)}</td><td>${safe(r.bay)}</td><td>${safe(r.warehouse)}</td><td>${r.pallets}</td><td>${safe(r.qtyEach)}</td><td>${r.totalQty.toLocaleString()}</td>`;
+      tbody.append(tr);
+    });
+    table.append(tbody);
+    out.append(table);
+  }
+
   // Used only by the explicit "Scan to Print" action (Pallet Labels screen) —
   // deliberately separate from customerSearch/Master Lookup's scan, which is
   // used constantly just to verify a pallet's bay and must never auto-print.
@@ -173,5 +224,5 @@
   }
   function toTSV(list){ const h=['Location','LWH_ID','Customer_ID','Customer','InvRec','BillToRef','ItemNm','ItemDesc','LotNum','Qty','Units','BayName','DateReceived']; const keys=['location','lwhid','custId','customer','invRec','billToRef','item','desc','lot','qty','units','bay','dateReceived']; return [h.join('\t'),...list.map(r=>keys.map(k=>String(r[k]??'').replace(/\t/g,' ')).join('\t'))].join('\n'); }
   function fillPallet(r){ if(window.palLocation) palLocation.value=r.location||''; palLwhid.value=r.lwhid||''; palCustId.value=r.custId||''; palCustomer.value=r.customer||''; palBay.value=r.bay||''; palItem.value=r.item||''; palLot.value=r.lot||''; palQty.value=r.qty||''; palDate.value=r.dateReceived||''; palDesc.value=r.desc||''; document.querySelector('[data-pallet-mode="simple"]').click(); }
-  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings};
+  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary};
 })();

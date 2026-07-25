@@ -121,6 +121,15 @@
         </form>
         <div><div id="customerLookupResults" class="results no-print"></div><div id="customerLookupPrintOutput" class="print-area"></div></div>
       </div>
+      <div class="tool-layout wide" style="margin-top:16px">
+        <form class="panel no-print" id="itemSummaryForm">
+          <h2>Item Summary</h2>
+          <p class="hint">Separate from the search above — enter one item number to see total pallets and qty, broken down by lot and bay.</p>
+          <label>Item Number<input id="itemSummarySearch" placeholder="Exact or partial item #" autocomplete="off" /></label>
+          <div class="grid-2"><button type="button" id="itemSummaryBtn">Search</button><button type="button" id="itemSummaryClearBtn" class="ghost">Clear</button></div>
+        </form>
+        <div><div id="itemSummaryOutput" class="results no-print"></div></div>
+      </div>
     </section>
 
     <section id="transactionHistory" class="view">
@@ -130,6 +139,7 @@
           <p class="hint">Rolling 90-day inbound/outbound trail. Search by Bill-to-Ref, item #, LWH ID, or customer — results show most recent first, so "last 3 times X moved" is just the top of the list.</p>
           <label>Search<input id="txnSearch" placeholder="Bill-to-Ref, item #, LWH ID, lot, customer..." autocomplete="off" /></label>
           <div class="grid-2"><button type="button" id="txnSearchBtn">Search</button><button type="button" id="txnLoadBtn" class="ghost">Load / Refresh Data</button></div>
+          <button type="button" id="txnClearBtn" class="ghost" style="margin-top:8px;width:100%">Clear</button>
           <div id="txnStatus" class="hint">Transaction history not loaded yet — searching will load it automatically.</div>
         </form>
         <div><div id="transactionResults" class="results no-print"></div></div>
