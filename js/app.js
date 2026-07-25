@@ -328,6 +328,20 @@ if(window.custSearch){custSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefa
   custSearchBtn.click();
 },250));}
 if(window.custClearBtn){custClearBtn.onclick=()=>{custSearch.value=''; LWHInventory.renderCustomerResults([]); custSearch.focus();};}
+
+// Transaction History: lazy-loaded on first search rather than at app
+// startup like Master Lookup — it's a much larger, less-frequently-used
+// dataset, so no reason to make everyone pay that load cost on every visit.
+async function runTransactionSearch(){
+  await LWHTransactions.loadTransactions(false);
+  const q=txnSearch.value;
+  const matches=LWHTransactions.transactionSearch(q);
+  LWHTransactions.renderTransactionResults(matches, matches.length);
+}
+if(window.txnSearchBtn){txnSearchBtn.onclick=()=>{runTransactionSearch();};}
+if(window.txnSearch){txnSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();txnSearchBtn.click();}};}
+if(window.txnLoadBtn){txnLoadBtn.onclick=async()=>{await LWHTransactions.loadTransactions(true); if(txnSearch.value.trim()) runTransactionSearch(); LWHUI.toast('Transaction history loaded');};}
+
 // Voice input: feature-detected — the mic button stays hidden entirely on
 // browsers without Web Speech API support rather than showing something
 // that won't work. Populating the field fires its existing 'input' handler,

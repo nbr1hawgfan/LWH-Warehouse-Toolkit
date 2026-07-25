@@ -43,6 +43,7 @@
   <script defer src="./js/picklist.js"></script>
   <script defer src="./js/bol.js"></script>
   <script defer src="./js/inventory.js"></script>
+  <script defer src="./js/transactions.js"></script>
   <script defer src="./js/scanner.js"></script>
   <script defer src="./js/doc-auto-detect.js"></script>
   <script defer src="./js/utilities.js"></script>
@@ -58,6 +59,7 @@
     <nav class="nav no-print" aria-label="Modules">
       <button class="nav-btn active" data-view="home"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button>
       <button class="nav-btn" data-view="customerLookup"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>Master Lookup</button>
+      <button class="nav-btn" data-view="transactionHistory"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="19" cy="17" r="2"/></svg>Transaction History</button>
       <button class="nav-btn" data-view="utilities"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg>Warehouse Tools</button>
       <button class="nav-btn" data-view="docscan"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Doc Scanner</button>
       <button class="nav-btn" data-view="rack"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>4x6 Rack Labels</button>
@@ -81,6 +83,7 @@
       <h3>Quick Actions</h3>
       <div class="module-grid">
         <button class="module-card" data-view="customerLookup"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></div><b>Master Lookup</b><span>Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.</span></button>
+        <button class="module-card" data-view="transactionHistory"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="19" cy="17" r="2"/></svg></div><b>Transaction History</b><span>Rolling 90-day inbound/outbound trail — search by Bill-to-Ref, item, or LWH ID to see when something arrived or shipped.</span></button>
         <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
         <button class="module-card" data-view="docscan"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><b>Doc Scanner</b><span>Auto-detects and straightens paperwork as you scan, extract text, and share or download as a PDF — multi-page.</span></button>
         <button class="module-card" data-view="rack"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><b>Rack Labels</b><span>4x6 bay tags with 1D barcode and QR.</span></button>
@@ -117,6 +120,19 @@
           <div id="custLookupStatus" class="hint">Master lookup data not loaded yet.</div>
         </form>
         <div><div id="customerLookupResults" class="results no-print"></div><div id="customerLookupPrintOutput" class="print-area"></div></div>
+      </div>
+    </section>
+
+    <section id="transactionHistory" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="transactionHistoryForm">
+          <h2>Transaction History</h2>
+          <p class="hint">Rolling 90-day inbound/outbound trail. Search by Bill-to-Ref, item #, LWH ID, or customer — results show most recent first, so "last 3 times X moved" is just the top of the list.</p>
+          <label>Search<input id="txnSearch" placeholder="Bill-to-Ref, item #, LWH ID, lot, customer..." autocomplete="off" /></label>
+          <div class="grid-2"><button type="button" id="txnSearchBtn">Search</button><button type="button" id="txnLoadBtn" class="ghost">Load / Refresh Data</button></div>
+          <div id="txnStatus" class="hint">Transaction history not loaded yet — searching will load it automatically.</div>
+        </form>
+        <div><div id="transactionResults" class="results no-print"></div></div>
       </div>
     </section>
 
