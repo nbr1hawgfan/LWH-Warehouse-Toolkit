@@ -58,7 +58,8 @@
       qty:'qty', quantity:'qty', location:'location', comments:'comments', vendor:'vendor',
       unique2:'unique2', unique3:'unique3', unique5:'unique5', unique6:'unique6', unique7:'unique7', unique8:'unique8',
       itemdesc:'itemDesc', itemdescription:'itemDesc',
-      warehouse:'warehouse', bayname:'bayName', bay:'bayName', stillininventory:'stillInInventory', currentbay:'currentBay'
+      warehouse:'warehouse', bayname:'bayName', bay:'bayName', stillininventory:'stillInInventory', currentbay:'currentBay',
+      syncedat:'syncedAt'
     };
     const idx={}; head.forEach((h,i)=>{ if(map[h] && idx[map[h]]===undefined) idx[map[h]]=i; });
     const known=head.join('|').startsWith('controlnumber|invreceipt|subcustnm|itemnm|lotnum|qty|location|comments|vendor|unique2|unique3|unique5|unique6|unique7|unique8|warehouse|bayname|stillininventory|currentbay');
@@ -66,7 +67,7 @@
     const data=Object.keys(idx).length>=3?lines:[rawHead,...lines];
     function val(r,key,fallback){ const i=idx[key]; return (i!==undefined ? r[i] : r[fallback]) || ''; }
     return data.map(r=>({
-      controlNumber:val(r,'controlNumber',0), invReceipt:val(r,'invReceipt',1), subCustNm:val(r,'subCustNm',2), itemNm:val(r,'itemNm',3), lotNum:val(r,'lotNum',4), qty:val(r,'qty',5), location:val(r,'location',6), comments:val(r,'comments',7), vendor:val(r,'vendor',8), unique2:val(r,'unique2',9), unique3:val(r,'unique3',10), unique5:val(r,'unique5',11), unique6:val(r,'unique6',12), unique7:val(r,'unique7',13), unique8:val(r,'unique8',14), itemDesc:val(r,'itemDesc'), warehouse:val(r,'warehouse',15), bayName:val(r,'bayName',16), stillInInventory:val(r,'stillInInventory',17), currentBay:val(r,'currentBay',18)
+      controlNumber:val(r,'controlNumber',0), invReceipt:val(r,'invReceipt',1), subCustNm:val(r,'subCustNm',2), itemNm:val(r,'itemNm',3), lotNum:val(r,'lotNum',4), qty:val(r,'qty',5), location:val(r,'location',6), comments:val(r,'comments',7), vendor:val(r,'vendor',8), unique2:val(r,'unique2',9), unique3:val(r,'unique3',10), unique5:val(r,'unique5',11), unique6:val(r,'unique6',12), unique7:val(r,'unique7',13), unique8:val(r,'unique8',14), itemDesc:val(r,'itemDesc'), warehouse:val(r,'warehouse',15), bayName:val(r,'bayName',16), stillInInventory:val(r,'stillInInventory',17), currentBay:val(r,'currentBay',18), syncedAt:val(r,'syncedAt')
     })).filter(r=>Object.values(r).some(Boolean));
   }
 
@@ -85,9 +86,16 @@
 
   function getCustomerUrl(){ const saved=LWHStorage.get('customerLookupUrl',''); const input=el('setCustomerLookupUrl'); const fromInput=input?input.value:''; const url=normalizeUrl(fromInput||saved||CUSTOMER_DEFAULT_URL,CUSTOMER_DEFAULT_URL); if(input&&input.value!==url)input.value=url; LWHStorage.set('customerLookupUrl',url); setCustomerCurrentUrl(url); return url; }
 
-  async function loadCustomerFromUrl(){ const url=getCustomerUrl(); customerStatus('Loading from: '+url); const {text,ctype}=await fetchText(url); customerRows=(ctype.includes('json')||/^[\s\r\n]*[\[{]/.test(text))?parseCustomerJson(JSON.parse(text)):parseCustomerDelimited(text); LWHStorage.set('customerLookupRows',customerRows); customerStatus(`Loaded ${customerRows.length} row(s).`); return customerRows; }
+  function formatSyncedAt(iso){
+    if(!iso) return null;
+    const d=new Date(iso.includes('T')?iso:iso.replace(' ','T'));
+    if(isNaN(d)) return null;
+    return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  }
 
-  function loadCached(){ customerRows=LWHStorage.get('customerLookupRows',[]); setCustomerCurrentUrl(LWHStorage.get('customerLookupUrl',CUSTOMER_DEFAULT_URL)||CUSTOMER_DEFAULT_URL); customerStatus(customerRows.length?`Using ${customerRows.length} cached row(s) while auto-load refreshes.`:'Master Lookup data not loaded yet. Auto-load will try to refresh.'); }
+  async function loadCustomerFromUrl(){ const url=getCustomerUrl(); customerStatus('Loading from: '+url); const {text,ctype}=await fetchText(url); customerRows=(ctype.includes('json')||/^[\s\r\n]*[\[{]/.test(text))?parseCustomerJson(JSON.parse(text)):parseCustomerDelimited(text); LWHStorage.set('customerLookupRows',customerRows); const synced=formatSyncedAt(customerRows[0]?.syncedAt); customerStatus(`Loaded ${customerRows.length} row(s).`+(synced?` Data as of ${synced}.`:'')); return customerRows; }
+
+  function loadCached(){ customerRows=LWHStorage.get('customerLookupRows',[]); setCustomerCurrentUrl(LWHStorage.get('customerLookupUrl',CUSTOMER_DEFAULT_URL)||CUSTOMER_DEFAULT_URL); const synced=formatSyncedAt(customerRows[0]?.syncedAt); customerStatus(customerRows.length?`Using ${customerRows.length} cached row(s) while auto-load refreshes.`+(synced?` (as of ${synced})`:''):'Master Lookup data not loaded yet. Auto-load will try to refresh.'); }
   function resetCustomerSource(){ LWHStorage.set('customerLookupUrl',CUSTOMER_DEFAULT_URL); const input=el('setCustomerLookupUrl'); if(input) input.value=CUSTOMER_DEFAULT_URL; setCustomerCurrentUrl(CUSTOMER_DEFAULT_URL); customerStatus('Source reset. Click Load / Refresh Data.'); }
 
   const customerFieldOrder=['controlNumber','invReceipt','subCustNm','itemNm','lotNum','qty','location','comments','vendor','unique2','unique3','unique5','unique6','unique7','unique8','itemDesc','warehouse','bayName','stillInInventory','currentBay'];
