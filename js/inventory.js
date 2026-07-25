@@ -1,5 +1,7 @@
 (function(){
-  const CUSTOMER_DEFAULT_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vR88eoG2Hhmq_JCsS_jZMnBiTWlcmehB4i0A5Z6BXZ2oykJ0KqGB6IhrZc0Tr5l5ZOYxtuy8OffpPL-/pub?output=csv';
+  // Live inventory, refreshed from birdsEye every ~15 min via Supabase.
+  // Replaces the static Google Sheet export as the default Master Lookup source.
+  const CUSTOMER_DEFAULT_URL='https://tjivcqxnkftujceumdtx.supabase.co/functions/v1/master-lookup-csv';
   const OLD_SHEET_ID='1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4';
   let customerRows=[];
 
