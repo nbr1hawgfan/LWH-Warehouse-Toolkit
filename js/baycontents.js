@@ -67,7 +67,7 @@
       .map(([item,d])=>`<tr><td>${safe(item)}</td><td>${safe(d.desc)}</td><td>${d.pallets.toLocaleString()}</td><td>${d.qty.toLocaleString()}</td></tr>`).join('');
 
     const header=`<div class="card"><b>${totalPallets.toLocaleString()}</b> pallet(s) · <b>${totalQty.toLocaleString()}</b> total qty · ${bays.length} bay(s): ${safe(bays.slice(0,10).join(', '))}${bays.length>10?'…':''}
-      <div class="actions"><button type="button" id="bcCsvBtn">Download CSV</button></div></div>`;
+      <div class="actions"><button type="button" id="bcCsvBtn">Download CSV</button><button type="button" id="bcPrintBtn" class="ghost">Print</button></div></div>`;
 
     const summaryTable=`<h3 style="margin-top:16px">By Item</h3><table class="pls-table"><thead><tr><th>Item #</th><th>Description</th><th>Pallets</th><th>Total Qty</th></tr></thead><tbody>${itemRows}</tbody></table>`;
 
@@ -84,6 +84,16 @@
       const blob=new Blob([csv],{type:'text/csv'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bay-contents.csv'; document.body.append(a); a.click(); a.remove();
       if(window.LWHUI) LWHUI.toast('CSV downloaded');
+    };
+
+    const printBtn=el('bcPrintBtn');
+    if(printBtn) printBtn.onclick=()=>{
+      const printOut=el('bcPrintOutput');
+      if(printOut){
+        printOut.innerHTML=`<div class="checklist-page"><h2>Bay Contents</h2><p>${totalPallets.toLocaleString()} pallet(s) · ${totalQty.toLocaleString()} total qty · ${bays.length} bay(s): ${safe(bays.join(', '))}</p>${summaryTable}${detailTable}</div>`;
+      }
+      if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
+      setTimeout(()=>window.print(),50);
     };
   }
 
