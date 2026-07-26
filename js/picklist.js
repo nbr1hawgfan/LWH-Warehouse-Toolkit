@@ -117,21 +117,32 @@
   function generatePrintable(list){
     const out=el('picklistPrintOutput'); if(!out) return;
     const codeType=(el('plCodeType')||{}).value||'qr';
-    const rows=list.map(r=>`<tr>
-        <td class="pl-code">${codeType==='qr'?`<div class="pl-qr" data-qr="${safe(r.lwhid)}"></div>`:`<svg class="pl-barcode" data-barcode="${safe(r.lwhid)}"></svg>`}<div class="pl-lwh">${safe(r.lwhid)}</div></td>
+    // Alternate the code column left/right by row, so two adjacent lines
+    // never have their barcodes stacked at the same x-position — that
+    // vertical alignment is what causes a scanner to drift onto the
+    // wrong line when rows are printed close together.
+    const rows=list.map((r,i)=>{
+      const codeCell=`${codeType==='qr'?`<div class="pl-qr" data-qr="${safe(r.lwhid)}"></div>`:`<svg class="pl-barcode" data-barcode="${safe(r.lwhid)}"></svg>`}<div class="pl-lwh">${safe(r.lwhid)}</div>`;
+      const isLeft=(i%2===0);
+      const leftCell=isLeft?`<td class="pl-code">${codeCell}</td>`:'<td class="pl-code-empty"></td>';
+      const rightCell=isLeft?'<td class="pl-code-empty"></td>':`<td class="pl-code">${codeCell}</td>`;
+      return `<tr>
+        ${leftCell}
         <td>${safe(r.customer)}</td>
         <td>${safe(r.item)}</td>
         <td>${safe(r.lot)}</td>
         <td>${safe(r.qty)}</td>
         <td>${safe(r.location)}</td>
         <td>${safe(r.bay)}</td>
-      </tr>`).join('');
+        ${rightCell}
+      </tr>`;
+    }).join('');
     const totalQty=list.reduce((sum,r)=>sum+(parseFloat(r.qty)||0),0);
     out.innerHTML=`<div class="picklist-page">
       <h1 class="pl-title">Pick List</h1>
-      <p class="pl-meta">Generated ${new Date().toLocaleString()} · ${list.length} row(s) · Total Qty ${totalQty.toLocaleString()}</p>
+      <p class="pl-meta">Generated ${new Date().toLocaleString()} · ${list.length} row(s) · Total Qty ${totalQty.toLocaleString()} · Codes alternate left/right by line to reduce mis-scans</p>
       <table class="pl-table">
-        <thead><tr><th>LWH ID</th><th>Customer</th><th>Item</th><th>Lot</th><th>Qty</th><th>Location</th><th>Bay</th></tr></thead>
+        <thead><tr><th>Code</th><th>Customer</th><th>Item</th><th>Lot</th><th>Qty</th><th>Location</th><th>Bay</th><th>Code</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;

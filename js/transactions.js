@@ -111,9 +111,11 @@
     out.append(wrap);
   }
 
+  function getAllTransactions(){ return transactionRows; }
+
   function clearTransactionResults(){
     const out=el('transactionResults'); if(out) out.innerHTML='';
   }
 
-  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults};
+  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults,getAllTransactions};
 })();

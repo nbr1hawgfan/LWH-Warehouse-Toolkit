@@ -41,9 +41,11 @@
   <script defer src="./js/distance.js"></script>
   <script defer src="./js/trailer.js"></script>
   <script defer src="./js/picklist.js"></script>
+  <script defer src="./js/baycontents.js"></script>
   <script defer src="./js/bol.js"></script>
   <script defer src="./js/inventory.js"></script>
   <script defer src="./js/transactions.js"></script>
+  <script defer src="./js/dailyactivity.js"></script>
   <script defer src="./js/scanner.js"></script>
   <script defer src="./js/doc-auto-detect.js"></script>
   <script defer src="./js/utilities.js"></script>
@@ -60,6 +62,7 @@
       <button class="nav-btn active" data-view="home"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button>
       <button class="nav-btn" data-view="customerLookup"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>Master Lookup</button>
       <button class="nav-btn" data-view="transactionHistory"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="19" cy="17" r="2"/></svg>Transaction History</button>
+      <button class="nav-btn" data-view="dailyActivity"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/><path d="M8 14l2 2 4-4"/></svg>Daily Activity</button>
       <button class="nav-btn" data-view="utilities"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg>Warehouse Tools</button>
       <button class="nav-btn" data-view="docscan"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Doc Scanner</button>
       <button class="nav-btn" data-view="rack"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>4x6 Rack Labels</button>
@@ -68,6 +71,7 @@
       <button class="nav-btn" data-view="receiving"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>Receiving Print</button>
       <button class="nav-btn" data-view="trailer"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg>Trailer Checklist</button>
       <button class="nav-btn" data-view="picklist"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/><path d="M7 4v2M17 4v2"/></svg>Pick List</button>
+      <button class="nav-btn" data-view="bayContents"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 10h18M9 10v10"/></svg>Bay Contents</button>
       <button class="nav-btn" data-view="bol"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>Bill of Lading</button>
       <button class="nav-btn" data-view="contact"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c0-1.7 1.5-3 3-3s3 1.3 3 3M14 9h4M14 13h4"/></svg>Contact QR</button>
       <button class="nav-btn" data-view="visitor"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg>Visitor Badges</button>
@@ -85,6 +89,7 @@
       <div class="module-grid">
         <button class="module-card" data-view="customerLookup"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></div><b>Master Lookup</b><span>Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.</span></button>
         <button class="module-card" data-view="transactionHistory"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="19" cy="17" r="2"/></svg></div><b>Transaction History</b><span>Rolling 90-day inbound/outbound trail — search by Bill-to-Ref, item, or LWH ID to see when something arrived or shipped.</span></button>
+        <button class="module-card" data-view="dailyActivity"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/><path d="M8 14l2 2 4-4"/></svg></div><b>Daily Activity</b><span>Day-by-day inbound/outbound pallet and qty totals, filterable by warehouse, over the last 90 days.</span></button>
         <button class="module-card" data-view="utilities"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M3 13h18"/></svg></div><b>Warehouse Tools</b><span>Calculator, unit converter, pallet footprint, notepad, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.</span></button>
         <button class="module-card" data-view="docscan"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><b>Doc Scanner</b><span>Auto-detects and straightens paperwork as you scan, extract text, and share or download as a PDF — multi-page.</span></button>
         <button class="module-card" data-view="rack"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><b>Rack Labels</b><span>4x6 bay tags with 1D barcode and QR.</span></button>
@@ -93,6 +98,7 @@
         <button class="module-card" data-view="receiving"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></div><b>Receiving Print</b><span>Enter an InvRec and print every pallet label from that load.</span></button>
         <button class="module-card" data-view="trailer"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg></div><b>Trailer Checklist</b><span>Pre-loading GMP and pre-shipment checklist, ready to print.</span></button>
         <button class="module-card" data-view="picklist"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/><path d="M7 4v2M17 4v2"/></svg></div><b>Pick List</b><span>Filter by customer/item/lot/bay/warehouse, print a scannable pick list table or a grouped Item Summary.</span></button>
+        <button class="module-card" data-view="bayContents"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 10h18M9 10v10"/></svg></div><b>Bay Contents</b><span>Same filters as Pick List, but a plain data table with a summary and CSV export — no barcodes.</span></button>
         <button class="module-card" data-view="bol"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg></div><b>Bill of Lading</b><span>Fillable, printable BOL with your logo and drawable signatures.</span></button>
         <button class="module-card" data-view="visitor"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M8 17c0-2 1.8-3.4 4-3.4s4 1.4 4 3.4"/></svg></div><b>Visitor Badges</b><span>Visitor, vendor, contractor badges with optional photo.</span></button>
         <button class="module-card" data-view="empbadge"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h5M13 14h3"/></svg></div><b>Employee Badges</b><span>Timecard scan badge or full front/back company ID badge — CR80 card size.</span></button>
@@ -144,6 +150,18 @@
           <div id="txnStatus" class="hint">Transaction history not loaded yet — searching will load it automatically.</div>
         </form>
         <div><div id="transactionResults" class="results no-print"></div></div>
+      </div>
+    </section>
+
+    <section id="dailyActivity" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="dailyActivityForm" onsubmit="return false">
+          <h2>Daily Activity</h2>
+          <p class="hint">Per-day inbound/outbound pallet and qty totals over the same rolling 90-day window as Transaction History. Filter by warehouse, or leave on "All Warehouses" for a combined view.</p>
+          <label>Warehouse<select id="daWarehouse"><option value="__all__">All Warehouses</option></select></label>
+          <button type="button" id="daLoadBtn" class="ghost">Load / Refresh Data</button>
+        </form>
+        <div><div id="daResults" class="results no-print"></div></div>
       </div>
     </section>
 
@@ -245,6 +263,23 @@
           <div id="plStatus" class="hint">Enter at least one filter to search.</div>
         </form>
         <div><div id="picklistPrintOutput" class="print-area"></div><div id="picklistResults" class="results no-print"></div></div>
+      </div>
+    </section>
+
+    <section id="bayContents" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print" id="bayContentsForm">
+          <h2>Bay Contents</h2>
+          <p class="hint">Same filters as Pick List — Customer, Item #, Lot #, Bay, Warehouse, comma-separated for multiple values. Plain table output with a summary and CSV export, no barcodes.</p>
+          <label>Customer<input id="bcCustomer" placeholder="e.g. Nissan" /></label>
+          <label>Item #<input id="bcItem" placeholder="e.g. 3102M1XF4CRA" /></label>
+          <label>Lot #<input id="bcLot" placeholder="e.g. 20250918" /></label>
+          <label>Bay<input id="bcBay" placeholder="e.g. A02" /></label>
+          <label>Warehouse<input id="bcWarehouse" placeholder="e.g. WHSE10" /></label>
+          <div class="actions"><button type="button" id="bcSearchBtn">Search</button><button type="button" id="bcClearBtn" class="ghost">Clear</button></div>
+          <div id="bcStatus" class="hint">Enter at least one filter to search.</div>
+        </form>
+        <div><div id="bcResults" class="results no-print"></div></div>
       </div>
     </section>
 
