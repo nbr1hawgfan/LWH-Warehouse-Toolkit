@@ -418,6 +418,9 @@
           <button type="button" class="seg" data-util="axleweight">Axle Weight</button>
           <button type="button" class="seg" data-util="margincalc">Margin Calc</button>
           <button type="button" class="seg" data-util="freightclass">Freight Class</button>
+          <button type="button" class="seg" data-util="timer">Timer</button>
+          <button type="button" class="seg" data-util="tip">Tip Calc</button>
+          <button type="button" class="seg" data-util="spinner">Random Picker</button>
           <button type="button" class="seg" data-util="pwgen">Password Gen</button>
           <button type="button" class="seg" data-util="health">Health</button>
           <button type="button" class="seg" data-util="revenue">Storage Revenue</button>
@@ -725,6 +728,61 @@
           <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Est. Freight Class</div><div id="fcClass" style="font-size:1.8em;font-weight:900;color:var(--brand)">—</div></div>
         </div>
         <div id="fcTotalWeight" class="hint" style="margin-top:10px;text-align:center">—</div>
+      </div>
+
+      <div id="utilTimer" class="card util-panel no-print" hidden>
+        <h3>Timer / Stopwatch</h3>
+        <div class="grid-2">
+          <button type="button" id="tmModeTimer" class="seg active">Countdown Timer</button>
+          <button type="button" id="tmModeStopwatch" class="seg">Stopwatch</button>
+        </div>
+        <div id="tmTimerFields" class="grid-2" style="margin-top:12px">
+          <label>Minutes<input id="tmMinutes" inputmode="numeric" placeholder="5" value="5" /></label>
+          <label>Seconds<input id="tmSeconds" inputmode="numeric" placeholder="0" value="0" /></label>
+        </div>
+        <div class="card" style="text-align:center;background:var(--bg);margin-top:14px">
+          <div id="tmDisplay" style="font-size:3em;font-weight:900;font-variant-numeric:tabular-nums">05:00</div>
+        </div>
+        <div class="grid-3" style="margin-top:12px">
+          <button type="button" id="tmStartBtn">Start</button>
+          <button type="button" id="tmPauseBtn" class="ghost">Pause</button>
+          <button type="button" id="tmResetBtn" class="ghost">Reset</button>
+        </div>
+        <div id="tmStatus" class="hint" style="margin-top:10px;text-align:center">—</div>
+      </div>
+
+      <div id="utilTip" class="card util-panel no-print" hidden>
+        <h3>Tip &amp; Bill Split</h3>
+        <p class="hint">Enter the bill and tip %, split evenly across however many people are paying.</p>
+        <div class="grid-2">
+          <label>Bill Amount ($)<input id="tpBill" inputmode="decimal" placeholder="84.50" /></label>
+          <label>Tip %<input id="tpPercent" inputmode="decimal" placeholder="18" value="18" /></label>
+        </div>
+        <label>Split Between (# people)<input id="tpPeople" inputmode="numeric" placeholder="1" value="1" /></label>
+        <div class="grid-2" style="margin-top:10px">
+          <button type="button" class="ghost" data-tip="15">15%</button>
+          <button type="button" class="ghost" data-tip="18">18%</button>
+          <button type="button" class="ghost" data-tip="20">20%</button>
+          <button type="button" class="ghost" data-tip="25">25%</button>
+        </div>
+        <div class="grid-3" style="margin-top:12px">
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Tip</div><div id="tpTip" style="font-size:1.6em;font-weight:900">—</div></div>
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Total</div><div id="tpTotal" style="font-size:1.6em;font-weight:900">—</div></div>
+          <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Per Person</div><div id="tpPerPerson" style="font-size:1.8em;font-weight:900;color:var(--brand)">—</div></div>
+        </div>
+      </div>
+
+      <div id="utilSpinner" class="card util-panel no-print" hidden>
+        <h3>Random Picker</h3>
+        <p class="hint">One entry per line. Spin to pick — great for "who's picking lunch," raffles, or breaking a tie.</p>
+        <textarea id="spNames" rows="6" placeholder="Marco's&#10;Taco stand&#10;The diner&#10;Sandwich shop"></textarea>
+        <div class="actions" style="margin-top:10px"><button type="button" id="spSpinBtn">Spin</button><button type="button" id="spClearBtn" class="ghost">Clear List</button></div>
+        <div style="position:relative;text-align:center;margin-top:18px">
+          <div style="position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:18px solid var(--brand);z-index:2"></div>
+          <svg id="spWheel" viewBox="0 0 200 200" style="width:260px;height:260px;max-width:100%"></svg>
+        </div>
+        <div class="card" style="text-align:center;margin-top:12px;background:var(--bg)"><div class="hint">Winner</div><div id="spWinnerText" style="font-size:1.6em;font-weight:900;color:var(--brand)">—</div></div>
+        <div id="spHistory" class="hint" style="margin-top:10px"></div>
       </div>
 
       <div id="utilPwgen" class="card util-panel no-print" hidden>

@@ -12,7 +12,7 @@
     tabs.addEventListener('click',e=>{
       const b=e.target.closest('[data-util]'); if(!b) return;
       tabs.querySelectorAll('.seg').forEach(s=>s.classList.toggle('active',s===b));
-      ['calc','convert','pallet','notepad','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','freightclass','pwgen','health','revenue','distance','translate'].forEach(name=>{
+      ['calc','convert','pallet','notepad','message','trailercube','datecalc','loancalc','costperfoot','sqftcalc','rackcap','standards','casecalc','axleweight','margincalc','freightclass','timer','tip','spinner','pwgen','health','revenue','distance','translate'].forEach(name=>{
         const panel=el('util'+name.charAt(0).toUpperCase()+name.slice(1));
         if(panel) panel.hidden=(name!==b.dataset.util);
       });
@@ -1573,6 +1573,203 @@
     };
   }
 
+  // ---------- Timer / Stopwatch ----------
+  function initTimer(){
+    const modeTimerBtn=el('tmModeTimer'), modeStopBtn=el('tmModeStopwatch'), timerFields=el('tmTimerFields');
+    const minutesEl=el('tmMinutes'), secondsEl=el('tmSeconds');
+    const display=el('tmDisplay'), status=el('tmStatus');
+    const startBtn=el('tmStartBtn'), pauseBtn=el('tmPauseBtn'), resetBtn=el('tmResetBtn');
+    if(!modeTimerBtn) return;
+
+    let mode='timer', running=false, tickHandle=null, audioCtx=null;
+    let endTime=0, remainingAtPause=0, startTime=0, elapsedAtPause=0;
+
+    function fmtTimer(ms){
+      const totalSec=Math.max(0,Math.ceil(ms/1000));
+      const m=Math.floor(totalSec/60), s=totalSec%60;
+      return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    }
+    function fmtStopwatch(ms){
+      const totalMs=Math.max(0,ms);
+      const m=Math.floor(totalMs/60000), s=Math.floor((totalMs%60000)/1000), cs=Math.floor((totalMs%1000)/10);
+      return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
+    }
+    function beep(){
+      try{
+        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+        for(let i=0;i<3;i++){
+          const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+          o.type='sine'; o.frequency.value=880;
+          o.connect(g); g.connect(audioCtx.destination);
+          const t0=audioCtx.currentTime+i*0.35;
+          g.gain.setValueAtTime(0.2,t0);
+          g.gain.exponentialRampToValueAtTime(0.001,t0+0.3);
+          o.start(t0); o.stop(t0+0.3);
+        }
+      }catch(e){}
+    }
+
+    function updateDisplay(){
+      if(mode==='timer'){
+        const remaining=running?(endTime-Date.now()):remainingAtPause;
+        display.textContent=fmtTimer(remaining);
+        if(running && remaining<=0){
+          stopTick(); running=false;
+          display.textContent='00:00';
+          status.textContent="Time's up!";
+          beep();
+        }
+      }else{
+        const elapsed=running?(Date.now()-startTime+elapsedAtPause):elapsedAtPause;
+        display.textContent=fmtStopwatch(elapsed);
+      }
+    }
+    function stopTick(){ if(tickHandle){ clearInterval(tickHandle); tickHandle=null; } }
+
+    function start(){
+      if(running) return;
+      if(mode==='timer'){
+        const mins=parseFloat(minutesEl.value)||0, secs=parseFloat(secondsEl.value)||0;
+        const totalMs=remainingAtPause>0?remainingAtPause:(mins*60+secs)*1000;
+        if(totalMs<=0){ status.textContent='Set a time first.'; return; }
+        endTime=Date.now()+totalMs;
+        remainingAtPause=0;
+      }else{
+        startTime=Date.now();
+      }
+      running=true;
+      status.textContent='Running…';
+      tickHandle=setInterval(updateDisplay,200);
+    }
+    function pause(){
+      if(!running) return;
+      running=false; stopTick();
+      if(mode==='timer'){ remainingAtPause=endTime-Date.now(); }
+      else{ elapsedAtPause=Date.now()-startTime+elapsedAtPause; }
+      status.textContent='Paused.';
+    }
+    function reset(){
+      running=false; stopTick();
+      remainingAtPause=0; elapsedAtPause=0;
+      status.textContent='—';
+      if(mode==='timer'){
+        const mins=parseFloat(minutesEl.value)||0, secs=parseFloat(secondsEl.value)||0;
+        display.textContent=fmtTimer((mins*60+secs)*1000);
+      }else{
+        display.textContent='00:00.00';
+      }
+    }
+    function setMode(newMode){
+      mode=newMode;
+      modeTimerBtn.classList.toggle('active',mode==='timer');
+      modeStopBtn.classList.toggle('active',mode==='stopwatch');
+      timerFields.hidden=(mode!=='timer');
+      reset();
+    }
+
+    modeTimerBtn.onclick=()=>setMode('timer');
+    modeStopBtn.onclick=()=>setMode('stopwatch');
+    startBtn.onclick=start;
+    pauseBtn.onclick=pause;
+    resetBtn.onclick=reset;
+    [minutesEl,secondsEl].forEach(f=>f.addEventListener('input',()=>{ if(!running) reset(); }));
+
+    reset();
+    window.LWHToolClear.timer=reset;
+  }
+
+  // ---------- Tip & Bill Split ----------
+  function initTipCalc(){
+    const bill=el('tpBill'), percent=el('tpPercent'), people=el('tpPeople');
+    const tipOut=el('tpTip'), totalOut=el('tpTotal'), perPersonOut=el('tpPerPerson');
+    if(!bill) return;
+    function calc(){
+      const b=parseFloat(bill.value)||0, pct=parseFloat(percent.value)||0, n=Math.max(1,parseInt(people.value)||1);
+      if(!b){ tipOut.textContent='—'; totalOut.textContent='—'; perPersonOut.textContent='—'; return; }
+      const tip=b*(pct/100), total=b+tip, perPerson=total/n;
+      tipOut.textContent='$'+tip.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      totalOut.textContent='$'+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      perPersonOut.textContent='$'+perPerson.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    }
+    [bill,percent,people].forEach(f=>f.addEventListener('input',calc));
+    document.querySelectorAll('[data-tip]').forEach(btn=>{
+      btn.addEventListener('click',()=>{ percent.value=btn.dataset.tip; calc(); });
+    });
+    window.LWHToolClear.tip=()=>{ bill.value=''; percent.value='18'; people.value='1'; tipOut.textContent='—'; totalOut.textContent='—'; perPersonOut.textContent='—'; };
+  }
+
+  // ---------- Random Picker / Spinner Wheel ----------
+  function initSpinner(){
+    const namesEl=el('spNames'), svg=el('spWheel'), winnerText=el('spWinnerText'), historyEl=el('spHistory');
+    const spinBtn=el('spSpinBtn'), clearBtn=el('spClearBtn');
+    if(!namesEl) return;
+
+    let totalRotation=0;
+    let history=[];
+    const COLORS=['#0a5870','#128aa3','#7d1935','#8b1538','#0f4a45','#c9a227','#3d5a80','#e07a5f','#588157','#6d597a'];
+
+    function getNames(){
+      return namesEl.value.split('\n').map(s=>s.trim()).filter(Boolean);
+    }
+    function polarToCartesian(cx,cy,r,angleDeg){
+      const rad=(angleDeg-90)*Math.PI/180;
+      return { x:cx+r*Math.cos(rad), y:cy+r*Math.sin(rad) };
+    }
+    function arcPath(cx,cy,r,startAngle,endAngle){
+      const startPt=polarToCartesian(cx,cy,r,startAngle);
+      const endPt=polarToCartesian(cx,cy,r,endAngle);
+      const largeArc=(endAngle-startAngle)>180?1:0;
+      return `M ${cx} ${cy} L ${startPt.x} ${startPt.y} A ${r} ${r} 0 ${largeArc} 1 ${endPt.x} ${endPt.y} Z`;
+    }
+    function buildWheel(){
+      const names=getNames();
+      totalRotation=0;
+      if(names.length<2){ svg.innerHTML=''; return; }
+      const seg=360/names.length;
+      let content='';
+      names.forEach((name,i)=>{
+        const start=i*seg, end=(i+1)*seg, mid=start+seg/2;
+        content+=`<path d="${arcPath(100,100,95,start,end)}" fill="${COLORS[i%COLORS.length]}" stroke="#fff" stroke-width="1"/>`;
+        const labelPt=polarToCartesian(100,100,60,mid);
+        content+=`<text x="${labelPt.x}" y="${labelPt.y}" fill="#fff" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="middle" transform="rotate(${mid},${labelPt.x},${labelPt.y})">${safeText(name.slice(0,14))}</text>`;
+      });
+      svg.innerHTML=`<g id="spWheelGroup" style="transform-origin:100px 100px;transform-box:fill-box">${content}<circle cx="100" cy="100" r="8" fill="#fff" stroke="#333" stroke-width="1.5"/></g>`;
+    }
+    function safeText(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    function spin(){
+      const names=getNames();
+      if(names.length<2){ winnerText.textContent='Add at least two entries'; return; }
+      const group=el('spWheelGroup'); if(!group) return;
+      const seg=360/names.length;
+      const winnerIndex=Math.floor(Math.random()*names.length);
+      const currentMod=((totalRotation%360)+360)%360;
+      const desiredAbsolute=(360-(winnerIndex*seg+seg/2))%360;
+      const deltaNeeded=((desiredAbsolute-currentMod)%360+360)%360;
+      totalRotation+=5*360+deltaNeeded;
+      group.style.transition='transform 4s cubic-bezier(0.17,0.67,0.12,0.99)';
+      group.style.transform=`rotate(${totalRotation}deg)`;
+      spinBtn.disabled=true;
+      winnerText.textContent='Spinning…';
+      setTimeout(()=>{
+        const winner=names[winnerIndex];
+        winnerText.textContent=winner;
+        history.unshift(winner);
+        history=history.slice(0,10);
+        historyEl.textContent=history.length?('Recent picks: '+history.join(', ')):'';
+        spinBtn.disabled=false;
+      },4100);
+    }
+
+    spinBtn.onclick=spin;
+    clearBtn.onclick=()=>{ namesEl.value=''; buildWheel(); winnerText.textContent='—'; };
+    namesEl.addEventListener('input',()=>{ clearTimeout(namesEl._t); namesEl._t=setTimeout(buildWheel,400); });
+
+    buildWheel();
+    window.LWHToolClear.spinner=()=>{ namesEl.value=''; buildWheel(); winnerText.textContent='—'; historyEl.textContent=''; history=[]; };
+  }
+
+
 
   // ---------- Password Generator ----------
   function initPasswordGen(){
@@ -1863,5 +2060,5 @@
   }
 
   window.LWHUtilities={stopScannerCamera};
-  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initRackCap(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initFreightClass(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
+  window.addEventListener('load',()=>{ initTabs(); initClearActiveTool(); initCalc(); initConvert(); initPallet(); initNotepad(); initScanner(); initGenerate(); initScanCode(); initMessage(); initTrailerCube(); initDateCalc(); initLoanCalc(); initCostPerFoot(); initSqftCalc(); initRackCap(); initStandardsCalc(); initCaseCalc(); initAxleWeight(); initMarginCalc(); initFreightClass(); initTimer(); initTipCalc(); initSpinner(); initPasswordGen(); initHealth(); initRevenue(); initTranslate(); });
 })();
