@@ -27,10 +27,12 @@
       const g=byDate[date];
       const qty=parseFloat(r.qty)||0;
       if(r.transactionType==='Inbound'){ g.inPallets++; g.inQty+=qty; } else { g.outPallets++; g.outQty+=qty; }
-      // Group by item + customer together — an item # can occasionally span
-      // more than one customer, so this avoids blending their totals.
-      const key=(r.itemNm||'(no item #)')+'|'+(r.subCustNm||'—');
-      if(!g.items[key]) g.items[key]={item:r.itemNm||'(no item #)',customer:r.subCustNm||'—',qty:0,pallets:0};
+      // Inbound and Outbound get their own line, and Bill-to-Ref is part of
+      // the grouping key — billing needs those kept separate, not blended.
+      const type=r.transactionType==='Inbound'?'Inbound':'Outbound';
+      const billToRef=r.billToRef||'—';
+      const key=type+'|'+(r.itemNm||'(no item #)')+'|'+(r.subCustNm||'—')+'|'+billToRef;
+      if(!g.items[key]) g.items[key]={type, item:r.itemNm||'(no item #)',customer:r.subCustNm||'—',billToRef,qty:0,pallets:0};
       g.items[key].qty+=qty; g.items[key].pallets++;
     });
     return Object.values(byDate).sort((a,b)=>b.date.localeCompare(a.date));
@@ -40,12 +42,14 @@
     const items={};
     filtered.forEach(r=>{
       const qty=parseFloat(r.qty)||0;
-      const key=(r.itemNm||'(no item #)')+'|'+(r.subCustNm||'—');
-      if(!items[key]) items[key]={item:r.itemNm||'(no item #)',customer:r.subCustNm||'—',pallets:0,inQty:0,outQty:0};
-      if(r.transactionType==='Inbound') items[key].inQty+=qty; else items[key].outQty+=qty;
-      items[key].pallets++;
+      const type=r.transactionType==='Inbound'?'Inbound':'Outbound';
+      const billToRef=r.billToRef||'—';
+      const key=type+'|'+(r.itemNm||'(no item #)')+'|'+(r.subCustNm||'—')+'|'+billToRef;
+      if(!items[key]) items[key]={type, item:r.itemNm||'(no item #)',customer:r.subCustNm||'—',billToRef,pallets:0,qty:0};
+      items[key].qty+=qty; items[key].pallets++;
     });
-    return Object.values(items).map(i=>({...i, totalQty:i.inQty+i.outQty})).sort((a,b)=>b.totalQty-a.totalQty);
+    // Inbound lines first (matches how the day cards lead with Inbound), then by qty descending within each.
+    return Object.values(items).sort((a,b)=> a.type!==b.type ? (a.type==='Inbound'?-1:1) : b.qty-a.qty);
   }
 
   function renderWarehouseOptions(rows){
@@ -77,7 +81,7 @@
     const grandOutQty=filtered.filter(r=>r.transactionType!=='Inbound').reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
 
     const rangeLabel=(from||to)?` — ${from||'start'} to ${to||'today'}`:' — last 90 days';
-    const aggRows=aggregate.map(i=>`<tr><td>${safe(i.item)}</td><td>${safe(i.customer)}</td><td>${i.pallets.toLocaleString()}</td><td>${i.inQty.toLocaleString()}</td><td>${i.outQty.toLocaleString()}</td><td>${i.totalQty.toLocaleString()}</td></tr>`).join('');
+    const aggRows=aggregate.map(i=>`<tr><td>${safe(i.type)}</td><td>${safe(i.item)}</td><td>${safe(i.customer)}</td><td>${safe(i.billToRef)}</td><td>${i.pallets.toLocaleString()}</td><td>${i.qty.toLocaleString()}</td></tr>`).join('');
 
     let html=`<div class="card" style="margin-bottom:10px">
       <b>Totals${rangeLabel}${warehouse!=='__all__'?' — '+safe(warehouse):''}</b>
@@ -85,19 +89,19 @@
         <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Inbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${grandInPallets.toLocaleString()} plt</div><div class="hint">${grandInQty.toLocaleString()} qty</div></div>
         <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Outbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${grandOutPallets.toLocaleString()} plt</div><div class="hint">${grandOutQty.toLocaleString()} qty</div></div>
       </div>
-      <div style="margin-top:12px;overflow-x:auto"><table class="pls-table"><thead><tr><th>Item #</th><th>Customer</th><th>Pallets</th><th>In Qty</th><th>Out Qty</th><th>Total Qty</th></tr></thead><tbody>${aggRows}</tbody></table></div>
+      <div style="margin-top:12px;overflow-x:auto"><table class="pls-table"><thead><tr><th>Type</th><th>Item #</th><th>Customer</th><th>Bill-to-Ref</th><th>Pallets</th><th>Qty</th></tr></thead><tbody>${aggRows}</tbody></table></div>
     </div>`;
 
     html+=days.map(g=>{
-      const allItems=Object.values(g.items).sort((a,b)=>b.qty-a.qty)
-        .map(d=>`<tr><td>${safe(d.item)}</td><td>${safe(d.customer)}</td><td>${d.pallets.toLocaleString()}</td><td>${d.qty.toLocaleString()}</td></tr>`).join('');
+      const allItems=Object.values(g.items).sort((a,b)=> a.type!==b.type ? (a.type==='Inbound'?-1:1) : b.qty-a.qty)
+        .map(d=>`<tr><td>${safe(d.type)}</td><td>${safe(d.item)}</td><td>${safe(d.customer)}</td><td>${safe(d.billToRef)}</td><td>${d.pallets.toLocaleString()}</td><td>${d.qty.toLocaleString()}</td></tr>`).join('');
       return `<div class="card" style="margin-bottom:10px">
         <b>${safe(formatDate(g.date))}</b>
         <div class="grid-2" style="margin-top:8px">
           <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Inbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${g.inPallets.toLocaleString()} plt</div><div class="hint">${g.inQty.toLocaleString()} qty</div></div>
           <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Outbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${g.outPallets.toLocaleString()} plt</div><div class="hint">${g.outQty.toLocaleString()} qty</div></div>
         </div>
-        <details style="margin-top:8px"><summary>All items that day (${Object.keys(g.items).length})</summary><table class="pls-table" style="margin-top:6px"><thead><tr><th>Item #</th><th>Customer</th><th>Pallets</th><th>Qty</th></tr></thead><tbody>${allItems}</tbody></table></details>
+        <details style="margin-top:8px"><summary>All items that day (${Object.keys(g.items).length})</summary><table class="pls-table" style="margin-top:6px"><thead><tr><th>Type</th><th>Item #</th><th>Customer</th><th>Bill-to-Ref</th><th>Pallets</th><th>Qty</th></tr></thead><tbody>${allItems}</tbody></table></details>
       </div>`;
     }).join('');
 
@@ -111,8 +115,8 @@
 
   function exportCsv(){
     if(!lastAggregate.length){ LWHUI.toast('No results to export — load data and pick a filter first'); return; }
-    const header=['Item #','Customer','Pallets','In Qty','Out Qty','Total Qty'];
-    const rows=lastAggregate.map(i=>[i.item,i.customer,i.pallets,i.inQty,i.outQty,i.totalQty].map(csvEscape));
+    const header=['Type','Item #','Customer','Bill-to-Ref','Pallets','Qty'];
+    const rows=lastAggregate.map(i=>[i.type,i.item,i.customer,i.billToRef,i.pallets,i.qty].map(csvEscape));
     const csv=[header.join(','), ...rows.map(r=>r.join(','))].join('\r\n');
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob);
@@ -131,8 +135,8 @@
     const from=(el('daFrom')||{}).value||'';
     const to=(el('daTo')||{}).value||'';
     const rangeLabel=(from||to)?`${from||'start'} to ${to||'today'}`:'last 90 days';
-    const header=['Item #','Customer','Pallets','In Qty','Out Qty','Total Qty'].map(h=>`<th>${h}</th>`).join('');
-    const rows=lastAggregate.map(i=>`<tr><td>${safe(i.item)}</td><td>${safe(i.customer)}</td><td>${i.pallets.toLocaleString()}</td><td>${i.inQty.toLocaleString()}</td><td>${i.outQty.toLocaleString()}</td><td>${i.totalQty.toLocaleString()}</td></tr>`).join('');
+    const header=['Type','Item #','Customer','Bill-to-Ref','Pallets','Qty'].map(h=>`<th>${h}</th>`).join('');
+    const rows=lastAggregate.map(i=>`<tr><td>${safe(i.type)}</td><td>${safe(i.item)}</td><td>${safe(i.customer)}</td><td>${safe(i.billToRef)}</td><td>${i.pallets.toLocaleString()}</td><td>${i.qty.toLocaleString()}</td></tr>`).join('');
     out.innerHTML=`
       <h2>Daily Activity Item Totals — ${rangeLabel}${warehouse!=='__all__'?' — '+safe(warehouse):''}</h2>
       <table class="txn-print-table">
