@@ -24,25 +24,74 @@ function weatherCodeText(code){
   const map={0:'Clear',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',56:'Freezing Drizzle',57:'Freezing Drizzle',61:'Light Rain',63:'Rain',65:'Heavy Rain',66:'Freezing Rain',67:'Freezing Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',80:'Light Showers',81:'Showers',82:'Heavy Showers',85:'Snow Showers',86:'Snow Showers',95:'Thunderstorm',96:'Thunderstorm, Hail',99:'Thunderstorm, Hail'};
   return map[code]||'Weather';
 }
+function dayLabel(iso){
+  const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString([], {weekday:'short'});
+}
+async function refreshForecast(loc){
+  if(!window.heroForecast) return;
+  const cacheKey='forecastCache';
+  const cached=LWHStorage.get(cacheKey,null);
+  if(cached && cached.lat===loc.lat && cached.lon===loc.lon && (Date.now()-cached.at)<60*60*1000){
+    heroForecast.innerHTML=cached.html; return;
+  }
+  try{
+    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=7`,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const days=data.daily.time.map((t,i)=>({
+      label:i===0?'Today':dayLabel(t),
+      hi:Math.round(data.daily.temperature_2m_max[i]),
+      lo:Math.round(data.daily.temperature_2m_min[i]),
+      code:data.daily.weather_code[i]
+    }));
+    const html=days.map(d=>`<div class="weather-day"><b>${d.label}</b><span>${weatherCodeText(d.code)}</span><span>${d.hi}°/${d.lo}°</span></div>`).join('');
+    heroForecast.innerHTML=html;
+    LWHStorage.set(cacheKey,{lat:loc.lat,lon:loc.lon,html,at:Date.now()});
+  }catch(e){
+    console.error('Forecast fetch failed',e);
+  }
+}
+async function refreshAlerts(loc){
+  if(!window.heroAlert) return;
+  try{
+    const res=await fetch(`https://api.weather.gov/alerts/active?point=${loc.lat},${loc.lon}`,{cache:'no-store',headers:{'Accept':'application/geo+json'}});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const features=data.features||[];
+    if(!features.length){ heroAlert.hidden=true; return; }
+    const top=features[0].properties;
+    const more=features.length>1?` (+${features.length-1} more active)`:'';
+    heroAlert.hidden=false;
+    heroAlert.textContent=`⚠ ${top.event}${top.areaDesc?' — '+top.areaDesc:''}${more}`;
+  }catch(e){
+    heroAlert.hidden=true;
+    console.error('Weather alert fetch failed',e);
+  }
+}
 async function refreshHero(){
   if(window.heroGreeting) heroGreeting.textContent=getGreeting();
   if(!window.heroWeather) return;
   const loc=parseWeatherLoc(LWHStorage.get('weatherLoc',''));
   const cached=LWHStorage.get('weatherCache',null);
   const fresh=cached && cached.lat===loc.lat && cached.lon===loc.lon && (Date.now()-cached.at)<30*60*1000;
-  if(fresh){ heroWeather.textContent=cached.text; return; }
-  try{
-    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`,{cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const temp=Math.round(data.current.temperature_2m);
-    const text=`${temp}°F · ${weatherCodeText(data.current.weather_code)}`;
-    heroWeather.textContent=text;
-    LWHStorage.set('weatherCache',{lat:loc.lat,lon:loc.lon,text,at:Date.now()});
-  }catch(e){
-    heroWeather.textContent=cached?cached.text:'Weather unavailable right now.';
-    console.error('Weather fetch failed',e);
+  if(fresh){ heroWeather.textContent=cached.text; }
+  else{
+    try{
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`,{cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      const temp=Math.round(data.current.temperature_2m);
+      const text=`${temp}°F · ${weatherCodeText(data.current.weather_code)}`;
+      heroWeather.textContent=text;
+      LWHStorage.set('weatherCache',{lat:loc.lat,lon:loc.lon,text,at:Date.now()});
+    }catch(e){
+      heroWeather.textContent=cached?cached.text:'Weather unavailable right now.';
+      console.error('Weather fetch failed',e);
+    }
   }
+  refreshForecast(loc);
+  refreshAlerts(loc);
 }
 // Small helpers so the header/nav/hover colors always follow whatever brand
 // color is picked in Settings, instead of a second color being hardcoded.
