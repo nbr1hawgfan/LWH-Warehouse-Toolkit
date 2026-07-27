@@ -223,6 +223,8 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .print-area{display:flex;flex-wrap:wrap;gap:16px;align-content:flex-start}
 #txnPrintTable{display:block;margin-top:16px}
 #txnPrintTable:empty{display:none}
+#daPrintTable{display:block;margin-top:16px}
+#daPrintTable:empty{display:none}
 .txn-print-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
 .txn-print-table th,.txn-print-table td{border:1px solid #999;padding:4px 6px;text-align:left;white-space:nowrap}
 .txn-print-table th{background:#f0f0f0;font-weight:700}

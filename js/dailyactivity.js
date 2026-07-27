@@ -1,6 +1,7 @@
 (function(){
   function el(id){ return document.getElementById(id); }
   function safe(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  let lastAggregate=[];
 
   function formatDate(iso){
     const d=new Date(iso+'T00:00:00');
@@ -8,11 +9,20 @@
     return d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   }
 
-  function buildDayGroups(rows, warehouse){
-    const filtered=warehouse && warehouse!=='__all__' ? rows.filter(r=>r.location===warehouse) : rows;
+  function filterRows(rows, warehouse, from, to){
+    return rows.filter(r=>{
+      if(!r.transactionDate) return false;
+      if(warehouse && warehouse!=='__all__' && r.location!==warehouse) return false;
+      if(from && r.transactionDate<from) return false;
+      if(to && r.transactionDate>to) return false;
+      return true;
+    });
+  }
+
+  function buildDayGroups(filtered){
     const byDate={};
     filtered.forEach(r=>{
-      const date=r.transactionDate; if(!date) return;
+      const date=r.transactionDate;
       if(!byDate[date]) byDate[date]={date, inPallets:0, inQty:0, outPallets:0, outQty:0, items:{}};
       const g=byDate[date];
       const qty=parseFloat(r.qty)||0;
@@ -26,6 +36,18 @@
     return Object.values(byDate).sort((a,b)=>b.date.localeCompare(a.date));
   }
 
+  function buildAggregateItems(filtered){
+    const items={};
+    filtered.forEach(r=>{
+      const qty=parseFloat(r.qty)||0;
+      const key=(r.itemNm||'(no item #)')+'|'+(r.subCustNm||'—');
+      if(!items[key]) items[key]={item:r.itemNm||'(no item #)',customer:r.subCustNm||'—',pallets:0,inQty:0,outQty:0};
+      if(r.transactionType==='Inbound') items[key].inQty+=qty; else items[key].outQty+=qty;
+      items[key].pallets++;
+    });
+    return Object.values(items).map(i=>({...i, totalQty:i.inQty+i.outQty})).sort((a,b)=>b.totalQty-a.totalQty);
+  }
+
   function renderWarehouseOptions(rows){
     const sel=el('daWarehouse'); if(!sel) return;
     const current=sel.value;
@@ -37,14 +59,37 @@
   function renderDays(){
     const out=el('daResults'); if(!out) return;
     const rows=window.LWHTransactions?LWHTransactions.getAllTransactions():[];
-    if(!rows.length){ out.innerHTML='<div class="card">No transaction history loaded yet — click Load / Refresh.</div>'; return; }
+    if(!rows.length){ out.innerHTML='<div class="card">No transaction history loaded yet — click Load / Refresh.</div>'; lastAggregate=[]; return; }
     renderWarehouseOptions(rows);
     const warehouse=(el('daWarehouse')||{}).value||'__all__';
-    const days=buildDayGroups(rows, warehouse);
-    if(!days.length){ out.innerHTML='<div class="card">No activity found for that warehouse in the current 90-day window.</div>'; return; }
+    const from=(el('daFrom')||{}).value||'';
+    const to=(el('daTo')||{}).value||'';
+    const filtered=filterRows(rows, warehouse, from, to);
+    const days=buildDayGroups(filtered);
+    const aggregate=buildAggregateItems(filtered);
+    lastAggregate=aggregate;
 
-    out.innerHTML=days.map(g=>{
-      const topItems=Object.values(g.items).sort((a,b)=>b.qty-a.qty).slice(0,5)
+    if(!filtered.length){ out.innerHTML='<div class="card">No activity found for that warehouse/date range.</div>'; return; }
+
+    const grandInPallets=filtered.filter(r=>r.transactionType==='Inbound').length;
+    const grandOutPallets=filtered.length-grandInPallets;
+    const grandInQty=filtered.filter(r=>r.transactionType==='Inbound').reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+    const grandOutQty=filtered.filter(r=>r.transactionType!=='Inbound').reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+
+    const rangeLabel=(from||to)?` — ${from||'start'} to ${to||'today'}`:' — last 90 days';
+    const aggRows=aggregate.map(i=>`<tr><td>${safe(i.item)}</td><td>${safe(i.customer)}</td><td>${i.pallets.toLocaleString()}</td><td>${i.inQty.toLocaleString()}</td><td>${i.outQty.toLocaleString()}</td><td>${i.totalQty.toLocaleString()}</td></tr>`).join('');
+
+    let html=`<div class="card" style="margin-bottom:10px">
+      <b>Totals${rangeLabel}${warehouse!=='__all__'?' — '+safe(warehouse):''}</b>
+      <div class="grid-2" style="margin-top:8px">
+        <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Inbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${grandInPallets.toLocaleString()} plt</div><div class="hint">${grandInQty.toLocaleString()} qty</div></div>
+        <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Outbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${grandOutPallets.toLocaleString()} plt</div><div class="hint">${grandOutQty.toLocaleString()} qty</div></div>
+      </div>
+      <div style="margin-top:12px;overflow-x:auto"><table class="pls-table"><thead><tr><th>Item #</th><th>Customer</th><th>Pallets</th><th>In Qty</th><th>Out Qty</th><th>Total Qty</th></tr></thead><tbody>${aggRows}</tbody></table></div>
+    </div>`;
+
+    html+=days.map(g=>{
+      const allItems=Object.values(g.items).sort((a,b)=>b.qty-a.qty)
         .map(d=>`<tr><td>${safe(d.item)}</td><td>${safe(d.customer)}</td><td>${d.pallets.toLocaleString()}</td><td>${d.qty.toLocaleString()}</td></tr>`).join('');
       return `<div class="card" style="margin-bottom:10px">
         <b>${safe(formatDate(g.date))}</b>
@@ -52,23 +97,68 @@
           <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Inbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${g.inPallets.toLocaleString()} plt</div><div class="hint">${g.inQty.toLocaleString()} qty</div></div>
           <div class="card" style="text-align:center;background:var(--bg)"><div class="hint">Outbound</div><div style="font-size:1.4em;font-weight:900;color:var(--brand)">${g.outPallets.toLocaleString()} plt</div><div class="hint">${g.outQty.toLocaleString()} qty</div></div>
         </div>
-        <details style="margin-top:8px"><summary>Top items that day</summary><table class="pls-table" style="margin-top:6px"><thead><tr><th>Item #</th><th>Customer</th><th>Pallets</th><th>Qty</th></tr></thead><tbody>${topItems}</tbody></table></details>
+        <details style="margin-top:8px"><summary>All items that day (${Object.keys(g.items).length})</summary><table class="pls-table" style="margin-top:6px"><thead><tr><th>Item #</th><th>Customer</th><th>Pallets</th><th>Qty</th></tr></thead><tbody>${allItems}</tbody></table></details>
       </div>`;
     }).join('');
+
+    out.innerHTML=html;
+  }
+
+  function csvEscape(v){
+    const s=String(v??'');
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+
+  function exportCsv(){
+    if(!lastAggregate.length){ LWHUI.toast('No results to export — load data and pick a filter first'); return; }
+    const header=['Item #','Customer','Pallets','In Qty','Out Qty','Total Qty'];
+    const rows=lastAggregate.map(i=>[i.item,i.customer,i.pallets,i.inQty,i.outQty,i.totalQty].map(csvEscape));
+    const csv=[header.join(','), ...rows.map(r=>r.join(','))].join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const stamp=new Date().toISOString().slice(0,10);
+    a.href=url; a.download=`daily-activity-item-totals-${stamp}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    LWHUI.toast(`Exported ${lastAggregate.length} row(s) to CSV`);
+  }
+
+  function renderPrintTable(){
+    const out=el('daPrintTable'); if(!out) return;
+    if(!lastAggregate.length){ out.innerHTML=''; LWHUI.toast('No results to print — load data and pick a filter first'); return; }
+    const warehouse=(el('daWarehouse')||{}).value||'__all__';
+    const from=(el('daFrom')||{}).value||'';
+    const to=(el('daTo')||{}).value||'';
+    const rangeLabel=(from||to)?`${from||'start'} to ${to||'today'}`:'last 90 days';
+    const header=['Item #','Customer','Pallets','In Qty','Out Qty','Total Qty'].map(h=>`<th>${h}</th>`).join('');
+    const rows=lastAggregate.map(i=>`<tr><td>${safe(i.item)}</td><td>${safe(i.customer)}</td><td>${i.pallets.toLocaleString()}</td><td>${i.inQty.toLocaleString()}</td><td>${i.outQty.toLocaleString()}</td><td>${i.totalQty.toLocaleString()}</td></tr>`).join('');
+    out.innerHTML=`
+      <h2>Daily Activity Item Totals — ${rangeLabel}${warehouse!=='__all__'?' — '+safe(warehouse):''}</h2>
+      <table class="txn-print-table">
+        <thead><tr>${header}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    setTimeout(()=>print(),100);
   }
 
   window.addEventListener('load',()=>{
     if(!el('daWarehouse')) return;
     daWarehouse.addEventListener('change',renderDays);
+    if(window.daFrom) daFrom.addEventListener('change',renderDays);
+    if(window.daTo) daTo.addEventListener('change',renderDays);
+    if(window.daClearRange) daClearRange.onclick=()=>{ daFrom.value=''; daTo.value=''; renderDays(); };
     if(window.daLoadBtn) daLoadBtn.onclick=async()=>{
       await LWHTransactions.loadTransactions(true);
       renderDays();
       if(window.LWHUI) LWHUI.toast('Daily activity refreshed');
     };
+    if(window.daCsvBtn) daCsvBtn.onclick=exportCsv;
+    if(window.daPrintBtn) daPrintBtn.onclick=renderPrintTable;
     // Lazy-load the first time this tab is actually opened, matching the
     // Transaction History tab's approach — no reason to pull 60K+ rows on
     // every app launch if nobody visits this screen that day.
-    const navBtn=document.querySelector('[data-view="dailyActivity"]');
     let loadedOnce=false;
     document.addEventListener('click',e=>{
       if(e.target.closest('[data-view="dailyActivity"]') && !loadedOnce){
@@ -78,3 +168,4 @@
     });
   });
 })();
+
