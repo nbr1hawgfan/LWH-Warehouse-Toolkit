@@ -1,6 +1,7 @@
 (function(){
   const TRANSACTIONS_URL='https://tjivcqxnkftujceumdtx.supabase.co/functions/v1/transaction-history-csv';
   let transactionRows=[];
+  let lastResults=[];
   let loaded=false;
 
   function el(id){ return document.getElementById(id); }
@@ -83,6 +84,7 @@
   }
 
   function renderTransactionResults(list, totalMatches){
+    lastResults=list;
     const out=el('transactionResults'); if(!out) return;
     out.innerHTML='';
     if(!list.length){ out.innerHTML='<div class="card">No transaction history found.</div>'; return; }
@@ -111,11 +113,48 @@
     out.append(wrap);
   }
 
+  function csvEscape(v){
+    const s=String(v??'');
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }
+
+  function exportCsv(){
+    if(!lastResults.length){ LWHUI.toast('No results to export — run a search first'); return; }
+    const header=fieldOrder.map(k=>labels[k]);
+    const rows=lastResults.map(r=>fieldOrder.map(k=>csvEscape(r[k])));
+    const csv=[header.join(','), ...rows.map(r=>r.join(','))].join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const stamp=new Date().toISOString().slice(0,10);
+    a.href=url; a.download=`transaction-history-${stamp}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    LWHUI.toast(`Exported ${lastResults.length} row(s) to CSV`);
+  }
+
+  function renderPrintTable(){
+    const out=el('txnPrintTable'); if(!out) return;
+    if(!lastResults.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
+    const header=fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('');
+    const rows=lastResults.map(r=>`<tr>${fieldOrder.map(k=>`<td>${safe(r[k])}</td>`).join('')}</tr>`).join('');
+    out.innerHTML=`
+      <h2>Transaction History — ${lastResults.length} result(s)</h2>
+      <table class="txn-print-table">
+        <thead><tr>${header}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    setTimeout(()=>print(),100);
+  }
+
   function getAllTransactions(){ return transactionRows; }
 
   function clearTransactionResults(){
+    lastResults=[];
     const out=el('transactionResults'); if(out) out.innerHTML='';
+    const printOut=el('txnPrintTable'); if(printOut) printOut.innerHTML='';
   }
 
-  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults,getAllTransactions};
+  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults,getAllTransactions,exportCsv,renderPrintTable};
 })();

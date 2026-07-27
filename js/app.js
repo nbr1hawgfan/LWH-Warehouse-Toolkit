@@ -391,6 +391,8 @@ if(window.txnSearchBtn){txnSearchBtn.onclick=()=>{runTransactionSearch();};}
 if(window.txnSearch){txnSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();txnSearchBtn.click();}};}
 if(window.txnLoadBtn){txnLoadBtn.onclick=async()=>{await LWHTransactions.loadTransactions(true); if(txnSearch.value.trim()) runTransactionSearch(); LWHUI.toast('Transaction history loaded');};}
 if(window.txnClearBtn){txnClearBtn.onclick=()=>{txnSearch.value=''; LWHTransactions.clearTransactionResults(); txnSearch.focus();};}
+if(window.txnCsvBtn){txnCsvBtn.onclick=()=>LWHTransactions.exportCsv();}
+if(window.txnPrintBtn){txnPrintBtn.onclick=()=>LWHTransactions.renderPrintTable();}
 
 // Item Summary: a separate, focused lookup — does not touch Master
 // Lookup's universal search or its results panel in any way.

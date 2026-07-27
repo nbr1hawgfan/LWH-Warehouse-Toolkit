@@ -221,6 +221,12 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
    Zebra printing. Copied forward unchanged from the previous stylesheet.
    ========================================================================= */
 .print-area{display:flex;flex-wrap:wrap;gap:16px;align-content:flex-start}
+#txnPrintTable{display:block;margin-top:16px}
+#txnPrintTable:empty{display:none}
+.txn-print-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+.txn-print-table th,.txn-print-table td{border:1px solid #999;padding:4px 6px;text-align:left;white-space:nowrap}
+.txn-print-table th{background:#f0f0f0;font-weight:700}
+.txn-print-table tr:nth-child(even) td{background:#fafafa}
 .label-page{background:#fff;color:#000;border:1px dashed #aaa;page-break-after:always;break-after:page;position:relative;overflow:hidden}
 .rack-label{width:6in;height:4in;padding:.22in .28in}
 .rack-title{border:6px solid #000;text-align:center;font-weight:900;line-height:.95;font-size:1.08in;padding:.12in .1in;margin:0 auto;width:92%;white-space:nowrap;overflow:hidden;text-overflow:clip}
