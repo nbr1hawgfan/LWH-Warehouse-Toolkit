@@ -6,7 +6,7 @@
   let customerRows=[];
 
   function el(id){ return document.getElementById(id); }
-  function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; renderHomeCustomerTotals(); }
+  function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; renderHomeCustomerTotals(); renderHomeKpis(); }
   function setCustomerCurrentUrl(url){ const u=el('custCurrentUrl'); if(u) u.textContent=url || CUSTOMER_DEFAULT_URL; }
 
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -120,6 +120,34 @@
       groups[name].totalQty+=parseFloat(r.qty)||0;
     });
     return Object.values(groups).sort((a,b)=>b.pallets-a.pallets);
+  }
+
+  function formatKpiDate(iso){
+    if(!iso) return null;
+    const d=new Date(String(iso).includes('T')?iso:String(iso).replace(' ','T'));
+    if(isNaN(d)) return null;
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+
+  // HOME KPI CARDS — mirrors the traditional dashboard look: a bold total
+  // pallet count, active warehouse count, and last-synced date. Same
+  // trigger as renderHomeCustomerTotals, so it always stays current.
+  function renderHomeKpis(){
+    const countEl=el('kpiInventoryCount'), whEl=el('kpiWarehouseCount'), updEl=el('kpiLastUpdated');
+    if(!countEl) return;
+    if(!customerRows.length){
+      countEl.textContent='—'; if(whEl) whEl.textContent='—'; if(updEl) updEl.textContent='—';
+      return;
+    }
+    countEl.textContent=customerRows.length.toLocaleString();
+    if(whEl){
+      const warehouses=new Set(customerRows.map(r=>r.warehouse||r.location).filter(Boolean));
+      whEl.textContent=warehouses.size.toLocaleString();
+    }
+    if(updEl){
+      const latest=customerRows.reduce((max,r)=> r.syncedAt && r.syncedAt>max ? r.syncedAt : max, '');
+      updEl.textContent=formatKpiDate(latest)||'—';
+    }
   }
 
   function renderHomeCustomerTotals(){
