@@ -45,7 +45,7 @@
 
   function buildPackingListHtml(header, pallets){
     const totalQty=pallets.reduce((s,p)=>s+(parseFloat(p.qty)||0),0);
-    const rows=pallets.map(p=>`<tr><td>${safe(p.lwhId)}</td><td>${safe(p.subCustNm)}</td><td>${safe(p.itemNm)}</td><td>${safe(p.itemDesc)}</td><td>${safe(p.lotNum)}</td><td>${p.qty}</td><td>${safe(p.transactionDate)}</td><td>${safe(p.transactionType)}</td></tr>`).join('');
+    const rows=pallets.map(p=>`<tr><td>${safe(p.lwhId)}</td><td>${safe(p.subCustNm)}</td><td>${safe(p.customerId)}</td><td>${safe(p.itemNm)}</td><td>${safe(p.itemDesc)}</td><td>${safe(p.lotNum)}</td><td>${p.qty}</td><td>${safe(p.transactionDate)}</td><td>${safe(p.transactionType)}</td></tr>`).join('');
     return `
       <h1 style="font-size:20px;margin-bottom:4px">Packing List — Pro ${safe(header.proNumber)}</h1>
       <p style="font-size:13px;color:#555;margin-top:0">${safe(header.loadDate)} · ${safe(header.direction)} · ${safe(header.loadStatus)}</p>
@@ -62,6 +62,7 @@
         <thead><tr>
           <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">LWH ID</th>
           <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">Customer</th>
+          <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">Customer ID</th>
           <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">Item #</th>
           <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">Description</th>
           <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">Lot #</th>
@@ -70,7 +71,7 @@
           <th style="padding:5px 8px;border:1px solid #ccc;text-align:left">Type</th>
         </tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr><td colspan="5" style="padding:5px 8px;border:1px solid #ccc"><b>${pallets.length} pallet(s)</b></td><td style="padding:5px 8px;border:1px solid #ccc;text-align:right"><b>${totalQty.toLocaleString()}</b></td><td colspan="2" style="padding:5px 8px;border:1px solid #ccc"></td></tr></tfoot>
+        <tfoot><tr><td colspan="6" style="padding:5px 8px;border:1px solid #ccc"><b>${pallets.length} pallet(s)</b></td><td style="padding:5px 8px;border:1px solid #ccc;text-align:right"><b>${totalQty.toLocaleString()}</b></td><td colspan="2" style="padding:5px 8px;border:1px solid #ccc"></td></tr></tfoot>
       </table>
       ${pallets.length===0?'<p style="font-size:13px;color:#b91c1c;margin-top:10px">No pallet-level detail found for this load — it may be older than the 90-day Transaction History window, or predates load tracking.</p>':''}
     `;
@@ -94,8 +95,8 @@
       `Load Date,${csvEscape(header.loadDate)}`,
       ''
     ];
-    const cols=['LWH ID','Customer','Item #','Description','Lot #','Qty','Date','Type'];
-    const rows=pallets.map(p=>[p.lwhId,p.subCustNm,p.itemNm,p.itemDesc,p.lotNum,p.qty,p.transactionDate,p.transactionType].map(csvEscape));
+    const cols=['LWH ID','Customer','Customer ID','Item #','Description','Lot #','Qty','Date','Type'];
+    const rows=pallets.map(p=>[p.lwhId,p.subCustNm,p.customerId,p.itemNm,p.itemDesc,p.lotNum,p.qty,p.transactionDate,p.transactionType].map(csvEscape));
     const csv=[...headerLines, cols.join(','), ...rows.map(r=>r.join(','))].join('\r\n');
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob);
