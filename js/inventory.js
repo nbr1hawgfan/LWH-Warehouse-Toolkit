@@ -133,17 +133,13 @@
   // pallet count, active warehouse count, and last-synced date. Same
   // trigger as renderHomeCustomerTotals, so it always stays current.
   function renderHomeKpis(){
-    const countEl=el('kpiInventoryCount'), whEl=el('kpiWarehouseCount'), updEl=el('kpiLastUpdated');
+    const countEl=el('kpiInventoryCount'), updEl=el('kpiLastUpdated');
     if(!countEl) return;
     if(!customerRows.length){
-      countEl.textContent='—'; if(whEl) whEl.textContent='—'; if(updEl) updEl.textContent='—';
+      countEl.textContent='—'; if(updEl) updEl.textContent='—';
       return;
     }
     countEl.textContent=customerRows.length.toLocaleString();
-    if(whEl){
-      const warehouses=new Set(customerRows.map(r=>r.warehouse||r.location).filter(Boolean));
-      whEl.textContent=warehouses.size.toLocaleString();
-    }
     if(updEl){
       const latest=customerRows.reduce((max,r)=> r.syncedAt && r.syncedAt>max ? r.syncedAt : max, '');
       updEl.textContent=formatKpiDate(latest)||'—';

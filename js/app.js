@@ -63,7 +63,9 @@ async function refreshAlerts(loc){
     const top=features[0].properties;
     const more=features.length>1?` (+${features.length-1} more active)`:'';
     heroAlert.hidden=false;
-    heroAlert.textContent=`⚠ ${top.event}${top.areaDesc?' — '+top.areaDesc:''}${more}`;
+    heroAlert.open=false;
+    if(window.heroAlertSummary) heroAlertSummary.textContent=`⚠ ${top.event}${more} — tap for details`;
+    if(window.heroAlertBody) heroAlertBody.textContent=`${top.areaDesc||''}`;
   }catch(e){
     heroAlert.hidden=true;
     console.error('Weather alert fetch failed',e);
@@ -114,7 +116,6 @@ function applySettings(){
   if(window.setCustomerLookupUrl){ const custUrl=LWHStorage.get('customerLookupUrl','')||LWHInventory.CUSTOMER_DEFAULT_URL; setCustomerLookupUrl.value=custUrl; if(window.custCurrentUrl) custCurrentUrl.textContent=custUrl; }
   if(window.LWHInventory && LWHInventory.loadCustomerLabelsToSettings) LWHInventory.loadCustomerLabelsToSettings();
   calX.value=LWHStorage.get('calX',0); calY.value=LWHStorage.get('calY',0); calScale.value=LWHStorage.get('calScale',100);
-  statPrints.textContent=LWHStorage.get('printJobs',0); statLookups.textContent=LWHStorage.get('lookupCount',0); statVisitors.textContent=(LWHStorage.get('visitorLog',[])||[]).length;
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;installBtn.hidden=false});
 let renderManagersList=()=>{};

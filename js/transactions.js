@@ -156,5 +156,22 @@
     const printOut=el('txnPrintTable'); if(printOut) printOut.innerHTML='';
   }
 
-  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults,getAllTransactions,exportCsv,renderPrintTable};
+  function renderHomeTransactionsToday(){
+    const out=el('kpiTransactionsToday'); if(!out) return;
+    if(!transactionRows.length){ out.textContent='—'; return; }
+    const today=new Date().toISOString().slice(0,10);
+    const count=transactionRows.filter(r=>r.transactionDate===today).length;
+    out.textContent=count.toLocaleString();
+  }
+
+  window.LWHTransactions={loadTransactions,transactionSearch,renderTransactionResults,clearTransactionResults,getAllTransactions,exportCsv,renderPrintTable,renderHomeTransactionsToday};
+
+  // Eager-load on app start (not just when the Transaction History tab is
+  // opened) so the Transactions Today KPI on Home has something to show.
+  // Cached the same as everywhere else — this doesn't refetch if the
+  // Load / Refresh button already ran this session.
+  window.addEventListener('load',()=>{
+    if(!el('kpiTransactionsToday')) return;
+    loadTransactions(false).then(renderHomeTransactionsToday);
+  });
 })();

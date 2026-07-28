@@ -79,7 +79,12 @@ button.ghost:hover{background:var(--brand-tint)}
 .kpi-primary .kpi-sub{opacity:.85}
 .hero p{margin:0;color:var(--muted)}
 .hero-weather{font-size:1.5em;font-weight:900;color:var(--dt-red-dark);margin:8px 0 0!important}
-.hero-alert{background:#fff3cd;border:1px solid #e0a800;color:#664d03;border-radius:var(--radius-sm);padding:10px 12px;margin:10px 0 0;font-weight:700;font-size:14px}
+.hero-alert{background:#fff3cd;border:1px solid #e0a800;color:#664d03;border-radius:var(--radius-sm);padding:8px 12px;margin:10px 0 0;font-size:14px}
+.hero-alert summary{font-weight:700;cursor:pointer;list-style:none}
+.hero-alert summary::-webkit-details-marker{display:none}
+.hero-alert summary::before{content:'▸ ';font-weight:900}
+.hero-alert[open] summary::before{content:'▾ '}
+.hero-alert #heroAlertBody{margin-top:8px;font-weight:500;font-size:13px;line-height:1.4}
 .weather-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;margin-top:12px}
 .weather-day{background:#fff;border:1px solid var(--dt-red);border-radius:var(--radius-sm);padding:8px 6px;text-align:center}
 .weather-day b{display:block;font-size:11px;color:var(--dt-navy);font-weight:700;text-transform:uppercase}
