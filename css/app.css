@@ -225,6 +225,8 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 #txnPrintTable:empty{display:none}
 #daPrintTable{display:block;margin-top:16px}
 #daPrintTable:empty{display:none}
+#ldPrintTable{display:block;margin-top:16px}
+#ldPrintTable:empty{display:none}
 .txn-print-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
 .txn-print-table th,.txn-print-table td{border:1px solid #999;padding:4px 6px;text-align:left;white-space:nowrap}
 .txn-print-table th{background:#f0f0f0;font-weight:700}
@@ -384,6 +386,7 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .pls-table{width:100%;border-collapse:collapse;font-size:12px}
 .pls-table th,.pls-table td{border:1px solid var(--brand);padding:6px 8px;vertical-align:top}
 .pls-table th{background:var(--brand-tint);color:var(--brand-dark);text-align:left}
+.warehouse-badge{display:inline-block;color:#fff;font-weight:700;font-size:11px;padding:2px 8px;border-radius:6px;letter-spacing:.02em}
 .pls-bay{font-weight:900;width:110px}
 .pls-baytotal{font-weight:900;text-align:right;width:110px;white-space:nowrap}
 .pls-item-total{text-align:right;font-weight:900;font-size:12px;padding:4px 2px;border:1px solid var(--brand);border-top:0}
