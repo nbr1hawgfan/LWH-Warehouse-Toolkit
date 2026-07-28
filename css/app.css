@@ -242,6 +242,8 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 #ldPackingListPrint:empty{display:none}
 #pkPrintArea{display:block;margin-top:16px}
 #pkPrintArea:empty{display:none}
+#stPrintTable{display:block;margin-top:16px}
+#stPrintTable:empty{display:none}
 .txn-print-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
 .txn-print-table th,.txn-print-table td{border:1px solid #999;padding:4px 6px;text-align:left;white-space:nowrap}
 .txn-print-table th{background:#f0f0f0;font-weight:700}
