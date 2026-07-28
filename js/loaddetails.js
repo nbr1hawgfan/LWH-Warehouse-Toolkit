@@ -122,6 +122,7 @@
         <div class="hint">Shipper ${safe(h.shipper||'—')} → Consignee ${safe(h.consignee||'—')}</div>
         <div style="margin-top:8px;overflow-x:auto"><table class="pls-table"><thead><tr><th>Customer</th><th>Item #</th><th>Description</th><th>Lot #</th><th>Pallets</th><th>Qty</th></tr></thead><tbody>${itemRows}</tbody></table></div>
         <div class="hint" style="margin-top:6px"><b>Load total:</b> ${g.pallets.toLocaleString()} pallets · ${g.qty.toLocaleString()} qty</div>
+        <div class="actions" style="margin-top:8px"><button type="button" class="ghost" data-pl-generate="${safe(h.proNumber)}">Generate Packing List</button></div>
       `;
       out.append(card);
     });
@@ -168,7 +169,9 @@
     const printOut=el('ldPrintTable'); if(printOut) printOut.innerHTML='';
   }
 
-  window.LWHLoadDetails={loadLoadDetails,loadDetailsSearch,renderResults,exportCsv,renderPrintTable,clearResults};
+  function getAllLoadDetails(){ return loadRows; }
+
+  window.LWHLoadDetails={loadLoadDetails,loadDetailsSearch,renderResults,exportCsv,renderPrintTable,clearResults,getAllLoadDetails};
 
   window.addEventListener('load',()=>{
     if(!el('ldSearchBtn')) return;
@@ -184,5 +187,10 @@
     el('ldClearBtn').onclick=()=>{el('ldSearch').value=''; clearResults(); el('ldSearch').focus();};
     el('ldCsvBtn').onclick=exportCsv;
     el('ldPrintBtn').onclick=renderPrintTable;
+    el('loadDetailsResults').addEventListener('click',e=>{
+      const btn=e.target.closest('[data-pl-generate]'); if(!btn) return;
+      window.LWHPackingList.generateFor(btn.dataset.plGenerate,'ldPackingListOutput','ldPackingListPrint');
+      document.getElementById('ldPackingListOutput').scrollIntoView({behavior:'smooth',block:'start'});
+    });
   });
 })();
