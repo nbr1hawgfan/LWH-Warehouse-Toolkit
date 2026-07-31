@@ -257,6 +257,43 @@
   // and respects the Settings toggle (default on, per-user override to off).
   // Only triggers on exactly one match — the "found it" moment for a specific
   // LWH ID lookup — rather than trying to read out a whole list of results.
+  //
+  // Voice selection: browsers ship several built-in voices (varies by device/OS),
+  // and the default one some people find robotic. speechSynthesis.getVoices() can
+  // return empty on first call in Chrome/Edge until the async 'voiceschanged' event
+  // fires, so we listen for that and re-populate the Settings dropdown when it does.
+  let cachedVoices=[];
+  function refreshVoiceList(){
+    if(!window.speechSynthesis) return;
+    cachedVoices=speechSynthesis.getVoices()||[];
+    const sel=el('setTtsVoice');
+    if(!sel) return;
+    if(!cachedVoices.length){ sel.innerHTML='<option value="">No voices found — try Chrome or Edge</option>'; return; }
+    const saved=LWHStorage.get('ttsVoiceURI','');
+    const sorted=[...cachedVoices].sort((a,b)=>{
+      const aEn=a.lang.toLowerCase().startsWith('en')?0:1, bEn=b.lang.toLowerCase().startsWith('en')?0:1;
+      if(aEn!==bEn) return aEn-bEn;
+      return a.name.localeCompare(b.name);
+    });
+    sel.innerHTML='<option value="">Default (system voice)</option>'+sorted.map(v=>`<option value="${safe(v.voiceURI)}"${v.voiceURI===saved?' selected':''}>${safe(v.name)} (${safe(v.lang)})</option>`).join('');
+  }
+  function findVoice(uri){ const list=cachedVoices.length?cachedVoices:(window.speechSynthesis?speechSynthesis.getVoices():[]); return list.find(v=>v.voiceURI===uri); }
+  function speakText(text){
+    if(!window.speechSynthesis || !text) return;
+    try{
+      speechSynthesis.cancel(); // stop any previous utterance before starting a new one
+      const utter=new SpeechSynthesisUtterance(text);
+      utter.rate=0.95;
+      const uri=LWHStorage.get('ttsVoiceURI','');
+      if(uri){ const v=findVoice(uri); if(v) utter.voice=v; }
+      speechSynthesis.speak(utter);
+    }catch(e){ /* silent — never let this interrupt an actual lookup */ }
+  }
+  function saveTtsVoice(uri){ LWHStorage.set('ttsVoiceURI',uri||''); }
+  if(window.speechSynthesis){
+    speechSynthesis.onvoiceschanged=refreshVoiceList;
+    refreshVoiceList();
+  }
   function speakResult(r){
     if(!LWHStorage.get('readAloudEnabled',true)) return;
     if(!window.speechSynthesis) return;
@@ -265,12 +302,7 @@
     const bay=r.currentBay||r.bayName; if(bay) parts.push('Bay '+bay);
     if(r.qty) parts.push('Quantity '+r.qty);
     if(!parts.length) return;
-    try{
-      speechSynthesis.cancel(); // stop any previous utterance before starting a new one
-      const utter=new SpeechSynthesisUtterance(parts.join('. '));
-      utter.rate=0.95;
-      speechSynthesis.speak(utter);
-    }catch(e){ /* silent — never let this interrupt an actual lookup */ }
+    speakText(parts.join('. '));
   }
   function renderCustomerResults(list){ const out=el('customerLookupResults'); const printOut=el('customerLookupPrintOutput'); if(printOut) printOut.innerHTML=''; if(!out)return; out.innerHTML=''; if(!list.length){ out.innerHTML='<div class="card">No customer lookup results found.</div>'; return; } const labels=customerLabels(); const top=document.createElement('div'); top.className='card'; top.innerHTML=`<b>${list.length}</b> matching row(s)<div class="actions"><button type="button" id="custPrintAll">Print Pallet Labels</button></div>`; out.append(top); const wrap=document.createElement('div'); wrap.className='result-list customer-results'; list.forEach((obj,i)=>{ const r=obj.row; const match=obj.match; const c=document.createElement('div'); c.className='result-card customer-card'; const grid=customerFieldOrder.map(k=>`<div class="cust-field"><b>${safe(labels[k]||k)}</b><span>${safe(r[k]||'')}</span></div>`).join(''); c.innerHTML=`<div><b>${safe(r.controlNumber)}</b> <span>${safe(r.subCustNm)}</span></div><div>${safe(r.warehouse||r.location)} · Bay <b>${safe(r.currentBay||r.bayName)}</b> · Qty ${safe(r.qty)} · INV ${safe(r.invReceipt)}</div>${match?`<div class="match-pill">Matched on ${safe(match.label)}: <b>${safe(match.value)}</b></div>`:''}<details open><summary>All customer lookup fields</summary><div class="cust-grid">${grid}</div></details><div class="actions"><button type="button" data-cust-print="${i}">Print Pallet Label</button><button type="button" data-cust-copy="${i}" class="ghost">Copy Result</button><button type="button" data-cust-fill="${i}" class="ghost">Fill Pallet Form</button></div>`; wrap.append(c); }); out.append(wrap); const rowsForLabels=list.map(x=>customerToPalletRow(x.row)); const pa=el('custPrintAll'); if(pa) pa.onclick=()=>printRows(rowsForLabels,printOut); wrap.onclick=e=>{ const b=e.target.closest('button'); if(!b)return; const idx=+(b.dataset.custPrint??b.dataset.custCopy??b.dataset.custFill); const obj=list[idx]; if(!obj)return; if(b.dataset.custPrint!==undefined) printRows([customerToPalletRow(obj.row)],printOut); if(b.dataset.custCopy!==undefined) copyCustomerResult(obj.row); if(b.dataset.custFill!==undefined){ fillPallet(customerToPalletRow(obj.row)); LWHUI.show('pallet'); } }; if(list.length===1) speakResult(list[0].row); }
 
@@ -297,5 +329,5 @@
   }
   function toTSV(list){ const h=['Location','LWH_ID','Customer_ID','Customer','InvRec','BillToRef','ItemNm','ItemDesc','LotNum','Qty','Units','BayName','DateReceived']; const keys=['location','lwhid','custId','customer','invRec','billToRef','item','desc','lot','qty','units','bay','dateReceived']; return [h.join('\t'),...list.map(r=>keys.map(k=>String(r[k]??'').replace(/\t/g,' ')).join('\t'))].join('\n'); }
   function fillPallet(r){ if(window.palLocation) palLocation.value=r.location||''; palLwhid.value=r.lwhid||''; palCustId.value=r.custId||''; palCustomer.value=r.customer||''; palBay.value=r.bay||''; palItem.value=r.item||''; palLot.value=r.lot||''; palQty.value=r.qty||''; palDate.value=r.dateReceived||''; palDesc.value=r.desc||''; document.querySelector('[data-pallet-mode="simple"]').click(); }
-  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary,customerTotals,renderHomeCustomerTotals};
+  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary,customerTotals,renderHomeCustomerTotals,refreshVoiceList,speakText,saveTtsVoice};
 })();

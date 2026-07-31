@@ -208,7 +208,9 @@ let renderQuickLinksList=()=>{};
 const QUICK_LINKS_DEFAULT=[
   {name:'Forklift Inspection',url:'https://script.google.com/macros/s/AKfycbyqgmk0BG_YoJIQcjCdVyMsR878-J1k0EQODinxxvQSx8CYzW2xZHIRLDbbua9TGup9/exec'},
   {name:'PTO Requests',url:'https://script.google.com/macros/s/AKfycbwXblseav0VCgynTXxL6BYTLniZ4xJAiYholbDgnFPXBqL46_sxP1Rc49MWMga52QsV/exec'},
-  {name:'Safety Training',url:'https://script.google.com/a/macros/logisticswarehouse.net/s/AKfycbxY_tZyajeHo00TH_EWaFgHBhG-fOWN8uxeXwxufDBzVnA8cOZxCdDtkdJ7N_O0uKfK/exec'}
+  {name:'Safety Training',url:'https://script.google.com/a/macros/logisticswarehouse.net/s/AKfycbxY_tZyajeHo00TH_EWaFgHBhG-fOWN8uxeXwxufDBzVnA8cOZxCdDtkdJ7N_O0uKfK/exec'},
+  {name:'Mobile Scan Portal',url:'http://mobile.logistics-warehouse.biz/'},
+  {name:'Customer Portal',url:'https://portal.logistics-warehouse.biz/Default.aspx'}
 ];
 function renderQuickLinksHome(){
   const wrap=document.getElementById('quickLinksHome'), grid=document.getElementById('quickLinksGrid');
@@ -230,6 +232,19 @@ function initQuickLinks(){
     const safety=QUICK_LINKS_DEFAULT.find(l=>l.name==='Safety Training');
     if(safety && !links.some(l=>l.url===safety.url)){ links.push(safety); LWHStorage.set('quickLinks',links); }
     LWHStorage.set('quickLinksMigratedSafety',true);
+  }
+  // Same one-time-only pattern as above: adds the Mobile Scan Portal and
+  // Customer Portal links to everyone's existing saved list, once, without
+  // touching anything already there. Won't re-add either if someone
+  // deliberately removes it afterward.
+  if(!LWHStorage.get('quickLinksMigratedPortals',false)){
+    const links=LWHStorage.get('quickLinks',[]);
+    ['Mobile Scan Portal','Customer Portal'].forEach(name=>{
+      const def=QUICK_LINKS_DEFAULT.find(l=>l.name===name);
+      if(def && !links.some(l=>l.url===def.url)) links.push(def);
+    });
+    LWHStorage.set('quickLinks',links);
+    LWHStorage.set('quickLinksMigratedPortals',true);
   }
   renderQuickLinksList=function render(){
     const links=LWHStorage.get('quickLinks',[]);
@@ -453,6 +468,8 @@ if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findRece
 if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(recPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} row(s)`);};}
 saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#c8102e');if(window.setTagline)LWHStorage.set('companyTagline',setTagline.value||'');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}if(window.setReadAloud)LWHStorage.set('readAloudEnabled',setReadAloud.checked);LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
+if(window.setTtsVoice){setTtsVoice.onchange=()=>{if(window.LWHInventory)LWHInventory.saveTtsVoice(setTtsVoice.value);LWHUI.toast('Voice saved')};}
+if(window.testTtsVoice){testTtsVoice.onclick=()=>{if(window.LWHInventory)LWHInventory.speakText('Bulk seven fifty M L Kahlua. Bay X L F zero two three. Quantity nineteen forty six.');};}
 saveCalibration.onclick=()=>{LWHStorage.set('calX',calX.value||0);LWHStorage.set('calY',calY.value||0);LWHStorage.set('calScale',calScale.value||100);LWHUI.toast('Calibration saved')};
 if(window.saveCustomerLookupUrl){saveCustomerLookupUrl.onclick=()=>{const url=LWHInventory.normalizeUrl(setCustomerLookupUrl.value||LWHInventory.CUSTOMER_DEFAULT_URL,LWHInventory.CUSTOMER_DEFAULT_URL); LWHStorage.set('customerLookupUrl',url); setCustomerLookupUrl.value=url; if(window.custCurrentUrl) custCurrentUrl.textContent=url; LWHUI.toast('Source saved')};}
 if(window.testCustomerLookupUrl){testCustomerLookupUrl.onclick=async()=>{try{await LWHInventory.loadCustomerFromUrl();LWHUI.toast('Source works')}catch(e){custLookupStatus.textContent='Test failed: '+e.message; LWHUI.toast('Load failed')}};}
