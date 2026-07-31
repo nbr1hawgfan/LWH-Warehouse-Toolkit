@@ -350,7 +350,7 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .shipwt-label .swl-total .swl-tlabel{font-size:.12in;text-transform:uppercase;letter-spacing:.5px}
 .shipwt-label .swl-total .swl-tval{font-size:.32in;font-weight:900!important;margin-top:.03in}
 .shipwt-label .swl-total .swl-tsub{font-size:.12in;margin-top:.05in}
-.shipwt-label .swl-freight{border:2px solid #000;padding:.08in;text-align:center;margin-top:.1in;font-size:.14in}
+.shipwt-label .swl-freight{border:2px solid #000;padding:.1in;text-align:center;margin-top:.1in;font-size:.22in}
 .shipwt-label .swl-footer{font-size:.11in;text-align:center;margin-top:.12in}
 .pallet-grid>div{font-weight:700}
 .pallet-codes .barcode-text{font-size:13px;margin-top:-7px}
