@@ -66,11 +66,17 @@
   }
 
   function simpleBolHtml(){
-    const logo=LWHStorage.get('companyLogo','');
+    const blindShip=el('bolBlindShip') && el('bolBlindShip').checked;
+    const logo=blindShip ? '' : LWHStorage.get('companyLogo','');
     const date=formatDate(el('bolSimpleDate').value), bolNumber=el('bolSimpleNumber').value;
     const fromName=el('bolSimpleFromName').value, fromAddr=el('bolSimpleFromAddr').value, fromCity=el('bolSimpleFromCity').value;
     const toName=el('bolSimpleToName').value, toAddr=el('bolSimpleToAddr').value, toCity=el('bolSimpleToCity').value;
-    const carrier=el('bolSimpleCarrier').value, driver=el('bolSimpleDriver').value, trailer=el('bolSimpleTrailer').value;
+    // Blind Ship: only blank the Carrier field if it's still the untouched
+    // "Logistics Warehouse" default — never overwrite something a person
+    // actually typed there (e.g. an outside trucking company's real name).
+    const carrierRaw=el('bolSimpleCarrier').value;
+    const carrier=(blindShip && carrierRaw.trim()==='Logistics Warehouse') ? '' : carrierRaw;
+    const driver=el('bolSimpleDriver').value, trailer=el('bolSimpleTrailer').value;
     const truck=el('bolSimpleTruck').value, seal=el('bolSimpleSeal').value;
     const instructions=el('bolSimpleInstructions').value;
 
