@@ -58,10 +58,10 @@
 <body>
   <header class="app-header no-print">
     <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.50.0</div></div></div>
-    <div class="header-actions"><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
+    <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button onclick="window.print()">Print</button></div>
   </header>
 
-  <main class="app-shell">
+  <main class="app-shell home-active">
     <nav class="nav no-print" aria-label="Modules">
       <button class="nav-btn active" data-view="home"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button>
       <button class="nav-btn" data-view="customerLookup"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>Master Lookup</button>
@@ -110,7 +110,6 @@
           <div class="kpi-sub">Refreshed automatically from birdsEye.</div>
         </div>
       </div>
-      <div class="card" style="margin-top:16px"><h3 style="margin-top:0">Inventory by Customer</h3><div id="homeCustomerTotals"><p class="hint">Loading inventory by customer…</p></div></div>
       <h3>Quick Actions</h3>
       <div class="module-grid">
         <button class="module-card" data-view="customerLookup"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></div><b>Master Lookup</b><span>Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.</span></button>
@@ -141,6 +140,8 @@
         <h3>Quick Links</h3>
         <div id="quickLinksGrid" class="module-grid"></div>
       </div>
+
+      <div class="card" style="margin-top:16px"><h3 style="margin-top:0">Inventory by Customer</h3><div id="homeCustomerTotals"><p class="hint">Loading inventory by customer…</p></div></div>
     </section>
 
 

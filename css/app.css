@@ -65,6 +65,15 @@ button.ghost:hover{background:var(--brand-tint)}
 @media(min-width:1800px){
   .app-shell{grid-template-columns:260px 1fr;padding:28px 56px}
 }
+
+/* Desktop-only: hide the sidebar nav while on Home so the landing page
+   isn't competing with it for attention. Gated to min-width:901px so it
+   never touches the existing tablet (<=900px) or phone (<=640px) nav
+   rules below — those still fully control mobile nav behavior. */
+@media(min-width:901px){
+  .app-shell.home-active{grid-template-columns:1fr}
+  .app-shell.home-active .nav{display:none}
+}
 .nav{background:var(--frame-black);border:1px solid var(--frame-black);border-radius:var(--radius);padding:10px;height:max-content;position:sticky;top:16px}
 .nav-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;color:#c7c7d6;border-radius:var(--radius-sm);margin-bottom:4px;padding:10px 12px;font-weight:600;border-left:3px solid transparent}
 .nav-btn .icon{color:#8686a0}
