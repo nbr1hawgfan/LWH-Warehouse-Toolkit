@@ -373,6 +373,9 @@ installBtn.onclick=async()=>{if(!deferredInstallPrompt)return;deferredInstallPro
 rackGenerate.onclick=()=>{LWHLabels.generateRack();applySettings()}; rackClear.onclick=()=>{rackList.value='';rackOutput.innerHTML=''}; rackBatchBtn.onclick=()=>{rackList.value=LWHLabels.generateBatch(rackBatchStart.value,rackBatchEnd.value,+rackBatchPad.value)};
 signGenerate.onclick=()=>{LWHLabels.generateSigns();applySettings()}; signClear.onclick=()=>{signList.value='';signOutput.innerHTML=''}; signBatchBtn.onclick=()=>{signList.value=LWHLabels.generateBatch(signBatchStart.value,signBatchEnd.value,+signBatchPad.value)};
 document.querySelectorAll('[data-pallet-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-pallet-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');palletSimple.hidden=b.dataset.palletMode!=='simple';palletBulk.hidden=b.dataset.palletMode!=='bulk'});
+document.querySelectorAll('[data-shipwt-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-shipwt-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');shipwtTci.hidden=b.dataset.shipwtMode!=='tci';shipwtSb.hidden=b.dataset.shipwtMode!=='sb'});
+if(window.swPrintBtn){swPrintBtn.onclick=()=>LWHShipWeights.printShipWeightLabel();}
+if(window.swClearBtn){swClearBtn.onclick=()=>LWHShipWeights.clearShipwt();}
 palGenerate.onclick=()=>{LWHLabels.generatePallet();applySettings()}; palSample.onclick=()=>{if(window.palLocation) palLocation.value='WHSE10';palLwhid.value='4098207';palCustId.value='1512A12518300020';palCustomer.value='ANCHE';palBay.value='A14';palItem.value='869468';palLot.value='07-02-25';palQty.value='1736';palDesc.value='16 6 OZ PINT WM'};
 if(window.palScanPrint){palScanPrint.onclick=()=>LWHScanner.start(value=>{
   const row=LWHInventory.findExactForPrint(value);
