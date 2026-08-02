@@ -6,7 +6,7 @@
   let customerRows=[];
 
   function el(id){ return document.getElementById(id); }
-  function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; renderHomeCustomerTotals(); renderHomeKpis(); if(window.LWHLocationOverview) LWHLocationOverview.populateWarehouses(); }
+  function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; renderHomeCustomerTotals(); renderHomeLocationCustomerTotals(); renderHomeKpis(); if(window.LWHLocationOverview) LWHLocationOverview.populateWarehouses(); if(window.LWHCustomerView) LWHCustomerView.populateCustomers(); }
   function setCustomerCurrentUrl(url){ const u=el('custCurrentUrl'); if(u) u.textContent=url || CUSTOMER_DEFAULT_URL; }
 
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -122,6 +122,22 @@
     return Object.values(groups).sort((a,b)=>b.pallets-a.pallets);
   }
 
+  // Same idea as customerTotals(), one level more granular — grouped by
+  // warehouse AND customer, for the Home quick-reference table. Sorted by
+  // warehouse first (so it reads as location-grouped blocks), then by
+  // pallets descending within each warehouse.
+  function locationCustomerTotals(){
+    const groups={};
+    customerRows.forEach(r=>{
+      const wh=r.warehouse||'—', name=r.subCustNm||'—';
+      const key=wh+'|'+name;
+      if(!groups[key]) groups[key]={warehouse:wh,customer:name,pallets:0,totalQty:0};
+      groups[key].pallets++;
+      groups[key].totalQty+=parseFloat(r.qty)||0;
+    });
+    return Object.values(groups).sort((a,b)=> a.warehouse===b.warehouse ? b.pallets-a.pallets : a.warehouse.localeCompare(b.warehouse));
+  }
+
   function formatKpiDate(iso){
     if(!iso) return null;
     const d=new Date(String(iso).includes('T')?iso:String(iso).replace(' ','T'));
@@ -153,6 +169,15 @@
     if(!totals.length){ out.innerHTML='<p class="hint">No inventory data available.</p>'; return; }
     const rows=totals.map(t=>`<tr><td>${safe(t.customer)}</td><td>${t.pallets.toLocaleString()}</td><td>${t.totalQty.toLocaleString()}</td></tr>`).join('');
     out.innerHTML=`<table class="pls-table"><thead><tr><th>Customer</th><th>Pallets</th><th>Total Qty</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderHomeLocationCustomerTotals(){
+    const out=el('homeLocationCustomerTotals'); if(!out) return;
+    if(!customerRows.length){ out.innerHTML='<p class="hint">Loading inventory…</p>'; return; }
+    const totals=locationCustomerTotals();
+    if(!totals.length){ out.innerHTML='<p class="hint">No inventory data available.</p>'; return; }
+    const rows=totals.map(t=>`<tr><td>${safe(t.warehouse)}</td><td>${safe(t.customer)}</td><td>${t.pallets.toLocaleString()}</td><td>${t.totalQty.toLocaleString()}</td></tr>`).join('');
+    out.innerHTML=`<table class="pls-table"><thead><tr><th>Location</th><th>Customer</th><th>Pallets</th><th>Total Qty</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   // ITEM SUMMARY — a separate, focused search, kept deliberately apart
@@ -329,5 +354,5 @@
   }
   function toTSV(list){ const h=['Location','LWH_ID','Customer_ID','Customer','InvRec','BillToRef','ItemNm','ItemDesc','LotNum','Qty','Units','BayName','DateReceived']; const keys=['location','lwhid','custId','customer','invRec','billToRef','item','desc','lot','qty','units','bay','dateReceived']; return [h.join('\t'),...list.map(r=>keys.map(k=>String(r[k]??'').replace(/\t/g,' ')).join('\t'))].join('\n'); }
   function fillPallet(r){ if(window.palLocation) palLocation.value=r.location||''; palLwhid.value=r.lwhid||''; palCustId.value=r.custId||''; palCustomer.value=r.customer||''; palBay.value=r.bay||''; palItem.value=r.item||''; palLot.value=r.lot||''; palQty.value=r.qty||''; palDate.value=r.dateReceived||''; palDesc.value=r.desc||''; document.querySelector('[data-pallet-mode="simple"]').click(); }
-  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary,customerTotals,renderHomeCustomerTotals,refreshVoiceList,speakText,saveTtsVoice};
+  window.LWHInventory={CUSTOMER_DEFAULT_URL,parseCustomerDelimited,loadCustomerFromUrl,loadCached,fillPallet,normalizeUrl,resetCustomerSource,getCustomerUrl,printRows,findReceiving,findExactForPrint,toTSV,customerSearch,getAllRows,renderCustomerResults,customerLabels,loadCustomerLabelsToSettings,saveCustomerLabelsFromSettings,itemSummary,renderItemSummary,customerTotals,renderHomeCustomerTotals,locationCustomerTotals,renderHomeLocationCustomerTotals,refreshVoiceList,speakText,saveTtsVoice};
 })();
