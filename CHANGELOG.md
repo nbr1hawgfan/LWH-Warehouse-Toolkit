@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.51.2
+- **Item Transaction Lookup: Summary by Item now groups by load/transaction**, not by item alone. Each row = one load (same Bill-to-Ref, or same INV Receipt when Bill-to-Ref is blank — inbound receipts usually don't carry one), with Type, Customer, Location, Item #, Item Description, INV Receipt, Bill-to-Ref, Date, Total Pallets, and Total Qty for that load — matching the minimum columns from the portal's per-item report.
+- **New: Lot Breakdown column.** When a single load spans more than one lot number, that row shows each lot's pallet count and qty (e.g. "LOTA (11 plt, 880 qty); LOTB (2 plt, 160 qty)") while Total Pallets/Qty still reads the load's full total — nothing gets hidden.
+- Totals by Item, Location & Type block still sits below the load table as the grand total across every load shown.
+
 ## v1.51.1
 - **Item Transaction Lookup: reworked Summary by Item.** It no longer collapses to one rolled-up row per item — it now shows the same detail rows (sorted item → location → type → date, a "perpetual" ins-and-outs read) with a **Totals by Item, Location & Type** table underneath, matching the reconciliation-style report used on the customer portal side. Print and CSV export both include the detail rows plus the totals block.
 - **Removed the Customer ID column** (e.g. "3442") from both views and exports — internal-only number, not meaningful on a customer-facing report.
