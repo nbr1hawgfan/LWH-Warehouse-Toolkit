@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.51.1
+- **Item Transaction Lookup: reworked Summary by Item.** It no longer collapses to one rolled-up row per item — it now shows the same detail rows (sorted item → location → type → date, a "perpetual" ins-and-outs read) with a **Totals by Item, Location & Type** table underneath, matching the reconciliation-style report used on the customer portal side. Print and CSV export both include the detail rows plus the totals block.
+- **Removed the Customer ID column** (e.g. "3442") from both views and exports — internal-only number, not meaningful on a customer-facing report.
+
 ## v1.51.0
 - **New: Item Transaction Lookup tab** — pallet-level inbound/outbound transaction detail for a specific item, or a Summary by Item view totaling pallets and qty (with an Inbound/Outbound split) per item. Same rolling ~90-day dataset as Transaction History.
 - **New: Item #, Warehouse, and date range filters**, all combinable with each other and with a Smart Search box that matches every column on the transaction row — item #, description, Bill-to-Ref, LWH ID, INV Receipt, lot #, customer, transaction type, location, and date — not just item/description.

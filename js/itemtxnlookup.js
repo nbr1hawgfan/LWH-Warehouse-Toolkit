@@ -3,9 +3,13 @@
   // dataset/loader as the Transaction History and Daily Activity tabs (same
   // rolling ~90-day window, same Supabase edge function). Two views:
   //   - Pallet Detail: every matching transaction row (one row = one pallet
-  //     movement), same shape as Transaction History's results.
-  //   - Summary by Item: matching rows grouped by item #, with total pallets
-  //     and qty (plus an Inbound/Outbound split).
+  //     movement), sorted most recent first — general-purpose browsing.
+  //   - Summary by Item: the same detail rows, but sorted item/location/type/
+  //     date (a "perpetual" ins-and-outs layout) with a Totals by Item,
+  //     Location & Type block underneath — for reconciling against what a
+  //     customer sees on their side, same idea as the portal's ROLLUP
+  //     transaction-by-item report, just with more columns per line since
+  //     the toolkit has more fields available than that one portal query.
   // Filters (Item #, Warehouse, Date range) all AND together with each other
   // and with the free-text Smart Search box, which matches across every
   // column on the row (not just item/description like Item Summary on the
@@ -17,10 +21,14 @@
 
   let mode='detail'; // 'detail' | 'summary'
   let lastDetailRows=[];
-  let lastSummaryRows=[];
+  let lastSummaryDetailRows=[];
+  let lastSummaryTotals=[];
 
-  const fieldOrder=['transactionDate','transactionType','lwhId','itemNm','itemDesc','qty','billToRef','subCustNm','customerId','lotNum','location','invReceipt','madeFrom','unique2'];
-  const labels={transactionDate:'Date',transactionType:'Type',lwhId:'LWH ID',itemNm:'Item #',itemDesc:'Item Description',qty:'Qty',billToRef:'Bill-to-Ref',subCustNm:'Customer',customerId:'Customer ID',lotNum:'Lot #',location:'Location',invReceipt:'INV Receipt',madeFrom:'Made From',unique2:'Unique2'};
+  // Customer ID (e.g. "3442") is our internal number and means nothing to
+  // the customer reading this — left out of both the displayed columns and
+  // exports. Still searchable via Smart Search below, just not a column.
+  const fieldOrder=['transactionDate','transactionType','lwhId','itemNm','itemDesc','qty','billToRef','subCustNm','lotNum','location','invReceipt','madeFrom','unique2'];
+  const labels={transactionDate:'Date',transactionType:'Type',lwhId:'LWH ID',itemNm:'Item #',itemDesc:'Item Description',qty:'Qty',billToRef:'Bill-to-Ref',subCustNm:'Customer',lotNum:'Lot #',location:'Location',invReceipt:'INV Receipt',madeFrom:'Made From',unique2:'Unique2'};
   // Every field on the row is searchable via the Smart Search box — this is
   // deliberately the full row, not a curated subset, per the request to make
   // "all of them" (BillToRef, type, INV Receipt, etc.) searchable.
@@ -81,9 +89,24 @@
     if(mode==='summary') renderSummary(filtered); else renderDetail(filtered);
   }
 
+  function buildTable(rows){
+    const scrollWrap=document.createElement('div'); scrollWrap.style.cssText='margin-top:10px;overflow-x:auto';
+    const table=document.createElement('table'); table.className='pls-table';
+    table.innerHTML='<thead><tr>'+fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('')+'</tr></thead>';
+    const tbody=document.createElement('tbody');
+    rows.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=fieldOrder.map(k=>`<td>${hasValue(r[k])?safe(r[k]):''}</td>`).join('');
+      tbody.append(tr);
+    });
+    table.append(tbody);
+    scrollWrap.append(table);
+    return scrollWrap;
+  }
+
   function renderDetail(list){
     lastDetailRows=list.slice().sort((a,b)=>(b.transactionDate||'').localeCompare(a.transactionDate||'')).slice(0,1000);
-    lastSummaryRows=[];
+    lastSummaryDetailRows=[]; lastSummaryTotals=[];
     const out=el('itlResults'); if(!out) return;
     out.innerHTML='';
     if(!list.length){ out.innerHTML='<div class="card">No matching transactions found.</div>'; return; }
@@ -102,58 +125,65 @@
     // Plain table — same view used for on-screen viewing, CSV, and Print
     // Table, per the customer's requirement that results come back as a
     // table rather than the card layout Transaction History uses. Wrapped
-    // for horizontal scroll on mobile, matching Daily Activity's pattern —
-    // 14 columns won't fit a phone width otherwise.
-    const scrollWrap=document.createElement('div'); scrollWrap.style.cssText='margin-top:10px;overflow-x:auto';
-    const table=document.createElement('table'); table.className='pls-table';
-    table.innerHTML='<thead><tr>'+fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('')+'</tr></thead>';
-    const tbody=document.createElement('tbody');
-    lastDetailRows.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=fieldOrder.map(k=>`<td>${hasValue(r[k])?safe(r[k]):''}</td>`).join('');
-      tbody.append(tr);
-    });
-    table.append(tbody);
-    scrollWrap.append(table);
-    out.append(scrollWrap);
+    // for horizontal scroll on mobile, matching Daily Activity's pattern.
+    out.append(buildTable(lastDetailRows));
   }
 
-  function buildSummary(list){
+  // Totals grouped by Item + Location + Type — same grain as the portal's
+  // ROLLUP "ITEM TOTAL" line (image: item 9078179, WHSE70, Outbound = 56
+  // pallets / 4480 qty), just broken out into its own block below the
+  // detail rows instead of an inline ROLLUP row.
+  function buildTotals(list){
     const groups={};
     list.forEach(r=>{
-      const key=r.itemNm||'(no item #)';
-      if(!groups[key]) groups[key]={itemNm:key, itemDesc:r.itemDesc||'', locations:new Set(), totalPallets:0, totalQty:0, inPallets:0, inQty:0, outPallets:0, outQty:0};
+      const key=(r.itemNm||'(no item #)')+'|'+(r.location||'—')+'|'+(r.transactionType||'—');
+      if(!groups[key]) groups[key]={itemNm:r.itemNm||'(no item #)', location:r.location||'—', transactionType:r.transactionType||'—', pallets:0, qty:0};
       const g=groups[key];
-      if(!g.itemDesc && r.itemDesc) g.itemDesc=r.itemDesc;
-      if(r.location) g.locations.add(r.location);
-      const qty=parseFloat(r.qty)||0;
-      g.totalPallets++; g.totalQty+=qty;
-      if(r.transactionType==='Inbound'){ g.inPallets++; g.inQty+=qty; } else { g.outPallets++; g.outQty+=qty; }
+      g.pallets++; g.qty+=parseFloat(r.qty)||0;
     });
-    return Object.values(groups).sort((a,b)=>b.totalPallets-a.totalPallets);
+    return Object.values(groups).sort((a,b)=> a.itemNm.localeCompare(b.itemNm) || a.location.localeCompare(b.location) || a.transactionType.localeCompare(b.transactionType));
   }
 
   function renderSummary(list){
-    lastSummaryRows=buildSummary(list);
+    // Sorted item → location → type → date (ascending, chronological within
+    // each group) — a perpetual-ledger read, not most-recent-first.
+    lastSummaryDetailRows=list.slice().sort((a,b)=>
+      (a.itemNm||'').localeCompare(b.itemNm||'') ||
+      (a.location||'').localeCompare(b.location||'') ||
+      (a.transactionType||'').localeCompare(b.transactionType||'') ||
+      (a.transactionDate||'').localeCompare(b.transactionDate||'')
+    ).slice(0,1000);
+    lastSummaryTotals=buildTotals(list);
     lastDetailRows=[];
+
     const out=el('itlResults'); if(!out) return;
     out.innerHTML='';
-    if(!lastSummaryRows.length){ out.innerHTML='<div class="card">No matching transactions found.</div>'; return; }
+    if(!lastSummaryDetailRows.length){ out.innerHTML='<div class="card">No matching transactions found.</div>'; return; }
 
-    const grandPallets=lastSummaryRows.reduce((s,g)=>s+g.totalPallets,0);
-    const grandQty=lastSummaryRows.reduce((s,g)=>s+g.totalQty,0);
+    const inbound=list.filter(r=>r.transactionType==='Inbound').length;
+    const outbound=list.length-inbound;
+    const totalQty=list.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
+    const items=new Set(list.map(r=>r.itemNm).filter(Boolean)).size;
+
     const top=document.createElement('div'); top.className='card';
-    top.innerHTML=`<b>${lastSummaryRows.length}</b> item(s) · <b>${grandPallets.toLocaleString()}</b> total pallet(s) · <b>${grandQty.toLocaleString()}</b> total qty`;
+    top.innerHTML=`<b>${list.length}</b> matching transaction(s) across <b>${items}</b> item(s)`+
+      (list.length>1000?` (showing first 1000)`:'')+
+      `<div class="hint">${inbound} Inbound · ${outbound} Outbound · ${totalQty.toLocaleString()} total Qty</div>`;
     out.append(top);
 
-    const scrollWrap=document.createElement('div'); scrollWrap.style.cssText='margin-top:10px;overflow-x:auto';
+    out.append(buildTable(lastSummaryDetailRows));
+
+    const totalsHeading=document.createElement('div'); totalsHeading.className='card'; totalsHeading.style.marginTop='14px';
+    totalsHeading.innerHTML='<b>Totals by Item, Location &amp; Type</b>';
+    out.append(totalsHeading);
+
+    const scrollWrap=document.createElement('div'); scrollWrap.style.cssText='margin-top:6px;overflow-x:auto';
     const table=document.createElement('table'); table.className='pls-table';
-    table.innerHTML='<thead><tr><th>Item #</th><th>Description</th><th>Location(s)</th><th>Total Pallets</th><th>Total Qty</th><th>Inbound Pallets</th><th>Inbound Qty</th><th>Outbound Pallets</th><th>Outbound Qty</th></tr></thead>';
+    table.innerHTML='<thead><tr><th>Item #</th><th>Location</th><th>Type</th><th>Pallets</th><th>Qty</th></tr></thead>';
     const tbody=document.createElement('tbody');
-    lastSummaryRows.forEach(g=>{
+    lastSummaryTotals.forEach(g=>{
       const tr=document.createElement('tr');
-      const locs=[...g.locations].sort().join(', ')||'—';
-      tr.innerHTML=`<td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe(locs)}</td><td>${g.totalPallets.toLocaleString()}</td><td>${g.totalQty.toLocaleString()}</td><td>${g.inPallets.toLocaleString()}</td><td>${g.inQty.toLocaleString()}</td><td>${g.outPallets.toLocaleString()}</td><td>${g.outQty.toLocaleString()}</td>`;
+      tr.innerHTML=`<td>${safe(g.itemNm)}</td><td>${safe(g.location)}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td>`;
       tbody.append(tr);
     });
     table.append(tbody);
@@ -165,12 +195,14 @@
 
   function exportCsv(){
     if(mode==='summary'){
-      if(!lastSummaryRows.length){ LWHUI.toast('No results to export — run a search first'); return; }
-      const header=['Item #','Description','Location(s)','Total Pallets','Total Qty','Inbound Pallets','Inbound Qty','Outbound Pallets','Outbound Qty'];
-      const rows=lastSummaryRows.map(g=>[g.itemNm,g.itemDesc,[...g.locations].sort().join(', '),g.totalPallets,g.totalQty,g.inPallets,g.inQty,g.outPallets,g.outQty].map(csvEscape));
-      const csv=[header.join(','),...rows.map(r=>r.join(','))].join('\r\n');
+      if(!lastSummaryDetailRows.length){ LWHUI.toast('No results to export — run a search first'); return; }
+      const detailHeader=fieldOrder.map(k=>labels[k]);
+      const detailRows=lastSummaryDetailRows.map(r=>fieldOrder.map(k=>csvEscape(r[k])));
+      const totalsHeader=['Item #','Location','Type','Pallets','Qty'];
+      const totalsRows=lastSummaryTotals.map(g=>[g.itemNm,g.location,g.transactionType,g.pallets,g.qty].map(csvEscape));
+      const csv=[detailHeader.join(','),...detailRows.map(r=>r.join(',')),'','Totals by Item, Location & Type',totalsHeader.join(','),...totalsRows.map(r=>r.join(','))].join('\r\n');
       downloadCsv(csv,'item-transaction-summary');
-      LWHUI.toast(`Exported ${lastSummaryRows.length} item row(s) to CSV`);
+      LWHUI.toast(`Exported ${lastSummaryDetailRows.length} row(s) + ${lastSummaryTotals.length} total(s) to CSV`);
     } else {
       if(!lastDetailRows.length){ LWHUI.toast('No results to export — run a search first'); return; }
       const header=fieldOrder.map(k=>labels[k]);
@@ -194,10 +226,12 @@
   function renderPrintTable(){
     const out=el('itlPrintTable'); if(!out) return;
     if(mode==='summary'){
-      if(!lastSummaryRows.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
-      const header=['Item #','Description','Location(s)','Total Pallets','Total Qty','Inbound Pallets','Inbound Qty','Outbound Pallets','Outbound Qty'].map(h=>`<th>${h}</th>`).join('');
-      const rows=lastSummaryRows.map(g=>`<tr><td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe([...g.locations].sort().join(', ')||'—')}</td><td>${g.totalPallets.toLocaleString()}</td><td>${g.totalQty.toLocaleString()}</td><td>${g.inPallets.toLocaleString()}</td><td>${g.inQty.toLocaleString()}</td><td>${g.outPallets.toLocaleString()}</td><td>${g.outQty.toLocaleString()}</td></tr>`).join('');
-      out.innerHTML=`<h2>Item Transaction Summary — ${lastSummaryRows.length} item(s)</h2><table class="txn-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+      if(!lastSummaryDetailRows.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
+      const header=fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('');
+      const rows=lastSummaryDetailRows.map(r=>`<tr>${fieldOrder.map(k=>`<td>${safe(r[k])}</td>`).join('')}</tr>`).join('');
+      const totalsHeader=['Item #','Location','Type','Pallets','Qty'].map(h=>`<th>${h}</th>`).join('');
+      const totalsRows=lastSummaryTotals.map(g=>`<tr><td>${safe(g.itemNm)}</td><td>${safe(g.location)}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
+      out.innerHTML=`<h2>Item Transaction Summary — ${lastSummaryDetailRows.length} result(s)</h2><table class="txn-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table><h2 style="margin-top:20px">Totals by Item, Location &amp; Type</h2><table class="txn-print-table"><thead><tr>${totalsHeader}</tr></thead><tbody>${totalsRows}</tbody></table>`;
     } else {
       if(!lastDetailRows.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
       const header=fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('');
@@ -213,7 +247,7 @@
     if(el('itlWarehouse')) el('itlWarehouse').value='__all__';
     if(el('itlFrom')) el('itlFrom').value='';
     if(el('itlTo')) el('itlTo').value='';
-    lastDetailRows=[]; lastSummaryRows=[];
+    lastDetailRows=[]; lastSummaryDetailRows=[]; lastSummaryTotals=[];
     const out=el('itlResults'); if(out) out.innerHTML='';
     const printOut=el('itlPrintTable'); if(printOut) printOut.innerHTML='';
   }
