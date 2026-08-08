@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.51.0
+- **New: Item Transaction Lookup tab** — pallet-level inbound/outbound transaction detail for a specific item, or a Summary by Item view totaling pallets and qty (with an Inbound/Outbound split) per item. Same rolling ~90-day dataset as Transaction History.
+- **New: Item #, Warehouse, and date range filters**, all combinable with each other and with a Smart Search box that matches every column on the transaction row — item #, description, Bill-to-Ref, LWH ID, INV Receipt, lot #, customer, transaction type, location, and date — not just item/description.
+- Pallet Detail results render as a plain table (not the Transaction History card layout) — same table on screen, in CSV, and on the printed report, per a customer requirement.
+- CSV export and Print Table both respect whichever view (Pallet Detail vs Summary by Item) and filters are currently active.
+
 ## v1.39.0
 - **Doc Scanner promoted to its own top-level tab**, right below Warehouse Tools in the nav bar and on the Home screen — no longer buried inside Warehouse Tools.
 - **New: framing guide overlay** on the camera view — a dashed guide with a dimmed surround to help line the document up before tapping the shutter.
