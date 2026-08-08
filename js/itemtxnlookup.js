@@ -308,13 +308,17 @@
       const rows=lastLoadRows.map(g=>`<tr><td>${safe(g.transactionType)}</td><td>${safe(g.subCustNm)}</td><td>${safe(displayLocation(g.location))}</td><td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe(g.invReceiptDisplay)}</td><td>${safe(g.billToRefDisplay)}</td><td>${safe(g.dateDisplay)}</td><td>${safe(lotBreakdownText(g))}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
       const totalsHeader=['Item #','Location','Type','Pallets','Qty'].map(h=>`<th>${h}</th>`).join('');
       const totalsRows=lastSummaryTotals.map(g=>`<tr><td>${safe(g.itemNm)}</td><td>${safe(displayLocation(g.location))}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
-      out.innerHTML=`<h2>Item Transaction Summary — ${lastLoadRows.length} load(s)</h2><table class="txn-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table><h2 style="margin-top:20px">Totals by Item, Location &amp; Type</h2><table class="txn-print-table"><thead><tr>${totalsHeader}</tr></thead><tbody>${totalsRows}</tbody></table>`;
+      out.innerHTML=`<h2>Item Transaction Summary — ${lastLoadRows.length} load(s)</h2><table class="txn-print-table itl-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table><h2 style="margin-top:20px">Totals by Item, Location &amp; Type</h2><table class="txn-print-table itl-print-table"><thead><tr>${totalsHeader}</tr></thead><tbody>${totalsRows}</tbody></table>`;
     } else {
       if(!lastDetailRows.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
       const header=fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('');
       const rows=lastDetailRows.map(r=>`<tr>${fieldOrder.map(k=>`<td>${safe(k==='location'?displayLocation(r[k]):r[k])}</td>`).join('')}</tr>`).join('');
-      out.innerHTML=`<h2>Item Transaction Detail — ${lastDetailRows.length} result(s)</h2><table class="txn-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+      out.innerHTML=`<h2>Item Transaction Detail — ${lastDetailRows.length} result(s)</h2><table class="txn-print-table itl-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
     }
+    // Landscape 11x8.5 — same trick Pick List uses — gives the wide table
+    // room; paired with the .itl-print-table wrap rules above so Qty (the
+    // right-most column) doesn't run off the printed page.
+    if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(11,8.5);
     setTimeout(()=>print(),100);
   }
 

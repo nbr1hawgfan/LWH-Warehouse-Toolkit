@@ -272,6 +272,16 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .txn-print-table th,.txn-print-table td{border:1px solid #999;padding:4px 6px;text-align:left;white-space:nowrap}
 .txn-print-table th{background:#f0f0f0;font-weight:700}
 .txn-print-table tr:nth-child(even) td{background:#fafafa}
+/* Item Transaction Lookup print tables run wide (11-14 columns, some with
+   long text like Item Description and Lot Breakdown) — the shared
+   .txn-print-table above uses nowrap, which is fine for the narrower
+   reports it was built for but runs the right-most column (Qty) off the
+   printed page here. .itl-print-table stacks on top of it: same borders/
+   striping, but lets long cells wrap within their own column instead of
+   forcing the whole table wider than the page, paired with landscape via
+   setPrintPageSize() in itemtxnlookup.js.*/
+.itl-print-table th,.itl-print-table td{white-space:normal;word-break:break-word;overflow-wrap:break-word}
+.itl-print-table{font-size:10px;table-layout:auto}
 .label-page{background:#fff;color:#000;border:1px dashed #aaa;page-break-after:always;break-after:page;position:relative;overflow:hidden}
 .rack-label{width:6in;height:4in;padding:.22in .28in}
 .rack-title{border:6px solid #000;text-align:center;font-weight:900;line-height:.95;font-size:1.08in;padding:.12in .1in;margin:0 auto;width:92%;white-space:nowrap;overflow:hidden;text-overflow:clip}

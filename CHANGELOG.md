@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.51.4
+- **Fixed: Item Transaction Lookup print — Qty column was running off the printed page.** The shared print-table style uses `nowrap`, fine for narrower reports but too wide once you add Item Description, Lot Breakdown, etc. Print now switches to landscape (same trick Pick List uses) and lets long cells wrap within their own column instead of stretching the table past the page edge. Doesn't touch print behavior on any other report — scoped to a table class used only here.
+
 ## v1.51.3
 - **Summary by Item is now the default view** when opening Item Transaction Lookup, per customer feedback.
 - **Customer warehouse code mapping added to Location** — WHSE70 now shows as "WHSE70 (FRESNO) — UWLC" and WHSE10 as "WHSE10 (...) — UWLW" everywhere Location appears (Pallet Detail, Summary, Totals, the Warehouse filter dropdown, CSV, and Print). Our WHSE code is never replaced, just the customer's code appended — filtering and internal reports still key off the WHSE code. More mappings can be added the same way as other customers surface their own codes.
