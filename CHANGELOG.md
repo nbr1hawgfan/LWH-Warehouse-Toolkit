@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.51.3
+- **Summary by Item is now the default view** when opening Item Transaction Lookup, per customer feedback.
+- **Customer warehouse code mapping added to Location** — WHSE70 now shows as "WHSE70 (FRESNO) — UWLC" and WHSE10 as "WHSE10 (...) — UWLW" everywhere Location appears (Pallet Detail, Summary, Totals, the Warehouse filter dropdown, CSV, and Print). Our WHSE code is never replaced, just the customer's code appended — filtering and internal reports still key off the WHSE code. More mappings can be added the same way as other customers surface their own codes.
+
 ## v1.51.2
 - **Item Transaction Lookup: Summary by Item now groups by load/transaction**, not by item alone. Each row = one load (same Bill-to-Ref, or same INV Receipt when Bill-to-Ref is blank — inbound receipts usually don't carry one), with Type, Customer, Location, Item #, Item Description, INV Receipt, Bill-to-Ref, Date, Total Pallets, and Total Qty for that load — matching the minimum columns from the portal's per-item report.
 - **New: Lot Breakdown column.** When a single load spans more than one lot number, that row shows each lot's pallet count and qty (e.g. "LOTA (11 plt, 880 qty); LOTB (2 plt, 160 qty)") while Total Pallets/Qty still reads the load's full total — nothing gets hidden.

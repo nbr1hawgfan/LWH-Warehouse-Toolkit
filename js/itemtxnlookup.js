@@ -22,10 +22,25 @@
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function itlStatus(msg){ const s=el('itlStatus'); if(s) s.textContent=msg; }
 
-  let mode='detail'; // 'detail' | 'summary'
+  let mode='summary'; // 'detail' | 'summary' — Summary is the default view
   let lastDetailRows=[];
   let lastLoadRows=[];
   let lastSummaryTotals=[];
+
+  // Customer-facing warehouse codes some customers use for our locations —
+  // shown alongside our WHSE code, never in place of it, since Tim's own
+  // Warehouse filter and internal reports still key off the WHSE codes.
+  // Add more mappings here as other customers surface their own codes.
+  const LOCATION_ALIASES={'WHSE70':'UWLC','WHSE10':'UWLW'};
+  function displayLocation(loc){
+    if(!loc) return loc;
+    const m=String(loc).match(/^(WHSE\d+)/i);
+    if(m){
+      const alias=LOCATION_ALIASES[m[1].toUpperCase()];
+      if(alias) return `${loc} — ${alias}`;
+    }
+    return loc;
+  }
 
   // Customer ID (e.g. "3442") is our internal number and means nothing to
   // the customer reading this — left out of both the displayed columns and
@@ -43,7 +58,7 @@
     const sel=el('itlWarehouse'); if(!sel) return;
     const current=sel.value;
     const warehouses=[...new Set(rows.map(r=>r.location).filter(Boolean))].sort();
-    sel.innerHTML='<option value="__all__">All Warehouses</option>'+warehouses.map(w=>`<option value="${safe(w)}">${safe(w)}</option>`).join('');
+    sel.innerHTML='<option value="__all__">All Warehouses</option>'+warehouses.map(w=>`<option value="${safe(w)}">${safe(displayLocation(w))}</option>`).join('');
     if(warehouses.includes(current)) sel.value=current;
   }
 
@@ -99,7 +114,10 @@
     const tbody=document.createElement('tbody');
     rows.forEach(r=>{
       const tr=document.createElement('tr');
-      tr.innerHTML=fieldOrder.map(k=>`<td>${hasValue(r[k])?safe(r[k]):''}</td>`).join('');
+      tr.innerHTML=fieldOrder.map(k=>{
+        if(k==='location') return `<td>${hasValue(r[k])?safe(displayLocation(r[k])):''}</td>`;
+        return `<td>${hasValue(r[k])?safe(r[k]):''}</td>`;
+      }).join('');
       tbody.append(tr);
     });
     table.append(tbody);
@@ -190,7 +208,7 @@
     const tbody=document.createElement('tbody');
     loads.forEach(g=>{
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${safe(g.transactionType)}</td><td>${safe(g.subCustNm)}</td><td>${safe(g.location)}</td><td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe(g.invReceiptDisplay)}</td><td>${safe(g.billToRefDisplay)}</td><td>${safe(g.dateDisplay)}</td><td>${safe(lotBreakdownText(g))}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td>`;
+      tr.innerHTML=`<td>${safe(g.transactionType)}</td><td>${safe(g.subCustNm)}</td><td>${safe(displayLocation(g.location))}</td><td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe(g.invReceiptDisplay)}</td><td>${safe(g.billToRefDisplay)}</td><td>${safe(g.dateDisplay)}</td><td>${safe(lotBreakdownText(g))}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td>`;
       tbody.append(tr);
     });
     table.append(tbody);
@@ -242,7 +260,7 @@
     const tbody=document.createElement('tbody');
     lastSummaryTotals.forEach(g=>{
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${safe(g.itemNm)}</td><td>${safe(g.location)}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td>`;
+      tr.innerHTML=`<td>${safe(g.itemNm)}</td><td>${safe(displayLocation(g.location))}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td>`;
       tbody.append(tr);
     });
     table.append(tbody);
@@ -256,16 +274,16 @@
     if(mode==='summary'){
       if(!lastLoadRows.length){ LWHUI.toast('No results to export — run a search first'); return; }
       const header=['Type','Customer','Location','Item #','Item Description','INV Receipt','Bill-to-Ref','Date','Lot Breakdown','Pallets','Qty'];
-      const rows=lastLoadRows.map(g=>[g.transactionType,g.subCustNm,g.location,g.itemNm,g.itemDesc,g.invReceiptDisplay,g.billToRefDisplay,g.dateDisplay,lotBreakdownText(g),g.pallets,g.qty].map(csvEscape));
+      const rows=lastLoadRows.map(g=>[g.transactionType,g.subCustNm,displayLocation(g.location),g.itemNm,g.itemDesc,g.invReceiptDisplay,g.billToRefDisplay,g.dateDisplay,lotBreakdownText(g),g.pallets,g.qty].map(csvEscape));
       const totalsHeader=['Item #','Location','Type','Pallets','Qty'];
-      const totalsRows=lastSummaryTotals.map(g=>[g.itemNm,g.location,g.transactionType,g.pallets,g.qty].map(csvEscape));
+      const totalsRows=lastSummaryTotals.map(g=>[g.itemNm,displayLocation(g.location),g.transactionType,g.pallets,g.qty].map(csvEscape));
       const csv=[header.join(','),...rows.map(r=>r.join(',')),'','Totals by Item, Location & Type',totalsHeader.join(','),...totalsRows.map(r=>r.join(','))].join('\r\n');
       downloadCsv(csv,'item-transaction-summary');
       LWHUI.toast(`Exported ${lastLoadRows.length} load(s) + ${lastSummaryTotals.length} total(s) to CSV`);
     } else {
       if(!lastDetailRows.length){ LWHUI.toast('No results to export — run a search first'); return; }
       const header=fieldOrder.map(k=>labels[k]);
-      const rows=lastDetailRows.map(r=>fieldOrder.map(k=>csvEscape(r[k])));
+      const rows=lastDetailRows.map(r=>fieldOrder.map(k=>csvEscape(k==='location'?displayLocation(r[k]):r[k])));
       const csv=[header.join(','),...rows.map(r=>r.join(','))].join('\r\n');
       downloadCsv(csv,'item-transaction-detail');
       LWHUI.toast(`Exported ${lastDetailRows.length} row(s) to CSV`);
@@ -287,14 +305,14 @@
     if(mode==='summary'){
       if(!lastLoadRows.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
       const header=['Type','Customer','Location','Item #','Item Description','INV Receipt','Bill-to-Ref','Date','Lot Breakdown','Pallets','Qty'].map(h=>`<th>${h}</th>`).join('');
-      const rows=lastLoadRows.map(g=>`<tr><td>${safe(g.transactionType)}</td><td>${safe(g.subCustNm)}</td><td>${safe(g.location)}</td><td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe(g.invReceiptDisplay)}</td><td>${safe(g.billToRefDisplay)}</td><td>${safe(g.dateDisplay)}</td><td>${safe(lotBreakdownText(g))}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
+      const rows=lastLoadRows.map(g=>`<tr><td>${safe(g.transactionType)}</td><td>${safe(g.subCustNm)}</td><td>${safe(displayLocation(g.location))}</td><td>${safe(g.itemNm)}</td><td>${safe(g.itemDesc)}</td><td>${safe(g.invReceiptDisplay)}</td><td>${safe(g.billToRefDisplay)}</td><td>${safe(g.dateDisplay)}</td><td>${safe(lotBreakdownText(g))}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
       const totalsHeader=['Item #','Location','Type','Pallets','Qty'].map(h=>`<th>${h}</th>`).join('');
-      const totalsRows=lastSummaryTotals.map(g=>`<tr><td>${safe(g.itemNm)}</td><td>${safe(g.location)}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
+      const totalsRows=lastSummaryTotals.map(g=>`<tr><td>${safe(g.itemNm)}</td><td>${safe(displayLocation(g.location))}</td><td>${safe(g.transactionType)}</td><td>${g.pallets.toLocaleString()}</td><td>${g.qty.toLocaleString()}</td></tr>`).join('');
       out.innerHTML=`<h2>Item Transaction Summary — ${lastLoadRows.length} load(s)</h2><table class="txn-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table><h2 style="margin-top:20px">Totals by Item, Location &amp; Type</h2><table class="txn-print-table"><thead><tr>${totalsHeader}</tr></thead><tbody>${totalsRows}</tbody></table>`;
     } else {
       if(!lastDetailRows.length){ out.innerHTML=''; LWHUI.toast('No results to print — run a search first'); return; }
       const header=fieldOrder.map(k=>`<th>${safe(labels[k])}</th>`).join('');
-      const rows=lastDetailRows.map(r=>`<tr>${fieldOrder.map(k=>`<td>${safe(r[k])}</td>`).join('')}</tr>`).join('');
+      const rows=lastDetailRows.map(r=>`<tr>${fieldOrder.map(k=>`<td>${safe(k==='location'?displayLocation(r[k]):r[k])}</td>`).join('')}</tr>`).join('');
       out.innerHTML=`<h2>Item Transaction Detail — ${lastDetailRows.length} result(s)</h2><table class="txn-print-table"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
     }
     setTimeout(()=>print(),100);
@@ -319,6 +337,9 @@
     document.querySelectorAll('[data-itl-view]').forEach(b=>{
       b.addEventListener('click',()=>setMode(b.dataset.itlView));
     });
+    // Keep the segmented control in sync with the default mode ('summary')
+    // in case markup ever drifts out of step with the JS default.
+    document.querySelectorAll('[data-itl-view]').forEach(b=>b.classList.toggle('active', b.dataset.itlView===mode));
 
     if(el('itlSearchBtn')) itlSearchBtn.onclick=()=>{ LWHTransactions.loadTransactions(false).then(runSearch); };
     if(el('itlWarehouse')) itlWarehouse.addEventListener('change',runSearch);
