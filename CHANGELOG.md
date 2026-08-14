@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.51.5
+- **Temporarily disabled: Transaction History and Item Transaction Lookup.** Both pull from the same Supabase `transaction_history` table, which has produced confirmed duplicate pallet counts on some loads — verified against the SQL Server source (clean) and the live Supabase table (clean at time of checking), but a fresh app reload still surfaced duplicates on re-export. Root cause not fully isolated yet, so both features are pulled from the nav bar and Home screen until the pipeline can be trusted — code and sections untouched underneath, this is a two-line revert once resolved, not a rebuild.
+
 ## v1.51.4
 - **Fixed: Item Transaction Lookup print — Qty column was running off the printed page.** The shared print-table style uses `nowrap`, fine for narrower reports but too wide once you add Item Description, Lot Breakdown, etc. Print now switches to landscape (same trick Pick List uses) and lets long cells wrap within their own column instead of stretching the table past the page edge. Doesn't touch print behavior on any other report — scoped to a table class used only here.
 
