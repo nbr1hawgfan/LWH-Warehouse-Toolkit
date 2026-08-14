@@ -4,19 +4,55 @@
   // rolling ~90-day window, same Supabase edge function). Two views:
   //   - Pallet Detail: every matching transaction row (one row = one pallet
   //     movement), sorted most recent first — general-purpose browsing.
-  //   - Summary by Item: rows grouped into one line per load/transaction
-  //     (same Bill-to-Ref, or same INV Receipt when Bill-to-Ref is blank —
-  //     inbound receipts don't carry one) with Total Pallets/Qty for that
-  //     load, plus a lot-number breakdown when a load spans more than one
-  //     lot (still rolls up to the same load total — nothing gets hidden).
-  //     A Totals by Item, Location & Type block sits below as the grand
-  //     total across every load shown, same grain as the portal's ROLLUP
-  //     "ITEM TOTAL" line. Built for reconciling our ins/outs against a
-  //     customer's own count of the same loads.
+  //     Still client-side, unchanged.
+  //   - Summary by Item: rows grouped into one line per load/transaction —
+  //     AS OF 2026-08-14, computed SERVER-SIDE by the
+  //     get_item_transaction_summary Postgres function instead of the old
+  //     client-side buildLoads()/buildTotals(). That function counts
+  //     pallets by DISTINCT LWH ID, not by row count, so it can't be
+  //     fooled by a duplicate row the way "pallets++ per row" could. Same
+  //     load-key logic (Bill-to-Ref, falling back to INV Receipt, falling
+  //     back to LWH ID), same lot breakdown, same Totals by Item, Location
+  //     & Type block — just computed in the database instead of the
+  //     browser. See CHANGELOG for the duplicate-pallet-count
+  //     investigation this came out of.
   // Filters (Item #, Warehouse, Date range) all AND together with each other
   // and with the free-text Smart Search box, which matches across every
   // column on the row (not just item/description like Item Summary on the
   // Master Lookup side does).
+
+  const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
+  const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
+
+  // Calls get_item_transaction_summary via PostgREST's RPC endpoint — plain
+  // fetch, no supabase-js library, matching how the rest of this app
+  // already talks to Supabase (see loadTransactions() in transactions.js).
+  // The anon key here is the public/publishable key, safe to embed
+  // client-side — NOT the sb_secret_ service-role key the PowerShell sync
+  // scripts use, which must never appear in this file.
+  async function fetchServerSummary(params){
+    const url=`${SUPABASE_URL}/rest/v1/rpc/get_item_transaction_summary`;
+    const body={};
+    if(params.item) body.p_item_number=params.item;
+    if(params.warehouse) body.p_location=params.warehouse;
+    if(params.q) body.p_search=params.q;
+    if(params.from) body.p_start_date=params.from;
+    if(params.to) body.p_end_date=params.to;
+    const res=await fetch(url,{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      const errText=await res.text().catch(()=>res.statusText);
+      throw new Error(`Server summary failed (HTTP ${res.status}): ${errText}`);
+    }
+    return res.json();
+  }
 
   function el(id){ return document.getElementById(id); }
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -98,13 +134,19 @@
   function runSearch(){
     const rows=window.LWHTransactions?LWHTransactions.getAllTransactions():[];
     renderWarehouseOptions(rows);
+    const f=currentFilters();
+    if(mode==='summary'){
+      // Summary is server-driven now — doesn't need the raw client-side
+      // pallet list to be loaded first, just fires the RPC directly.
+      runServerSummary(f);
+      return;
+    }
     if(!rows.length){
       el('itlResults').innerHTML='<div class="card">Transaction history not loaded yet — click Load / Refresh Data, or run a search to load it automatically.</div>';
       return;
     }
-    const f=currentFilters();
     const filtered=filterRows(rows, f);
-    if(mode==='summary') renderSummary(filtered); else renderDetail(filtered);
+    renderDetail(filtered);
   }
 
   function buildTable(rows){
@@ -157,6 +199,12 @@
   // Bill-to-Ref), and falling back to the individual LWH ID as a last
   // resort for a lone pallet with neither. Always scoped to the same item,
   // location, type, and customer so nothing gets merged across those.
+  //
+  // NO LONGER CALLED as of 2026-08-14 — Summary mode now gets this same
+  // grouping done server-side by get_item_transaction_summary instead
+  // (counts by distinct LWH ID, immune to the row-duplication bug this
+  // client-side version could fall victim to). Left in place rather than
+  // deleted, in case the server call ever needs a client-side fallback.
   function buildLoads(list){
     const groups={};
     list.forEach(r=>{
@@ -198,6 +246,11 @@
   }
 
   function lotBreakdownText(g){
+    // Server rows (Summary mode as of 2026-08-14) come with the breakdown
+    // text already formatted by get_item_transaction_summary — use that
+    // directly. Fall back to the old lots-array logic only if a row
+    // somehow doesn't have it (shouldn't happen anymore, but harmless).
+    if(g.lotBreakdownText!==undefined) return g.lotBreakdownText;
     return g.multiLot ? g.lots.map(l=>`${l.lotNum} (${l.pallets.toLocaleString()} plt, ${l.qty.toLocaleString()} qty)`).join('; ') : (g.lots[0]?.lotNum||'—');
   }
 
@@ -217,35 +270,44 @@
   }
 
   // Grand totals grouped by Item + Location + Type — same grain as the
-  // portal's ROLLUP "ITEM TOTAL" line, summed across every load shown above.
-  function buildTotals(list){
+  // portal's ROLLUP "ITEM TOTAL" line, summed across every LOAD row shown
+  // above. Takes already-built load rows (server or otherwise) rather than
+  // raw pallet rows — since each load row's pallet count already equals
+  // its member pallets exactly, summing load rows here is mathematically
+  // identical to summing raw pallets, just cheaper and consistent with
+  // Summary mode no longer fetching the full raw pallet list at all.
+  function buildTotalsFromLoads(loadRows){
     const groups={};
-    list.forEach(r=>{
-      const key=(r.itemNm||'(no item #)')+'|'+(r.location||'—')+'|'+(r.transactionType||'—');
-      if(!groups[key]) groups[key]={itemNm:r.itemNm||'(no item #)', location:r.location||'—', transactionType:r.transactionType||'—', pallets:0, qty:0};
-      const g=groups[key];
-      g.pallets++; g.qty+=parseFloat(r.qty)||0;
+    loadRows.forEach(g=>{
+      const key=(g.itemNm||'(no item #)')+'|'+(g.location||'—')+'|'+(g.transactionType||'—');
+      if(!groups[key]) groups[key]={itemNm:g.itemNm||'(no item #)', location:g.location||'—', transactionType:g.transactionType||'—', pallets:0, qty:0};
+      const t=groups[key];
+      t.pallets+=g.pallets; t.qty+=g.qty;
     });
     return Object.values(groups).sort((a,b)=> a.itemNm.localeCompare(b.itemNm) || a.location.localeCompare(b.location) || a.transactionType.localeCompare(b.transactionType));
   }
 
-  function renderSummary(list){
-    lastLoadRows=buildLoads(list);
-    lastSummaryTotals=buildTotals(list);
+  // Renders Summary mode from already-built load rows — as of 2026-08-14
+  // these come from the server (get_item_transaction_summary), not from
+  // filtering the raw client-side pallet list the way this used to work.
+  function renderSummary(loadRows){
+    lastLoadRows=loadRows;
+    lastSummaryTotals=buildTotalsFromLoads(loadRows);
     lastDetailRows=[];
 
     const out=el('itlResults'); if(!out) return;
     out.innerHTML='';
     if(!lastLoadRows.length){ out.innerHTML='<div class="card">No matching transactions found.</div>'; return; }
 
-    const inbound=list.filter(r=>r.transactionType==='Inbound').length;
-    const outbound=list.length-inbound;
-    const totalQty=list.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
-    const items=new Set(list.map(r=>r.itemNm).filter(Boolean)).size;
+    const totalPallets=lastLoadRows.reduce((s,g)=>s+g.pallets,0);
+    const totalQty=lastLoadRows.reduce((s,g)=>s+g.qty,0);
+    const inbound=lastLoadRows.filter(g=>g.transactionType==='Inbound').reduce((s,g)=>s+g.pallets,0);
+    const outbound=totalPallets-inbound;
+    const items=new Set(lastLoadRows.map(g=>g.itemNm).filter(Boolean)).size;
 
     const top=document.createElement('div'); top.className='card';
-    top.innerHTML=`<b>${lastLoadRows.length}</b> load(s)/transaction(s) from <b>${list.length}</b> pallet-level row(s) across <b>${items}</b> item(s)`+
-      `<div class="hint">${inbound} Inbound · ${outbound} Outbound · ${totalQty.toLocaleString()} total Qty</div>`;
+    top.innerHTML=`<b>${lastLoadRows.length}</b> load(s)/transaction(s) totaling <b>${totalPallets.toLocaleString()}</b> pallet(s) across <b>${items}</b> item(s)`+
+      `<div class="hint">${inbound.toLocaleString()} Inbound · ${outbound.toLocaleString()} Outbound · ${totalQty.toLocaleString()} total Qty</div>`;
     out.append(top);
 
     out.append(buildLoadsTable(lastLoadRows));
@@ -266,6 +328,47 @@
     table.append(tbody);
     scrollWrap.append(table);
     out.append(scrollWrap);
+  }
+
+  // Fetches the summary from the server and hands it to renderSummary()
+  // in the same load-row shape the rest of this file already expects, so
+  // buildLoadsTable / exportCsv / renderPrintTable don't need to change
+  // at all — only where the data comes from changes.
+  async function runServerSummary(f){
+    const out=el('itlResults'); if(!out) return;
+    out.innerHTML='<div class="card">Loading summary from server…</div>';
+
+    let rpcRows;
+    try{
+      rpcRows=await fetchServerSummary({
+        item:f.item||null,
+        warehouse:(f.warehouse && f.warehouse!=='__all__') ? f.warehouse : null,
+        q:f.q||null,
+        from:f.from||null,
+        to:f.to||null
+      });
+    }catch(e){
+      console.error(e);
+      lastLoadRows=[]; lastSummaryTotals=[];
+      out.innerHTML=`<div class="card">Couldn't load the summary from the server: ${safe(e.message)}<div class="hint">Summary now runs in the database, not the browser — this needs a live connection each time. Check your connection and try again.</div></div>`;
+      return;
+    }
+
+    const loadRows=(rpcRows||[]).map(r=>({
+      transactionType:r.transaction_type||'—',
+      subCustNm:r.customer||'—',
+      location:r.location||'—',
+      itemNm:r.item_number||'(no item #)',
+      itemDesc:r.item_description||'',
+      invReceiptDisplay:r.inv_receipt_display||'—',
+      billToRefDisplay:r.bill_to_ref_display||'—',
+      dateDisplay:r.date_display||'—',
+      pallets:Number(r.pallets)||0,
+      qty:Number(r.qty)||0,
+      lotBreakdownText:r.lot_breakdown||'—'
+    }));
+
+    renderSummary(loadRows);
   }
 
   function csvEscape(v){ const s=String(v??''); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }

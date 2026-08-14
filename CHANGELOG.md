@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.51.6
+- **Item Transaction Lookup: Summary mode now computed server-side.** Instead of pulling raw pallet rows and grouping them into loads in the browser (`buildLoads()`), Summary now calls a new Postgres function — `get_item_transaction_summary` — via a direct PostgREST RPC call, same "no client library, just fetch" pattern the rest of this app already uses. That function counts pallets by DISTINCT LWH ID rather than by row count, so it's structurally immune to the duplicate-row bug the counting issue traced back to — even if a stray duplicate row ever landed in the table again, it couldn't inflate a pallet count the way the old client-side logic could.
+- Pallet Detail mode is unchanged — still client-side, still fast, wasn't the mode with the counting bug.
+- Both Transaction History and Item Transaction Lookup remain DISABLED in the nav/Home screen from v1.51.5 — this fix needs to be tested live against real data before re-enabling. See that entry for the full investigation.
+
 ## v1.51.5
 - **Temporarily disabled: Transaction History and Item Transaction Lookup.** Both pull from the same Supabase `transaction_history` table, which has produced confirmed duplicate pallet counts on some loads — verified against the SQL Server source (clean) and the live Supabase table (clean at time of checking), but a fresh app reload still surfaced duplicates on re-export. Root cause not fully isolated yet, so both features are pulled from the nav bar and Home screen until the pipeline can be trusted — code and sections untouched underneath, this is a two-line revert once resolved, not a rebuild.
 
