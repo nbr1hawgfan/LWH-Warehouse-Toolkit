@@ -415,7 +415,13 @@ if(window.txnPrintBtn){txnPrintBtn.onclick=()=>LWHTransactions.renderPrintTable(
 
 // Item Summary: a separate, focused lookup — does not touch Master
 // Lookup's universal search or its results panel in any way.
-if(window.itemSummaryBtn){itemSummaryBtn.onclick=()=>{const result=LWHInventory.itemSummary(itemSummarySearch.value); LWHInventory.renderItemSummary(result);};}
+// itemSummary() is async now (server-side RPC as of 2026-08-14) — the
+// click handler awaits it, showing a brief loading state in between.
+if(window.itemSummaryBtn){itemSummaryBtn.onclick=async()=>{
+  itemSummaryOutput.innerHTML='<div class="card">Loading item summary from server…</div>';
+  const result=await LWHInventory.itemSummary(itemSummarySearch.value);
+  LWHInventory.renderItemSummary(result);
+};}
 if(window.itemSummarySearch){itemSummarySearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();itemSummaryBtn.click();}};}
 if(window.itemSummaryClearBtn){itemSummaryClearBtn.onclick=()=>{itemSummarySearch.value=''; itemSummaryOutput.innerHTML=''; itemSummarySearch.focus();};}
 

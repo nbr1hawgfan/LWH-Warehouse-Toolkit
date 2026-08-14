@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.51.7
+- **Item Summary now computed server-side too.** Same fix as v1.51.6's Item Transaction Lookup change, applied to Master Lookup's Item Summary — `itemSummary()` used to group pallets client-side with `groups[key].pallets++` and `totalPallets = matches.length`, the exact same row-counting pattern that caused the duplicate-pallet-count bug. Now calls a new Postgres function, `get_item_inventory_summary`, which counts by DISTINCT `pallet_id` instead. Same "exact match, fall back to partial match" search behavior preserved. `itemSummary()` is async now.
+- Corrected the About page — it still said Transaction History and Item Transaction Lookup were disabled; both were re-enabled after testing.
+- Home screen's customer/location pallet totals (`customerTotals()`/`locationCustomerTotals()`) have the same row-counting pattern and weren't touched in this pass — lower priority since they're informational dashboard totals, not something anyone acts on precisely, but worth the same fix eventually if it matters.
+
 ## v1.51.6
 - **Item Transaction Lookup: Summary mode now computed server-side.** Instead of pulling raw pallet rows and grouping them into loads in the browser (`buildLoads()`), Summary now calls a new Postgres function — `get_item_transaction_summary` — via a direct PostgREST RPC call, same "no client library, just fetch" pattern the rest of this app already uses. That function counts pallets by DISTINCT LWH ID rather than by row count, so it's structurally immune to the duplicate-row bug the counting issue traced back to — even if a stray duplicate row ever landed in the table again, it couldn't inflate a pallet count the way the old client-side logic could.
 - Pallet Detail mode is unchanged — still client-side, still fast, wasn't the mode with the counting bug.

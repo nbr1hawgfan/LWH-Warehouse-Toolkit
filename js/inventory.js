@@ -5,6 +5,33 @@
   const OLD_SHEET_ID='1cMa6qXIJGsnCm5hOQmNUBtxZzFPU5lZIwaYqZzrLPR4';
   let customerRows=[];
 
+  // Same anon key as itemtxnlookup.js — public/publishable, safe to embed
+  // client-side, NOT the sb_secret_ service-role key the PowerShell sync
+  // scripts use. Redeclared here rather than shared across files since
+  // each module in this app is a self-contained IIFE by convention.
+  const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
+  const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
+
+  // Calls get_item_inventory_summary via PostgREST's RPC endpoint — same
+  // plain-fetch pattern as fetchServerSummary() in itemtxnlookup.js.
+  async function fetchServerItemSummary(itemNumber){
+    const url=`${SUPABASE_URL}/rest/v1/rpc/get_item_inventory_summary`;
+    const res=await fetch(url,{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_ANON_KEY,
+        'Authorization':'Bearer '+SUPABASE_ANON_KEY,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({p_item_number:itemNumber})
+    });
+    if(!res.ok){
+      const errText=await res.text().catch(()=>res.statusText);
+      throw new Error(`Server item summary failed (HTTP ${res.status}): ${errText}`);
+    }
+    return res.json();
+  }
+
   function el(id){ return document.getElementById(id); }
   function customerStatus(msg){ const s=el('custLookupStatus'); if(s) s.textContent=msg; renderHomeCustomerTotals(); renderHomeLocationCustomerTotals(); renderHomeKpis(); if(window.LWHLocationOverview) LWHLocationOverview.populateWarehouses(); if(window.LWHCustomerView) LWHCustomerView.populateCustomers(); }
   function setCustomerCurrentUrl(url){ const u=el('custCurrentUrl'); if(u) u.textContent=url || CUSTOMER_DEFAULT_URL; }
@@ -184,34 +211,48 @@
   // from the universal search above. Groups every pallet of one item by
   // lot + bay, so "how much of item XYZ do we have and where" is a
   // single glance instead of scrolling through individual pallet cards.
-  function itemSummary(q){
+  //
+  // AS OF 2026-08-14: computed SERVER-SIDE by get_item_inventory_summary
+  // instead of the old client-side grouping — that function counts by
+  // DISTINCT pallet_id, not row count, same fix applied to Item
+  // Transaction Lookup's Summary mode after the duplicate-pallet-count
+  // investigation. Now async — callers need to await it.
+  async function itemSummary(q){
     q=String(q||'').trim();
     if(!q) return null;
-    const qLower=q.toLowerCase();
-    let matches=customerRows.filter(r=>String(r.itemNm||'').toLowerCase()===qLower);
-    if(!matches.length) matches=customerRows.filter(r=>String(r.itemNm||'').toLowerCase().includes(qLower));
-    if(!matches.length) return {item:q, itemDesc:'', rows:[], totalPallets:0, totalQty:0};
 
-    const groups={};
-    matches.forEach(r=>{
-      const bay=r.currentBay||r.bayName||'—';
-      const qtyEach=r.qty||'0';
-      const key=[r.lotNum||'—', bay, qtyEach].join('|');
-      if(!groups[key]) groups[key]={lotNum:r.lotNum||'—', bay, warehouse:r.warehouse||r.location||'—', qtyEach, pallets:0};
-      groups[key].pallets++;
-    });
-    const rows=Object.values(groups).map(g=>({...g, totalQty:(parseFloat(g.qtyEach)||0)*g.pallets}));
-    rows.sort((a,b)=> a.lotNum.localeCompare(b.lotNum) || a.bay.localeCompare(b.bay) || (parseFloat(b.qtyEach)-parseFloat(a.qtyEach)));
+    let rpcRows;
+    try{
+      rpcRows=await fetchServerItemSummary(q);
+    }catch(e){
+      console.error(e);
+      return {item:q, itemDesc:'', rows:[], totalPallets:0, totalQty:0, error:e.message};
+    }
 
-    const totalPallets=matches.length;
-    const totalQty=matches.reduce((s,r)=>s+(parseFloat(r.qty)||0),0);
-    return {item:matches[0].itemNm, itemDesc:matches[0].itemDesc||'', rows, totalPallets, totalQty};
+    if(!rpcRows || !rpcRows.length){
+      return {item:q, itemDesc:'', rows:[], totalPallets:0, totalQty:0};
+    }
+
+    const rows=rpcRows.map(r=>({
+      lotNum:r.lot_number||'—',
+      bay:r.bay_name||'—',
+      warehouse:r.warehouse||'—',
+      qtyEach:String(r.qty_each??'0'),
+      pallets:Number(r.pallets)||0,
+      totalQty:Number(r.total_qty)||0
+    }));
+
+    const totalPallets=rows.reduce((s,r)=>s+r.pallets,0);
+    const totalQty=rows.reduce((s,r)=>s+r.totalQty,0);
+
+    return {item:rpcRows[0].item_number, itemDesc:rpcRows[0].item_description||'', rows, totalPallets, totalQty};
   }
 
   function renderItemSummary(result){
     const out=el('itemSummaryOutput'); if(!out) return;
     out.innerHTML='';
     if(!result){ return; }
+    if(result.error){ out.innerHTML=`<div class="card">Couldn't load the item summary from the server: ${safe(result.error)}<div class="hint">Check your connection and try again — this now runs in the database, not the browser.</div></div>`; return; }
     if(!result.rows.length){ out.innerHTML=`<div class="card">No pallets found for "${safe(result.item)}".</div>`; return; }
 
     const header=document.createElement('div'); header.className='card';
