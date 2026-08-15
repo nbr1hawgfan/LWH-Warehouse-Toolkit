@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.51.8
+- **Fixed: Print button crowded off-screen on mobile.** On narrow phones (worst on iPhone, milder on larger Android), the header's action row (hamburger menu + Print) didn't have room to sit beside the app title, pushing Print toward the edge of the screen. Print now drops to its own row below the hamburger menu on screens under 640px wide, instead of squeezing into the same row.
+
 ## v1.51.7
 - **Item Summary now computed server-side too.** Same fix as v1.51.6's Item Transaction Lookup change, applied to Master Lookup's Item Summary — `itemSummary()` used to group pallets client-side with `groups[key].pallets++` and `totalPallets = matches.length`, the exact same row-counting pattern that caused the duplicate-pallet-count bug. Now calls a new Postgres function, `get_item_inventory_summary`, which counts by DISTINCT `pallet_id` instead. Same "exact match, fall back to partial match" search behavior preserved. `itemSummary()` is async now.
 - Corrected the About page — it still said Transaction History and Item Transaction Lookup were disabled; both were re-enabled after testing.
