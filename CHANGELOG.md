@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.52.2
+- **New app icon.** Requested by Doug — the old toolbox icon felt "cute" and didn't represent the company. Replaced favicon.png, icon-192.png, and icon-512.png with a red rounded-square badge built from the real company logo (WAREHOUSE LOGISTICS "W" mark), with a small flat wrench mark underneath — a compromise between "represents the company" and keeping a subtle nod to it being a tools app. Landed on this after showing three initial concept directions, then two real candidate compositions (red vs. black background) using the actual logo file — Doug picked red.
+- Heads-up on two things worth expecting, not bugs: (1) at the tiny 64px favicon size, the "WAREHOUSE LOGISTICS" text is too small to read — normal for any detailed logo at that size, still reads as a red W badge at a glance; (2) anyone with the app already installed/added to their home screen may need to remove and re-add it for their OS to pick up the new icon — that's how PWA install icons cache at the OS level, separate from the service worker's own cache (which this release does bump, for everything else).
+- `icons/company-logo.png` (the real logo file, used elsewhere in the header) is unchanged — only the app/browser icon files were replaced.
+
 ## v1.52.1
 - **Home screen weather condensed.** Requested by Doug — loves having the weather, but wanted the Home screen more compact so it's quicker to get into actually using the app, especially on a smaller PC monitor. The 5-day forecast grid is now collapsed by default behind a "5-Day Forecast" toggle (same collapsible pattern already used for weather alerts) instead of always showing all 7 days' worth of cards. Today's current condition still shows immediately, just slightly smaller (1.5em → 1.15em) so even the always-visible part takes less vertical space. Nothing removed — same data, same accuracy, just one click away instead of always on screen.
 - **Nav sidebar intentionally left untouched** — per direction, its structure stays as-is for now; flagged as a possible future round if there's appetite for a narrower or collapsible version later.
