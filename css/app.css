@@ -29,8 +29,12 @@
   --dt-navy:#1c1c2b;
   --shadow:0 10px 26px rgba(9,30,28,.08);
   --shadow-sm:0 2px 8px rgba(9,30,28,.06);
-  --radius:14px;
-  --radius-sm:10px;
+  /* Squared-off corners, matching the customer portal's look — was 14px/10px.
+     Kept as variables (not hardcoded 0) so the existing user color-picker in
+     Settings still works exactly the same; only the shape changed, not the
+     customization system. */
+  --radius:4px;
+  --radius-sm:3px;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
@@ -44,15 +48,15 @@ button.ghost:hover{background:var(--brand-tint)}
 
 .icon{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-.app-header{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 24px;background:var(--frame-black);color:#fff;box-shadow:var(--shadow);border-bottom:4px solid var(--brand)}
+.app-header{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:16px 24px;background:var(--brand);color:#fff;box-shadow:var(--shadow);border-bottom:4px solid var(--frame-black)}
 .app-header h1{margin:2px 0 0;font-size:26px;font-weight:800;letter-spacing:-.01em}
-.eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:11px;opacity:.75;font-weight:600;color:#fff}
-.version{font-size:12px;opacity:.8}
+.eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:11px;opacity:.85;font-weight:600;color:#fff}
+.version{font-size:12px;opacity:.85}
 .header-actions{display:flex;gap:8px}
 .header-actions .ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.65)}
 .header-actions .ghost:hover{background:rgba(255,255,255,.12)}
 .brand-row{display:flex;align-items:center;gap:14px}
-.brand-logo{width:52px;height:52px;border-radius:12px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#fff}
+.brand-logo{width:52px;height:52px;border-radius:50%;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#fff}
 
 .app-shell{display:grid;grid-template-columns:236px 1fr;gap:20px;padding:20px;max-width:1400px;margin:0 auto}
 
@@ -86,25 +90,33 @@ button.ghost:hover{background:var(--brand-tint)}
 .card,.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
 
 .hero{margin-bottom:20px;background:var(--card);border-color:var(--line)}
-.hero h2{margin:0 0 6px;font-size:22px}
+.hero h2{margin:0 0 6px;font-size:24px;font-weight:900;letter-spacing:-.01em;text-transform:uppercase}
 
 .kpi-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px;margin-bottom:20px}
 .kpi-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
-.kpi-primary{background:var(--brand);border-color:var(--brand);color:#fff}
-.kpi-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
-.kpi-primary .kpi-label{opacity:.85}
-.kpi-value{font-size:2.6em;font-weight:900;margin-top:8px;line-height:1}
-.kpi-sub{font-size:12.5px;opacity:.65;margin-top:8px}
-.kpi-primary .kpi-sub{opacity:.85}
+.kpi-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);opacity:.85}
+.kpi-value{font-size:2.6em;font-weight:900;margin-top:8px;line-height:1;color:var(--brand)}
+.kpi-sub{font-size:12.5px;color:var(--muted);opacity:.8;margin-top:8px}
 .hero p{margin:0;color:var(--muted)}
-.hero-weather{font-size:1.5em;font-weight:900;color:var(--dt-red-dark);margin:8px 0 0!important}
+.section-label{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:24px 0 14px;padding-left:12px;border-left:4px solid var(--brand)}
+.hero-weather{font-size:1.15em;font-weight:800;color:var(--dt-red-dark);margin:6px 0 0!important}
 .hero-alert{background:#fff3cd;border:1px solid #e0a800;color:#664d03;border-radius:var(--radius-sm);padding:8px 12px;margin:10px 0 0;font-size:14px}
 .hero-alert summary{font-weight:700;cursor:pointer;list-style:none}
 .hero-alert summary::-webkit-details-marker{display:none}
 .hero-alert summary::before{content:'▸ ';font-weight:900}
 .hero-alert[open] summary::before{content:'▾ '}
 .hero-alert #heroAlertBody{margin-top:8px;font-weight:500;font-size:13px;line-height:1.4}
-.weather-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;margin-top:12px}
+/* Collapsed by default — Doug loves the weather but wants the Home screen
+   compact enough to get straight into using the app, especially on a
+   smaller PC monitor. Today's current condition still shows right away
+   via .hero-weather above; the full 5-day grid is one click away instead
+   of always taking up vertical space. */
+.hero-forecast-toggle{margin-top:10px}
+.hero-forecast-toggle summary{font-weight:700;cursor:pointer;list-style:none;color:var(--brand);font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+.hero-forecast-toggle summary::-webkit-details-marker{display:none}
+.hero-forecast-toggle summary::before{content:'▸ ';font-weight:900}
+.hero-forecast-toggle[open] summary::before{content:'▾ '}
+.weather-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px;margin-top:10px}
 .weather-day{background:#fff;border:1px solid var(--dt-red);border-radius:var(--radius-sm);padding:8px 6px;text-align:center}
 .weather-day b{display:block;font-size:11px;color:var(--dt-navy);font-weight:700;text-transform:uppercase}
 .weather-day span{display:block;font-size:13px;font-weight:700;margin-top:4px;color:var(--dt-red-dark)}

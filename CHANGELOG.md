@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.52.1
+- **Home screen weather condensed.** Requested by Doug — loves having the weather, but wanted the Home screen more compact so it's quicker to get into actually using the app, especially on a smaller PC monitor. The 5-day forecast grid is now collapsed by default behind a "5-Day Forecast" toggle (same collapsible pattern already used for weather alerts) instead of always showing all 7 days' worth of cards. Today's current condition still shows immediately, just slightly smaller (1.5em → 1.15em) so even the always-visible part takes less vertical space. Nothing removed — same data, same accuracy, just one click away instead of always on screen.
+- **Nav sidebar intentionally left untouched** — per direction, its structure stays as-is for now; flagged as a possible future round if there's appetite for a narrower or collapsible version later.
+
+## v1.52.0
+- **Visual refresh to match the customer portal's look and feel.** Requested by Doug for company brand consistency.
+  - Header now red (was black) with a black underline, echoing the portal's red-bar-over-black-bar structure. Logo badge is now circular, matching the portal's white circle logo.
+  - Cards, panels, and buttons squared off — corner radius reduced from 14px/10px to 4px/3px across the whole app, matching the portal's flat rectangular card style.
+  - Home screen's three top stat cards (Current Inventory / Transactions Today / Inventory Updated) are now uniform plain white cards with red numbers, matching the portal's stat row exactly — previously the first card was solid red-filled, different from the other two.
+  - Section headers (starting with "Quick Actions") got a thin red left-accent bar, matching the portal's "FINANCIAL" section label style.
+  - Print button given the same white-outline "ghost" style as the other header buttons — needed once the header background changed to red, since the old solid-red Print button would have been nearly invisible against a red header.
+  - **The existing user color customization in Settings is fully preserved** — every color change here is expressed through the same `--brand`/`--brand-dark`/`--brand-tint` CSS variables the color picker already controls, not hardcoded. Anyone who picks a different brand color still gets a correctly-shaded, coherent theme.
+  - **Not changed:** the sidebar/hamburger nav structure. The portal's nav is 5 items in a horizontal bar; the Toolkit has ~25 tools. Squeezing that many into a portal-style horizontal bar would need dropdown submenus and a real structural rebuild, not just a style pass — flagged as a separate, bigger conversation if that's wanted. The sidebar's black background already matches the portal's black nav bar color.
+
 ## v1.51.8
 - **Fixed: Print button crowded off-screen on mobile.** On narrow phones (worst on iPhone, milder on larger Android), the header's action row (hamburger menu + Print) didn't have room to sit beside the app title, pushing Print toward the edge of the screen. Print now drops to its own row below the hamburger menu on screens under 640px wide, instead of squeezing into the same row.
 
