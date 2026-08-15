@@ -95,6 +95,78 @@ async function refreshHero(){
   refreshForecast(loc);
   refreshAlerts(loc);
 }
+
+// DATA HEALTH — checks the raw Supabase tables directly (current_inventory,
+// transaction_history), not the already-safe data the rest of the app
+// displays. Built after a full day spent manually tracing a duplicate-
+// pallet-count bug in August 2026 that a night shift manager happened to
+// notice by eye — this runs the same "row count vs distinct pallet count"
+// check automatically instead of relying on someone spotting a wrong
+// number first. Same anon-key plain-fetch RPC pattern as inventory.js and
+// itemtxnlookup.js — public/publishable key, safe client-side, not the
+// service-role secret the PowerShell sync scripts use.
+const HEALTH_SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
+const HEALTH_SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
+
+async function fetchHealthRpc(fnName){
+  const res=await fetch(`${HEALTH_SUPABASE_URL}/rest/v1/rpc/${fnName}`,{
+    method:'POST',
+    headers:{
+      'apikey':HEALTH_SUPABASE_ANON_KEY,
+      'Authorization':'Bearer '+HEALTH_SUPABASE_ANON_KEY,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({})
+  });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  return (data && data[0]) ? data[0] : null;
+}
+
+function healthTimeAgo(iso){
+  if(!iso) return 'unknown';
+  const then=new Date(iso), now=new Date();
+  if(isNaN(then)) return 'unknown';
+  const mins=Math.round((now-then)/60000);
+  if(mins<1) return 'just now';
+  if(mins<60) return mins+' min ago';
+  const hrs=Math.round(mins/60);
+  if(hrs<24) return hrs+' hr'+(hrs===1?'':'s')+' ago';
+  const days=Math.round(hrs/24);
+  return days+' day'+(days===1?'':'s')+' ago';
+}
+
+async function refreshDataHealth(){
+  const out=document.getElementById('dataHealthPanel');
+  if(!out) return;
+  try{
+    const [inv,txn]=await Promise.all([
+      fetchHealthRpc('get_inventory_health'),
+      fetchHealthRpc('get_transaction_health')
+    ]);
+    const sources=[
+      {label:'Inventory', data:inv},
+      {label:'Transactions', data:txn}
+    ];
+    const anyDupes=sources.some(s=>s.data && s.data.duplicate_pallets>0);
+    const anyFailed=sources.some(s=>!s.data);
+    out.className='card data-health '+(anyDupes?'data-health-bad':'data-health-good');
+    const headText=anyDupes?'Data issue detected':(anyFailed?'Data health check incomplete':'Data looks healthy');
+    out.innerHTML=`<div class="data-health-head">${anyDupes?'⚠ ':(anyFailed?'':'✓ ')}${headText}</div>`+
+      sources.map(s=>{
+        if(!s.data) return `<div class="data-health-row"><b>${s.label}</b> — couldn't check right now</div>`;
+        const dupe=s.data.duplicate_pallets>0;
+        return `<div class="data-health-row"><b>${s.label}:</b> ${Number(s.data.row_count).toLocaleString()} rows`+
+          (dupe?`, <b style="color:var(--bad)">${s.data.duplicate_pallets} duplicate(s) found</b>`:', no duplicates')+
+          ` · synced ${healthTimeAgo(s.data.last_synced_at)}</div>`;
+      }).join('');
+  }catch(e){
+    console.error('Data health check failed',e);
+    out.className='card data-health';
+    out.innerHTML='<div class="data-health-head">Data health check unavailable</div><div class="data-health-row">Couldn\'t reach the server — check your connection.</div>';
+  }
+}
+
 // Small helpers so the header/nav/hover colors always follow whatever brand
 // color is picked in Settings, instead of a second color being hardcoded.
 function hexToRgb(hex){hex=String(hex||'').trim().replace('#',''); if(hex.length===3)hex=hex.split('').map(c=>c+c).join(''); const n=parseInt(hex,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
@@ -345,6 +417,9 @@ function applyIncomingUrlParams(){
 window.addEventListener('load',()=>{
   applySettings();
   refreshHero();
+  refreshDataHealth();
+  setInterval(refreshDataHealth,15*60*1000);
+  if(window.installQr && window.LWHQR) LWHQR.make(installQr,'https://nbr1hawgfan.github.io/LWH-Warehouse-Toolkit/',140);
   tickClock();
   setInterval(tickClock,1000);
   setInterval(refreshHero,30*60*1000);

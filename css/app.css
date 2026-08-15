@@ -99,6 +99,20 @@ button.ghost:hover{background:var(--brand-tint)}
 .kpi-sub{font-size:12.5px;color:var(--muted);opacity:.8;margin-top:8px}
 .hero p{margin:0;color:var(--muted)}
 .section-label{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin:24px 0 14px;padding-left:12px;border-left:4px solid var(--brand)}
+/* Data Health panel — checks the raw Supabase tables directly (not just
+   the already-safe, already-deduplicated data the rest of the app
+   displays), specifically to catch a pipeline problem like the one that
+   took a full day to trace by hand in August 2026, before anyone notices
+   a wrong number downstream. Green when clean, red when it finds a
+   mismatch between row count and distinct pallet/LWH count. */
+.data-health{border-left:5px solid var(--good);padding:14px 18px}
+.data-health-good{background:#f0f9f0}
+.data-health-bad{border-left-color:var(--bad);background:#fdf0ef}
+.data-health-head{font-weight:800;font-size:15px;margin-bottom:6px}
+.data-health-good .data-health-head{color:var(--good)}
+.data-health-bad .data-health-head{color:var(--bad)}
+.data-health-row{font-size:13px;color:var(--muted);margin-top:2px}
+.data-health-row b{color:var(--ink);font-weight:700}
 .hero-weather{font-size:1.15em;font-weight:800;color:var(--dt-red-dark);margin:6px 0 0!important}
 .hero-alert{background:#fff3cd;border:1px solid #e0a800;color:#664d03;border-radius:var(--radius-sm);padding:8px 12px;margin:10px 0 0;font-size:14px}
 .hero-alert summary{font-weight:700;cursor:pointer;list-style:none}
