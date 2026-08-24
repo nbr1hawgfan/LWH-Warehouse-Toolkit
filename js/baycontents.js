@@ -67,7 +67,7 @@
       .map(([item,d])=>`<tr><td>${safe(item)}</td><td>${safe(d.desc)}</td><td>${d.pallets.toLocaleString()}</td><td>${d.qty.toLocaleString()}</td></tr>`).join('');
 
     const header=`<div class="card"><b>${totalPallets.toLocaleString()}</b> pallet(s) · <b>${totalQty.toLocaleString()}</b> total qty · ${bays.length} bay(s): ${safe(bays.slice(0,10).join(', '))}${bays.length>10?'…':''}
-      <div class="actions"><button type="button" id="bcCsvBtn">Download CSV</button><button type="button" id="bcPrintBtn" class="ghost">Print</button></div></div>`;
+      <div class="actions"><button type="button" id="bcCsvBtn">Download CSV</button><button type="button" id="bcPrintBtn" class="ghost">Print</button><button type="button" id="bcBarcodeBtn" class="ghost">Print Barcode Sheet</button></div></div>`;
 
     const summaryTable=`<h3 style="margin-top:16px">By Item</h3><table class="pls-table"><thead><tr><th>Item #</th><th>Description</th><th>Pallets</th><th>Total Qty</th></tr></thead><tbody>${itemRows}</tbody></table>`;
 
@@ -95,6 +95,48 @@
       if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
       setTimeout(()=>window.print(),50);
     };
+
+    const barcodeBtn=el('bcBarcodeBtn');
+    if(barcodeBtn) barcodeBtn.onclick=()=>generateBarcodeSheet(list);
+  }
+
+  // Same layout as Pick List's barcode sheet: one barcode per LWH ID,
+  // alternating left/right by row so two adjacent lines never have their
+  // codes stacked at the same x-position -- that's what causes a scanner
+  // to drift onto the wrong line when rows print close together.
+  function generateBarcodeSheet(list){
+    const out=el('bcPrintOutput'); if(!out) return;
+    if(!list.length){ if(window.LWHUI) LWHUI.toast('No results to print — search first'); return; }
+    const rows=list.map((r,i)=>{
+      const codeCell=`<svg class="pl-barcode" data-barcode="${safe(r.lwhid)}"></svg><div class="pl-lwh">${safe(r.lwhid)}</div>`;
+      const isLeft=(i%2===0);
+      const leftCell=isLeft?`<td class="pl-code">${codeCell}</td>`:'<td class="pl-code-empty"></td>';
+      const rightCell=isLeft?'<td class="pl-code-empty"></td>':`<td class="pl-code">${codeCell}</td>`;
+      return `<tr>
+        ${leftCell}
+        <td>${safe(r.customer)}</td>
+        <td>${safe(r.item)}</td>
+        <td>${safe(r.lot)}</td>
+        <td>${safe(r.qty)}</td>
+        <td>${safe(r.warehouse)}</td>
+        <td>${safe(r.bay)}</td>
+        ${rightCell}
+      </tr>`;
+    }).join('');
+    const totalQty=list.reduce((sum,r)=>sum+(parseFloat(r.qty)||0),0);
+    const bays=[...new Set(list.map(r=>r.bay).filter(Boolean))];
+    out.innerHTML=`<div class="picklist-page">
+      <h1 class="pl-title">Bay Contents — Barcode Sheet</h1>
+      <p class="pl-meta">Generated ${new Date().toLocaleString()} · ${list.length} row(s) · Total Qty ${totalQty.toLocaleString()} · ${bays.length} bay(s): ${safe(bays.join(', '))} · Codes alternate left/right by line to reduce mis-scans</p>
+      <table class="pl-table">
+        <thead><tr><th>Code</th><th>Customer</th><th>Item</th><th>Lot</th><th>Qty</th><th>Warehouse</th><th>Bay</th><th>Code</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+    out.querySelectorAll('.pl-barcode').forEach(svg=>{ if(window.LWHBarcode){ try{ LWHBarcode.make(svg,svg.dataset.barcode,{height:32,width:1.3}); }catch(e){} } });
+    if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(11,8.5); // landscape — more room for the table columns
+    setTimeout(()=>window.print(),50);
+    if(window.LWHUI) LWHUI.toast(`Barcode sheet generated (${list.length} row(s))`);
   }
 
   function clearAll(){
