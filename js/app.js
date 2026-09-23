@@ -318,6 +318,17 @@ function initQuickLinks(){
     LWHStorage.set('quickLinks',links);
     LWHStorage.set('quickLinksMigratedPortals',true);
   }
+  // One-time migration: points everyone's saved Forklift Inspection quick
+  // link at the new GitHub Pages app. Only rewrites the URL on an existing
+  // Forklift entry (matched by name); doesn't add one back if someone removed it.
+  if(!LWHStorage.get('quickLinksMigratedForklift',false)){
+    const links=LWHStorage.get('quickLinks',[]);
+    const def=QUICK_LINKS_DEFAULT.find(l=>l.name==='Forklift Inspection');
+    let changed=false;
+    links.forEach(l=>{ if(def && /forklift/i.test(l.name||'') && l.url!==def.url){ l.url=def.url; changed=true; } });
+    if(changed) LWHStorage.set('quickLinks',links);
+    LWHStorage.set('quickLinksMigratedForklift',true);
+  }
   renderQuickLinksList=function render(){
     const links=LWHStorage.get('quickLinks',[]);
     list.innerHTML=links.length?links.map((l,i)=>`<div class="grid-2" style="align-items:center;margin-bottom:6px"><input data-idx="${i}" data-field="name" value="${String(l.name||'').replace(/"/g,'&quot;')}" placeholder="Name (e.g. Forklift Inspection)" /><input data-idx="${i}" data-field="url" value="${String(l.url||'').replace(/"/g,'&quot;')}" placeholder="https://..." /></div><div class="actions" style="margin-bottom:12px"><button type="button" class="ghost" data-remove="${i}">Remove</button></div>`).join(''):'<p class="hint">No quick links yet.</p>';
