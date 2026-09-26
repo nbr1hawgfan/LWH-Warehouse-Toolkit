@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.58.0
+- **New: Today's Dock.** One screen of the day's inbound and outbound loads, side by side. Each load shows Pro #, customer, carrier, trailer, warehouse, pallet count and status; tap a load to see its items, lots and quantities. Totals across the top (inbound, outbound, done), status counts, and warehouse filter chips. Arrows move to other days. Refreshes itself every 5 minutes.
+  - **TV Mode** hides the header and menu, goes full screen and enlarges everything for a shipping-office TV. Esc or "Exit TV Mode" to leave.
+  - Built from the same load-details feed Load Details already uses (grouped by Pro #), so there's nothing to set up in Supabase.
+  - Status colors are matched by wording (e.g. Shipped/Received = green, Loading/Unloading/Picking = amber, Scheduled = blue); the exact words come from birdsEye.
+- **Glass header** (requested by Doug). The header now stays pinned at the top and pages scroll underneath it, blurred, iPhone-style. After scrolling it slims down to one line to save screen space — on phones the Print button and "Home" label tuck away until you scroll back up. Still follows the Settings brand color; browsers without blur support show the solid color. The phone menu button now scrolls back up to the menu.
+
 ## v1.57.0
 - **New: FIFO / Aging.** Two tabs, both reading live `current_inventory`:
   - **Pick Oldest First** — type or scan an item number and get its on-hand pallets in pick order, oldest receive date first. The first pallet's bay is shown big at the top with warehouse, lot, received date, age, qty and pallet ID; the rest follow numbered in order. Partial item numbers show a list of matching items to choose from. If the item is in more than one warehouse, chips filter to one. Unusual bay statuses (e.g. HOLD) are flagged.

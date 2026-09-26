@@ -574,3 +574,25 @@ calRack.onclick=()=>{rackList.value='TEST-4X6';LWHUI.show('rack');LWHLabels.gene
 calLetter.onclick=()=>{signList.value='TEST SIGN';LWHUI.show('signs');LWHLabels.generateSigns();setTimeout(()=>print(),250)};
 clearStorage.onclick=()=>{if(confirm('Clear saved settings and cached data?')){LWHStorage.clear();applySettings();LWHUI.toast('Saved settings cleared')}};
 rackList.value=LWHStorage.get('rackList','');
+
+// GLASS HEADER (v1.58.0) — keeps --header-h in sync so sticky sidebars and
+// panels sit just below the pinned header, and slims the header once the page
+// is scrolled (with a gap between the on/off points so it never flickers).
+(function(){
+  const header=document.querySelector('.app-header'); if(!header) return;
+  const setH=()=>document.documentElement.style.setProperty('--header-h',header.offsetHeight+'px');
+  setH();
+  if(window.ResizeObserver) new ResizeObserver(setH).observe(header); else window.addEventListener('resize',setH);
+  let compact=false, ticking=false;
+  function update(){
+    ticking=false;
+    const y=window.scrollY||0;
+    if(!compact && y>48){ compact=true; document.body.classList.add('header-compact'); }
+    else if(compact && y<8){ compact=false; document.body.classList.remove('header-compact'); }
+  }
+  window.addEventListener('scroll',()=>{ if(!ticking){ ticking=true; requestAnimationFrame(update); } },{passive:true});
+  update();
+  // Phone menu lives at the top of the page — jump up to it when opened.
+  const t=document.getElementById('navToggle');
+  if(t) t.addEventListener('click',()=>{ if(document.querySelector('.nav.open')) window.scrollTo({top:0,behavior:'smooth'}); });
+})();
