@@ -1,5 +1,7 @@
 -- ============================================================
--- LWH Toolkit v1.55.0 — "My Hours"
+-- LWH Toolkit v1.55.1 — "My Hours"
+-- v1.55.1: no longer requires emp_employees.is_active = true. An employee
+--          is found if they're in emp_employees OR have any punches.
 -- Run this once in the Supabase SQL Editor (same project as inventory).
 --
 -- What it does:
@@ -32,14 +34,16 @@ declare
   v_punches json;
   v_synced  timestamptz;
 begin
+  -- Look the employee up for their name. The active flag is NOT checked:
+  -- it isn't always current, and having punches is what matters here.
   select e.first_name, e.full_name
     into v_first, v_full
   from emp_employees e
   where e.emp_id = p_emp_id
-    and coalesce(e.is_active, true)
+  order by e.is_active desc nulls last
   limit 1;
 
-  if not found then
+  if not found and not exists (select 1 from emp_punches where emp_id = p_emp_id) then
     return json_build_object('found', false);
   end if;
 

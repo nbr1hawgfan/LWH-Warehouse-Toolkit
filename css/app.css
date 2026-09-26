@@ -538,19 +538,40 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .bol-sig-line{display:block;border-bottom:1px solid #000;height:34px}
 .bol-sig-date{font-size:10px;margin-top:2px}
 
-/* ---- My Hours (v1.55.0) ---- */
-.mh-remember{display:flex;align-items:center;gap:8px;font-weight:normal}
-.mh-remember input{width:auto;margin:0}
-.mh-week-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;margin:4px 0 12px}
-.mh-week-nav button{padding:8px 12px}
-.mh-week-nav button:disabled{opacity:.4;cursor:default}
-.mh-week-label{text-align:center;font-weight:700}
+/* ---- My Hours (v1.55.0, entry panel restyled v1.55.1) ---- */
+.mh-entry{padding:22px}
+.mh-entry-head{display:flex;gap:12px;align-items:center;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.mh-entry-head h2{margin:0 0 2px}
+.mh-entry-icon{flex:none;width:44px;height:44px;border-radius:50%;background:var(--brand-tint);color:var(--brand);display:grid;place-items:center}
+.mh-entry-icon .icon{width:24px;height:24px}
+.mh-entry-sub{font-size:13px;color:var(--muted);line-height:1.35}
+.mh-field-label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.mh-id-input{font-size:30px;font-weight:700;text-align:center;letter-spacing:.35em;padding:12px 10px 12px calc(10px + .35em);border:2px solid var(--line);border-radius:var(--radius);font-variant-numeric:tabular-nums;transition:border-color .15s ease,box-shadow .15s ease}
+.mh-id-input::placeholder{color:#cfccd3;font-weight:600}
+.mh-id-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-tint)}
+.mh-remember{display:flex;align-items:center;gap:8px;font-weight:500;font-size:13px;color:var(--muted);margin:10px 0 20px;cursor:pointer}
+.mh-remember input{width:16px;height:16px;margin:0;accent-color:var(--brand)}
+.mh-week-picker{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:6px;border:2px solid var(--line);border-radius:var(--radius);padding:5px;margin-bottom:18px}
+.mh-arrow{min-height:44px;padding:0;background:var(--brand-tint);color:var(--brand);display:grid;place-items:center}
+@media (hover:hover){.mh-arrow:not(:disabled):hover{background:var(--brand);color:#fff}}
+.mh-arrow:disabled{background:transparent;color:#cfccd3;cursor:default;transform:none}
+.mh-arrow .icon{width:20px;height:20px}
+.mh-week-center{text-align:center;line-height:1.2}
+.mh-week-label{font-weight:800;font-size:15px}
+.mh-week-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.mh-show-btn{width:100%;min-height:52px;font-size:16px}
+.mh-status{font-size:13px;color:var(--bad);min-height:18px;margin-top:8px;text-align:center}
+.mh-entry-foot{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+.mh-link{background:none;color:var(--brand);min-height:36px;padding:6px 2px;font-weight:600;font-size:13px}
+.mh-link:hover{background:none;text-decoration:underline}
+.mh-link[hidden]{display:none}
+.mh-entry-foot .mh-link:last-child{margin-left:auto;color:var(--muted)}
 .mh-hello{color:var(--muted,#555)}
 .mh-total{margin:6px 0 10px}
 .mh-total-num{font-size:2.2em;font-weight:800;color:var(--brand)}
 .mh-total-unit{font-weight:600}
 .mh-week-table{overflow-x:auto}
-.mh-week-table .pls-table{table-layout:fixed;min-width:420px}
+.mh-week-table .pls-table{table-layout:fixed}
 .mh-day{text-align:center}
 .mh-day b{font-size:1.15em}
 .mh-day-name{font-weight:700}
@@ -560,3 +581,10 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .mh-detail-day:first-of-type{border-top:0}
 .mh-detail-head{font-weight:700;margin-bottom:2px}
 .mh-punch{display:flex;justify-content:space-between;gap:12px;font-size:.95em}
+#myHours .tool-layout>*{min-width:0}
+@media (max-width:600px){
+  .mh-entry{padding:18px 16px}
+  .mh-week-table .pls-table td{padding:6px 2px}
+  .mh-day b{font-size:1em}
+  .mh-total-num{font-size:1.9em}
+}

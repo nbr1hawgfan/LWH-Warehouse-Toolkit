@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.55.1
+- **My Hours entry panel restyled.** Large centered Employee ID box, a week picker with arrow buttons and a "This week / Last week / N weeks ago" subtitle, one full-width Show My Hours button, and "Back to this week" / "Clear / Not me" as small links underneath. Results side unchanged.
+- **Fixed: employees with punches showing as "not active."** The lookup no longer requires `emp_employees.is_active = true`. The flag wasn't always current (e.g. ID 52332), and having timeclock punches is what matters. An ID is found if it's in `emp_employees` or has any punches. **Re-run `sql/my_hours_function.sql` in Supabase** to pick this up.
+- **Fixed: My Hours was slightly too wide on phones**, cutting off the right edge.
+
 ## v1.55.0
 - **New: My Hours.** Employees enter their 5-digit employee ID and see their own clocked hours for any Sunday–Saturday workweek — a Sun–Sat grid with each day's hours, the week total, and the actual clock-in/clock-out times underneath. Prev/Next arrows move between weeks (can't go past the current week), "This Week" jumps back. Optional "Remember my ID on this device" checkbox (off by default, so shared PCs don't keep someone's ID); "Clear / Not Me" wipes it.
 - **Hours only, no pay data.** Reads just the punch times and worked hours from `emp_punches`; pay rates and wages aren't part of the data path at all.

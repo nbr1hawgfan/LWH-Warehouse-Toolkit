@@ -18,7 +18,7 @@
 
   function el(id){ return document.getElementById(id); }
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  function status(msg){ const s=el('mhStatus'); if(s) s.textContent=msg||''; }
+  function status(msg,isErr){ const s=el('mhStatus'); if(!s) return; s.textContent=msg||''; s.style.color=isErr?'':'var(--muted)'; }
 
   // ---- Dates (all local time; the timeclock stores plain local timestamps) ----
   function sundayOf(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-x.getDay()); return x; }
@@ -52,7 +52,9 @@
     el('mhWeekLabel').textContent=weekLabel(weekStart);
     const current=sundayOf(new Date());
     el('mhNextWeek').disabled=weekStart>=current;
-    el('mhThisWeek').disabled=+weekStart===+current;
+    const back=Math.round((current-weekStart)/(7*86400000));
+    el('mhWeekSub').textContent=back===0?'This week':back===1?'Last week':back+' weeks ago';
+    el('mhThisWeek').hidden=back===0;
   }
 
   async function fetchWeek(empId,start){
@@ -73,7 +75,7 @@
     const id=cleanId();
     const out=el('mhResults');
     if(!/^\d{5}$/.test(id)){
-      status('Enter your 5-digit employee ID.');
+      status('Enter your 5-digit employee ID.',true);
       el('mhEmpId').focus();
       return;
     }
@@ -86,7 +88,7 @@
       const data=await fetchWeek(id,weekStart);
       if(seq!==requestSeq) return; // a newer request (week change) already took over
       if(!data || !data.found){
-        out.innerHTML='<div class="card">No active employee found with that ID. Double-check the number, or see your supervisor.</div>';
+        out.innerHTML='<div class="card">We couldn\'t find employee ID '+safe(id)+' in the timeclock. Double-check the number, or see your supervisor.</div>';
         status('');
         return;
       }
@@ -96,7 +98,7 @@
       if(seq!==requestSeq) return;
       console.error('My Hours load failed',e);
       out.innerHTML='<div class="card">Couldn\'t load hours right now — check your connection and try again.</div>';
-      status('Load failed: '+e.message);
+      status('Load failed: '+e.message,true);
     }
   }
 
