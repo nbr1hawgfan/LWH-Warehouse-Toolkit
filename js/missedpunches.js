@@ -20,6 +20,8 @@
   let passcode='';
   let weekStart=sundayOf(new Date());
   let data=null, kindFilter='', groupFilter='';
+  let tab='missed';                       // 'missed' | 'hours'
+  let hoursData=null, hQuery='', hGroup='', hSort='name';
   let seq=0;
 
   function el(id){ return document.getElementById(id); }
@@ -39,10 +41,12 @@
   function setPass(v){ try{ if(v) sessionStorage.setItem(PASS_KEY,v); else sessionStorage.removeItem(PASS_KEY); }catch{} }
 
   async function fetchReport(){
-    const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/toolkit_timeclock_exceptions`,{
+    const hours=tab==='hours';
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${hours?'toolkit_manager_week_hours':'toolkit_timeclock_exceptions'}`,{
       method:'POST',
       headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({p_passcode:passcode,p_week_date:isoDate(weekStart),p_max_hours:Number(el('mpLimit').value)||10})
+      body:JSON.stringify(hours?{p_passcode:passcode,p_week_date:isoDate(weekStart)}
+                               :{p_passcode:passcode,p_week_date:isoDate(weekStart),p_max_hours:Number(el('mpLimit').value)||10})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     return res.json();
@@ -51,7 +55,7 @@
   function setUnlocked(on){
     el('mpLocked').hidden=on;
     el('mpUnlocked').hidden=!on;
-    if(!on){ el('mpResults').innerHTML=''; data=null; }
+    if(!on){ el('mpResults').innerHTML=''; data=null; hoursData=null; }
   }
 
   function renderWeekNav(){
@@ -84,12 +88,12 @@
       }
       setPass(passcode);
       setUnlocked(true);
-      data=r; kindFilter=''; groupFilter='';
-      render();
+      if(tab==='hours'){ hoursData=r; renderHours(); }
+      else { data=r; kindFilter=''; groupFilter=''; render(); }
       status('');
     }catch(e){
       if(mine!==seq) return;
-      console.error('Missed punches failed',e);
+      console.error('Manager report failed',e);
       el('mpResults').innerHTML='<div class="card">Couldn\'t load the report right now — check your connection and try again.</div>';
       status('Load failed: '+e.message,true);
     }
@@ -201,6 +205,100 @@
     setTimeout(()=>print(),100);
   }
 
+
+  // ---------------- Everyone's Hours ----------------
+  function empGroup(e){ return [e.location,e.team].filter(Boolean).join(' · ')||'—'; }
+  function hoursFiltered(){
+    if(!hoursData) return [];
+    const q=hQuery.trim().toLowerCase();
+    let list=(hoursData.employees||[]).filter(e=>(!hGroup||empGroup(e)===hGroup)&&(!q||String(e.name).toLowerCase().includes(q)||String(e.emp_id).includes(q)));
+    const tot=e=>Number(e.total)||0;
+    if(hSort==='most') list.sort((a,b)=>tot(b)-tot(a)||a.name.localeCompare(b.name));
+    else if(hSort==='least') list.sort((a,b)=>tot(a)-tot(b)||a.name.localeCompare(b.name));
+    else list.sort((a,b)=>a.name.localeCompare(b.name));
+    return list;
+  }
+  function cell(v){ const n=Number(v)||0; return n?fmtHours(n):'<span class="mp-dash">—</span>'; }
+
+  function renderHours(){
+    const out=el('mpResults'); if(!hoursData) return;
+    const all=hoursData.employees||[];
+    const groups=[...new Set(all.map(empGroup))].filter(g=>g!=='—').sort();
+    if(hGroup && !groups.includes(hGroup)) hGroup='';
+    out.innerHTML=`
+      <div class="card">
+        <div class="mp-head" id="mpHoursHead"></div>
+        <div class="mp-hours-tools">
+          <input id="mpSearch" type="search" placeholder="Search name or ID" value="${safe(hQuery)}" autocomplete="off" />
+          <select id="mpSort"><option value="name">Sort: Name</option><option value="most">Sort: Most hours</option><option value="least">Sort: Fewest hours</option></select>
+        </div>
+        ${groups.length>1?`<div class="ff-chips" style="margin-top:10px">${['',...groups].map(g=>`<button type="button" class="ff-chip${g===hGroup?' active':''}" data-hgroup="${safe(g)}">${g?safe(g):'Everyone'}<span>${g?all.filter(e=>empGroup(e)===g).length:all.length}</span></button>`).join('')}</div>`:''}
+        ${all.length?`<div class="grid-2 no-print" style="margin-top:12px"><button type="button" id="mpHoursCsv" class="ghost">Download CSV</button><button type="button" id="mpHoursPrint" class="ghost">Print</button></div>`:''}
+      </div>
+      <div class="card mp-hours-card" style="margin-top:10px"><div id="mpHoursTable"></div></div>
+      <div class="hint" style="margin-top:8px">Shows everyone with at least one punch this week. Hours by clock-in day, decimal (7.50 = 7 hrs 30 min). Over 40 is highlighted. Tap a name to open their week with punch times. Timeclock last synced ${hoursData.last_synced_at?new Date(hoursData.last_synced_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'—'}.</div>`;
+    el('mpSort').value=hSort;
+    el('mpSearch').oninput=e=>{ hQuery=e.target.value; renderHoursTable(); };
+    el('mpSort').onchange=e=>{ hSort=e.target.value; renderHoursTable(); };
+    out.querySelectorAll('[data-hgroup]').forEach(b=>b.onclick=()=>{ hGroup=b.dataset.hgroup; renderHours(); });
+    const c=el('mpHoursCsv'); if(c) c.onclick=hoursCsv;
+    const p=el('mpHoursPrint'); if(p) p.onclick=hoursPrint;
+    renderHoursTable();
+  }
+
+  function renderHoursTable(){
+    const box=el('mpHoursTable'); if(!box) return;
+    const list=hoursFiltered();
+    const start=parseLocal(hoursData.week_start);
+    const dayTotals=[0,1,2,3,4,5,6].map(i=>list.reduce((s,e)=>s+(Number((e.days||[])[i])||0),0));
+    const grand=list.reduce((s,e)=>s+(Number(e.total)||0),0);
+    el('mpHoursHead').innerHTML=`<b>${list.length} employee${list.length===1?'':'s'}</b> · ${fmtHours(grand)} total hours · week of ${weekLabel(start)}`;
+    if(!list.length){ box.innerHTML=`<div class="hint">${(hoursData.employees||[]).length?'No one matches that search.':'No punches recorded for this week yet.'}</div>`; return; }
+    const heads=[0,1,2,3,4,5,6].map(i=>{ const d=addDays(start,i); return `<th>${d.toLocaleDateString('en-US',{weekday:'short'})}<div>${d.getMonth()+1}/${d.getDate()}</div></th>`; }).join('');
+    box.innerHTML=`<div class="mp-hours-wrap"><table class="mp-hours-table">
+      <thead><tr><th class="mp-name-col">Employee</th><th class="mp-total-col">Total</th>${heads}</tr></thead>
+      <tbody>${list.map(e=>{
+        const t=Number(e.total)||0;
+        const tags=(e.open_punch?'<span class="mp-badge mp-warn">Open punch</span>':'')+(e.missing_in?'<span class="mp-badge mp-bad">No clock-in</span>':'');
+        return `<tr><td class="mp-name-col"><button type="button" class="mp-name" data-hweek="${safe(e.emp_id)}">${safe(e.name)}</button><div class="db-sub">ID ${safe(e.emp_id)}${empGroup(e)!=='—'?' · '+safe(empGroup(e)):''}</div>${tags?`<div class="mp-tags">${tags}</div>`:''}</td><td class="mp-total mp-total-col${t>40?' mp-ot':''}">${fmtHours(t)}</td>${(e.days||[]).map(v=>`<td>${cell(v)}</td>`).join('')}</tr>`;
+      }).join('')}</tbody>
+      <tfoot><tr><td class="mp-name-col">All shown</td><td class="mp-total mp-total-col">${fmtHours(grand)}</td>${dayTotals.map(v=>`<td>${cell(v)}</td>`).join('')}</tr></tfoot>
+    </table></div>`;
+    box.querySelectorAll('[data-hweek]').forEach(b=>b.onclick=()=>{ if(window.LWHMyHours) LWHMyHours.open(b.dataset.hweek,hoursData.week_start); });
+  }
+
+  function hoursCsv(){
+    const list=hoursFiltered(); if(!list.length) return;
+    const start=parseLocal(hoursData.week_start);
+    const head=['Employee','Employee ID','Location/Team',...[0,1,2,3,4,5,6].map(i=>{ const d=addDays(start,i); return d.toLocaleDateString('en-US',{weekday:'short'})+' '+(d.getMonth()+1)+'/'+d.getDate(); }),'Total','Open punch'];
+    const rows=list.map(e=>[e.name,e.emp_id,empGroup(e),...(e.days||[]).map(v=>fmtHours(v)),fmtHours(e.total),e.open_punch?'Yes':''].map(csvEscape).join(','));
+    const blob=new Blob([[head.join(','),...rows].join('\r\n')],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`weekly-hours-week-of-${hoursData.week_start}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    LWHUI.toast(`Exported ${list.length} employee(s) to CSV`);
+  }
+  function hoursPrint(){
+    const list=hoursFiltered(); const out=el('mpPrintArea'); if(!list.length||!out) return;
+    const start=parseLocal(hoursData.week_start);
+    out.innerHTML=`<h2>Weekly Hours — week of ${weekLabel(start)}${hGroup?' · '+safe(hGroup):''}</h2>
+      <p>${list.length} employee(s) · printed ${new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})} · hours only</p>
+      <table class="txn-print-table"><thead><tr><th>Employee</th><th>ID</th>${[0,1,2,3,4,5,6].map(i=>`<th>${addDays(start,i).toLocaleDateString('en-US',{weekday:'short'})}</th>`).join('')}<th>Total</th></tr></thead><tbody>
+      ${list.map(e=>`<tr><td>${safe(e.name)}</td><td>${safe(e.emp_id)}</td>${(e.days||[]).map(v=>`<td>${Number(v)?fmtHours(v):''}</td>`).join('')}<td><b>${fmtHours(e.total)}</b></td></tr>`).join('')}
+      </tbody></table>`;
+    if(window.LWHLabels && LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(11,8.5);
+    setTimeout(()=>print(),100);
+  }
+
+  function setTab(t){
+    tab=t;
+    document.querySelectorAll('#missedPunches [data-mptab]').forEach(b=>b.classList.toggle('active',b.dataset.mptab===t));
+    el('mpLimitWrap').hidden=t!=='missed';
+    const cur=t==='hours'?hoursData:data;
+    if(cur && cur.week_start===isoDate(weekStart)){ t==='hours'?renderHours():render(); }
+    else run();
+  }
+
   function unlock(){
     const v=String(el('mpPass').value||'').trim();
     if(!v){ status('Enter the manager passcode.',true); el('mpPass').focus(); return; }
@@ -219,6 +317,7 @@
     el('mpNext').onclick=()=>{ const n=addDays(weekStart,7); if(n>sundayOf(new Date())) return; weekStart=n; renderWeekNav(); run(); };
     el('mpLastWeek').onclick=()=>{ weekStart=addDays(sundayOf(new Date()),-7); renderWeekNav(); run(); };
     el('mpLimit').onchange=run;
+    document.querySelectorAll('#missedPunches [data-mptab]').forEach(b=>b.onclick=()=>setTab(b.dataset.mptab));
     el('mpLockBtn').onclick=lock;
     // Same browser tab, already unlocked → open straight to the report.
     const saved=getPass();

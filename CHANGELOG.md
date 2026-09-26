@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.60.0
+- **New: Everyone's Hours tab on the Missed Punches page.** Same manager passcode and week picker. One row per employee who punched that week: total (right beside the name, highlighted over 40) and Sunday–Saturday hours by clock-in day, with a totals row. Search by name or ID, sort by name / most / fewest hours, location/team chips, Download CSV, Print (landscape). "Open punch" and "No clock-in" tags point to rows worth a look; tapping a name opens that person's week with punch times in My Hours. On phones the name and total stay put while the days scroll sideways. Hours only, no pay.
+- The passcode check is now one shared piece inside Supabase (`toolkit_manager_check`) used by both reports, so the lockout covers both. It can't be called from the app directly.
+- **Security fix:** the real manager passcode had been saved into `sql/missed_punches.sql` on GitHub (this repo is public). The file is back to the `CHANGE-ME` placeholder, with a warning to set the passcode in the Supabase SQL Editor only. **The old passcode is still visible in GitHub history, so it needs to be changed.**
+- **Requires re-running `sql/missed_punches.sql`** in Supabase (leave `CHANGE-ME` as-is when running the whole file — it keeps the current passcode).
+
 ## v1.59.0
 - **New: Missed Punches (managers).** A passcode-protected page listing timeclock problems for any Sunday–Saturday week, grouped by employee, worst first:
   - **Missing clock-out** — still "clocked in" longer than the hour limit (a shift in progress today isn't flagged).

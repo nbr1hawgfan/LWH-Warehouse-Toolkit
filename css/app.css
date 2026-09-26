@@ -414,6 +414,35 @@ body.dock-tv .db-badge{font-size:14px}
   .mp-badge{justify-self:start}
 }
 
+
+/* ---- Everyone's Hours (v1.60.0) ---- */
+.mp-hours-tools{display:grid;grid-template-columns:1fr auto;gap:8px}
+.mp-hours-tools input,.mp-hours-tools select{margin:0}
+.mp-hours-card{padding:0;overflow:hidden}
+.mp-hours-card>div>.hint{padding:16px}
+.mp-hours-wrap{overflow-x:auto}
+.mp-hours-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.mp-hours-table th,.mp-hours-table td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.mp-hours-table th{background:var(--bg);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0}
+.mp-hours-table th div{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px}
+.mp-hours-table .mp-name-col{text-align:left;position:sticky;left:0;background:var(--card);z-index:1;min-width:150px;padding-left:12px;white-space:normal;box-shadow:1px 0 0 var(--line)}
+.mp-hours-table th.mp-name-col{background:var(--bg);z-index:2}
+.mp-hours-table tbody tr:hover td{background:#faf9fb}
+.mp-name{background:none;color:var(--brand);min-height:0;padding:0;font-weight:700;font-size:14px;text-align:left}
+.mp-name:hover{background:none;text-decoration:underline}
+.mp-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.mp-dash{color:#cfccd3}
+.mp-total{font-weight:800}
+.mp-ot{color:#b45309;background:#fef3c7}
+.mp-hours-table tfoot td{font-weight:800;background:var(--bg);border-bottom:0}
+.mp-hours-table tfoot .mp-name-col{background:var(--bg)}
+#mpLimitWrap[hidden]{display:none}
+.mp-hours-table .mp-total-col{border-right:2px solid var(--line);padding-right:10px}
+.mp-hours-table th.mp-total-col{color:var(--ink)}
+#missedPunches .tool-layout>*{min-width:0}
+.mp-hours-card{max-width:100%}
+@media(max-width:640px){.mp-hours-tools{grid-template-columns:1fr}.mp-hours-table .mp-name-col{min-width:130px}}
+
 /* =========================================================================
    PRINT-CRITICAL — DO NOT MODIFY
    These rules control physical label/sign/badge sizing and typography for

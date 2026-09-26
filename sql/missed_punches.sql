@@ -1,9 +1,9 @@
 -- ============================================================
--- LWH Toolkit v1.59.0 — Missed Punches (managers)
+-- LWH Toolkit v1.60.0 — Missed Punches + Everyone's Hours (managers)
 -- Run this in the Supabase SQL Editor (same project as inventory).
 --
--- >>> BEFORE RUNNING: change  CHANGE-ME  at the very bottom of this file
--- >>> to the manager passcode you want (6+ characters recommended).
+-- >>> Passcode: set it in the Supabase SQL Editor only (see the bottom of
+-- >>> this file). This repo is public — never save the real passcode here.
 --
 -- Creates:
 --   toolkit_manager_access         — holds the manager passcode (hashed).
@@ -31,6 +31,43 @@ create table if not exists public.toolkit_manager_access (
 alter table public.toolkit_manager_access enable row level security;  -- no policies = no API access
 revoke all on public.toolkit_manager_access from anon, authenticated;
 
+
+-- Shared passcode check for every manager report. Returns null when the
+-- passcode is right, otherwise 'not_set_up' | 'locked' | 'bad_passcode'.
+-- 10 wrong tries in a row locks all manager reports for 10 minutes.
+-- Not callable from the app directly — only from inside the reports.
+create or replace function public.toolkit_manager_check(p_passcode text)
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  v_acc toolkit_manager_access%rowtype;
+begin
+  select * into v_acc from toolkit_manager_access where id = 1 for update;
+  if not found or v_acc.passcode_hash = encode(sha256(convert_to('CHANGE-ME', 'UTF8')), 'hex') then
+    return 'not_set_up';
+  end if;
+  if v_acc.locked_until is not null and v_acc.locked_until > now() then
+    return 'locked';
+  end if;
+  if encode(sha256(convert_to(coalesce(p_passcode, ''), 'UTF8')), 'hex') <> v_acc.passcode_hash then
+    update toolkit_manager_access
+       set failed_attempts = failed_attempts + 1,
+           locked_until = case when failed_attempts + 1 >= 10 then now() + interval '10 minutes' else null end
+     where id = 1;
+    return 'bad_passcode';
+  end if;
+  if v_acc.failed_attempts <> 0 or v_acc.locked_until is not null then
+    update toolkit_manager_access set failed_attempts = 0, locked_until = null where id = 1;
+  end if;
+  return null;
+end;
+$$;
+revoke all on function public.toolkit_manager_check(text) from public, anon, authenticated;
+
 create or replace function public.toolkit_timeclock_exceptions(
   p_passcode   text,
   p_week_date  date    default null,
@@ -49,28 +86,15 @@ declare
   v_start   date;
   v_end     date;
   v_limit   numeric   := least(greatest(coalesce(p_max_hours, 10), 4), 24);
-  v_acc     toolkit_manager_access%rowtype;
+  v_err     text;
   v_exc     json;
   v_missed  json;
   v_synced  timestamptz;
 begin
-  -- ---- passcode check ----
-  select * into v_acc from toolkit_manager_access where id = 1 for update;
-  if not found or v_acc.passcode_hash = encode(sha256(convert_to('CHANGE-ME', 'UTF8')), 'hex') then
-    return json_build_object('ok', false, 'error', 'not_set_up');
-  end if;
-  if v_acc.locked_until is not null and v_acc.locked_until > now() then
-    return json_build_object('ok', false, 'error', 'locked', 'locked_until', v_acc.locked_until);
-  end if;
-  if encode(sha256(convert_to(coalesce(p_passcode, ''), 'UTF8')), 'hex') <> v_acc.passcode_hash then
-    update toolkit_manager_access
-       set failed_attempts = failed_attempts + 1,
-           locked_until = case when failed_attempts + 1 >= 10 then now() + interval '10 minutes' else null end
-     where id = 1;
-    return json_build_object('ok', false, 'error', 'bad_passcode');
-  end if;
-  if v_acc.failed_attempts <> 0 or v_acc.locked_until is not null then
-    update toolkit_manager_access set failed_attempts = 0, locked_until = null where id = 1;
+  -- ---- passcode check (shared with the Everyone's Hours report) ----
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then
+    return json_build_object('ok', false, 'error', v_err);
   end if;
 
   -- ---- the week (Sunday–Saturday) ----
@@ -186,13 +210,97 @@ $$;
 revoke all on function public.toolkit_timeclock_exceptions(text, date, numeric) from public;
 grant execute on function public.toolkit_timeclock_exceptions(text, date, numeric) to anon, authenticated;
 
+
+-- ------------------------------------------------------------
+-- Everyone's Hours (v1.60.0): every employee with punches in one
+-- Sunday–Saturday week — hours per day and week total. Hours only.
+-- ------------------------------------------------------------
+create or replace function public.toolkit_manager_week_hours(
+  p_passcode  text,
+  p_week_date date default null
+)
+returns json
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  v_today  date := (now() at time zone 'America/Chicago')::date;
+  v_date   date;
+  v_start  date;
+  v_end    date;
+  v_err    text;
+  v_rows   json;
+  v_synced timestamptz;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then
+    return json_build_object('ok', false, 'error', v_err);
+  end if;
+
+  v_date  := coalesce(p_week_date, v_today);
+  v_start := v_date - extract(dow from v_date)::int;
+  v_end   := v_start + 6;
+
+  with p as (
+    select distinct on (log_id) log_id, emp_id, clock_in_date, clocked_in, clocked_out, worked_hours
+    from emp_punches
+    where clock_in_date between v_start and v_end
+    order by log_id
+  ),
+  per_emp as (
+    select emp_id,
+           array[
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start),
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start + 1),
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start + 2),
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start + 3),
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start + 4),
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start + 5),
+             sum(coalesce(worked_hours,0)) filter (where clock_in_date = v_start + 6)
+           ] as days,
+           sum(coalesce(worked_hours,0)) as total,
+           bool_or(clocked_in is not null and clocked_out is null) as open_punch,
+           bool_or(clocked_in is null and clocked_out is not null) as missing_in
+    from p group by emp_id
+  )
+  select coalesce(json_agg(json_build_object(
+           'emp_id',     x.emp_id,
+           'name',       coalesce(e.full_name, 'ID ' || x.emp_id),
+           'team',       e.team,
+           'location',   e.location,
+           'days',       x.days,
+           'total',      x.total,
+           'open_punch', x.open_punch,
+           'missing_in', x.missing_in
+         ) order by coalesce(e.full_name, x.emp_id::text)), '[]'::json)
+    into v_rows
+  from per_emp x
+  left join lateral (select full_name, team, location from emp_employees ee
+                     where ee.emp_id = x.emp_id order by ee.is_active desc nulls last limit 1) e on true;
+
+  select max(last_synced_at) into v_synced from emp_sync_meta;
+
+  return json_build_object(
+    'ok', true, 'week_start', v_start, 'week_end', v_end, 'today', v_today,
+    'last_synced_at', v_synced, 'employees', v_rows);
+end;
+$$;
+
+revoke all on function public.toolkit_manager_week_hours(text, date) from public;
+grant execute on function public.toolkit_manager_week_hours(text, date) to anon, authenticated;
+
 -- ============================================================
--- MANAGER PASSCODE — change CHANGE-ME below, then run the whole file.
--- To change the passcode later, edit it here and run just this statement.
--- (Leaving it as CHANGE-ME keeps whatever passcode is already set.)
+-- MANAGER PASSCODE
+-- !! This GitHub repo is PUBLIC. Do NOT save your real passcode in this file
+-- !! on GitHub. Instead, in the Supabase SQL Editor, change CHANGE-ME to your
+-- !! passcode in the statement below and run it there — don't commit it back.
+-- Leaving it as CHANGE-ME (e.g. re-running this whole file) keeps whatever
+-- passcode is already set.
 -- ============================================================
 insert into public.toolkit_manager_access (id, passcode_hash)
-values (1, encode(sha256(convert_to('011571', 'UTF8')), 'hex'))
+values (1, encode(sha256(convert_to('CHANGE-ME', 'UTF8')), 'hex'))
 on conflict (id) do update
   set passcode_hash   = excluded.passcode_hash,
       failed_attempts = 0,
