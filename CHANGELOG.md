@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.57.0
+- **New: FIFO / Aging.** Two tabs, both reading live `current_inventory`:
+  - **Pick Oldest First** — type or scan an item number and get its on-hand pallets in pick order, oldest receive date first. The first pallet's bay is shown big at the top with warehouse, lot, received date, age, qty and pallet ID; the rest follow numbered in order. Partial item numbers show a list of matching items to choose from. If the item is in more than one warehouse, chips filter to one. Unusual bay statuses (e.g. HOLD) are flagged.
+  - **Aging Report** — every pallet older than 30 / 60 / 90 / 180 days or 1 year, grouped by customer (most pallets first), with a warehouse filter, Download CSV and Print Report. Ages over 90 days show amber, over 180 red.
+- Age is calculated from the receive date at lookup time, so it's always current. Each pallet ID is counted once (same duplicate protection as Data Health). Inactive inventory is excluded.
+- **Requires running `sql/fifo_functions.sql` once in the Supabase SQL Editor.**
+
 ## v1.56.0
 - **New: Share and Save PDF on My Hours.** Two buttons under the results.
   - **Share** opens the phone's normal share menu (Messages, email, Files, Drive, etc.) with a one-page PDF of the week plus a plain-text summary. On devices that can't share files it shares just the text, and on computers without a share menu it copies the summary so it can be pasted into an email.
