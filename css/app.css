@@ -537,3 +537,26 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
 .bol-sig-img{height:44px}
 .bol-sig-line{display:block;border-bottom:1px solid #000;height:34px}
 .bol-sig-date{font-size:10px;margin-top:2px}
+
+/* ---- My Hours (v1.55.0) ---- */
+.mh-remember{display:flex;align-items:center;gap:8px;font-weight:normal}
+.mh-remember input{width:auto;margin:0}
+.mh-week-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;margin:4px 0 12px}
+.mh-week-nav button{padding:8px 12px}
+.mh-week-nav button:disabled{opacity:.4;cursor:default}
+.mh-week-label{text-align:center;font-weight:700}
+.mh-hello{color:var(--muted,#555)}
+.mh-total{margin:6px 0 10px}
+.mh-total-num{font-size:2.2em;font-weight:800;color:var(--brand)}
+.mh-total-unit{font-weight:600}
+.mh-week-table{overflow-x:auto}
+.mh-week-table .pls-table{table-layout:fixed;min-width:420px}
+.mh-day{text-align:center}
+.mh-day b{font-size:1.15em}
+.mh-day-name{font-weight:700}
+.mh-day-date{font-size:.85em;opacity:.7;margin-bottom:2px}
+.mh-today{background:var(--brand-tint)}
+.mh-detail-day{padding:8px 0;border-top:1px solid rgba(0,0,0,.08)}
+.mh-detail-day:first-of-type{border-top:0}
+.mh-detail-head{font-weight:700;margin-bottom:2px}
+.mh-punch{display:flex;justify-content:space-between;gap:12px;font-size:.95em}
