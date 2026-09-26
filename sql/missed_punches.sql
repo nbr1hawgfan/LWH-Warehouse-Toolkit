@@ -192,7 +192,7 @@ grant execute on function public.toolkit_timeclock_exceptions(text, date, numeri
 -- (Leaving it as CHANGE-ME keeps whatever passcode is already set.)
 -- ============================================================
 insert into public.toolkit_manager_access (id, passcode_hash)
-values (1, encode(sha256(convert_to('CHANGE-ME', 'UTF8')), 'hex'))
+values (1, encode(sha256(convert_to('011571', 'UTF8')), 'hex'))
 on conflict (id) do update
   set passcode_hash   = excluded.passcode_hash,
       failed_attempts = 0,
