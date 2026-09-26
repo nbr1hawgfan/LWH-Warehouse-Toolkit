@@ -55,6 +55,7 @@
   <script defer src="./js/packinglist.js"></script>
   <script defer src="./js/spottertimesheets.js"></script>
   <script defer src="./js/myhours.js"></script>
+  <script defer src="./js/missedpunches.js"></script>
   <script defer src="./js/fifo.js"></script>
   <script defer src="./js/dockboard.js"></script>
   <script defer src="./js/shipweights.js"></script>
@@ -64,7 +65,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.58.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.59.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -87,6 +88,7 @@
       <button class="nav-btn" data-view="shipwt"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 14a3 3 0 0 0 6 0z"/><path d="M19 7l-3 7a3 3 0 0 0 6 0z"/></svg>Ship Weights</button>
       <button class="nav-btn" data-view="spotterTimesheets"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 3v3M16 3v3"/><path d="M7 13h3M12 13h3M7 17h3"/></svg>Spotter Timesheets</button>
       <button class="nav-btn" data-view="myHours"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>My Hours</button>
+      <button class="nav-btn" data-view="missedPunches"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M19 5l1.5-1.5"/></svg>Missed Punches</button>
       <button class="nav-btn" data-view="docscan"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Doc Scanner</button>
       <button class="nav-btn" data-view="radar"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12 12 4"/><path d="M12 12 17 15"/></svg>Weather Radar</button>
       <button class="nav-btn" data-view="rack"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>4x6 Rack Labels</button>
@@ -147,6 +149,7 @@
         <button class="module-card" data-view="shipwt"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 14a3 3 0 0 0 6 0z"/><path d="M19 7l-3 7a3 3 0 0 0 6 0z"/></svg></div><b>Ship Weights</b><span>Calculate gross shipment weight and print a 4x6 label with freight class.</span></button>
         <button class="module-card" data-view="spotterTimesheets"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 3v3M16 3v3"/><path d="M7 13h3M12 13h3M7 17h3"/></svg></div><b>Spotter Timesheets</b><span>Weekly hours synced from drivers' phones — search, print, or export.</span></button>
         <button class="module-card" data-view="myHours"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><b>My Hours</b><span>Enter your employee ID to see your hours for any Sunday–Saturday week.</span></button>
+        <button class="module-card" data-view="missedPunches"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M19 5l1.5-1.5"/></svg></div><b>Missed Punches</b><span>Managers: missing clock-ins/outs, shifts over 10 hours, and usual workdays with no punches. Passcode required.</span></button>
         <button class="module-card" data-view="docscan"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><b>Doc Scanner</b><span>Auto-detects and straightens paperwork as you scan, extract text, and share or download as a PDF — multi-page.</span></button>
         <button class="module-card" data-view="radar"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12 12 4"/><path d="M12 12 17 15"/></svg></div><b>Weather Radar</b><span>Animated precipitation radar for the yard and surrounding area.</span></button>
         <button class="module-card" data-view="rack"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div><b>Rack Labels</b><span>4x6 bay tags with 1D barcode and QR.</span></button>
@@ -493,6 +496,37 @@
         <div><div id="mhResults" class="results"></div></div>
       </div>
     </section>
+
+    <section id="missedPunches" class="view">
+      <div class="tool-layout wide">
+        <form class="panel no-print mh-entry" id="missedPunchesForm" onsubmit="return false">
+          <div class="mh-entry-head">
+            <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M19 5l1.5-1.5"/></svg></div>
+            <div><h2>Missed Punches</h2><div class="mh-entry-sub">Managers — timeclock problems to fix before payroll. Hours only, no pay info.</div></div>
+          </div>
+          <div id="mpLocked">
+            <label for="mpPass" class="mh-field-label">Manager passcode</label>
+            <input id="mpPass" type="password" class="ff-item-input mp-pass" autocomplete="current-password" placeholder="Passcode" />
+            <button type="button" id="mpUnlockBtn" class="mh-show-btn mp-unlock"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Unlock Report</button>
+          </div>
+          <div id="mpUnlocked" hidden>
+            <div class="mh-field-label">Workweek</div>
+            <div class="mh-week-picker">
+              <button type="button" id="mpPrev" class="mh-arrow" aria-label="Previous week"><svg class="icon" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+              <div class="mh-week-center"><div id="mpWeekLabel" class="mh-week-label"></div><div id="mpWeekSub" class="mh-week-sub"></div></div>
+              <button type="button" id="mpNext" class="mh-arrow" aria-label="Next week"><svg class="icon" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+            </div>
+            <label for="mpLimit" class="mh-field-label">Flag shifts longer than</label>
+            <select id="mpLimit" class="ff-days"><option value="8">8 hours</option><option value="10" selected>10 hours</option><option value="12">12 hours</option><option value="14">14 hours</option></select>
+            <div class="mh-entry-foot"><button type="button" id="mpLastWeek" class="mh-link">Jump to last week</button><button type="button" id="mpLockBtn" class="mh-link">Lock</button></div>
+          </div>
+          <div id="mpStatus" class="mh-status" role="status"></div>
+        </form>
+        <div><div id="mpResults" class="results no-print"></div></div>
+      </div>
+      <div id="mpPrintArea" class="print-area"></div>
+    </section>
+
 
     <section id="rack" class="view">
       <div class="tool-layout">

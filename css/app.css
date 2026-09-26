@@ -382,6 +382,38 @@ body.dock-tv .db-pallets b{font-size:36px}
 body.dock-tv .db-col-head h3{font-size:24px}
 body.dock-tv .db-badge{font-size:14px}
 
+
+/* ---- Missed Punches (v1.59.0) ---- */
+.mp-pass{text-transform:none;letter-spacing:.1em}
+.mp-unlock{display:flex;align-items:center;justify-content:center;gap:8px}
+.mp-unlock .icon{width:18px;height:18px}
+.mp-head{font-size:15px;margin-bottom:12px}
+.mp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mp-tile{background:#fff;color:var(--ink);border:1.5px solid var(--line);border-top:4px solid var(--line);text-align:left;padding:10px 12px;min-height:0;display:flex;flex-direction:column;gap:2px;font-weight:600}
+.mp-tile b{font-size:30px;font-weight:900;line-height:1}
+.mp-tile span{font-size:12px;color:var(--muted);font-weight:600}
+.mp-tile:hover{background:var(--bg)}
+.mp-tile.mp-bad{border-top-color:var(--bad)} .mp-tile.mp-bad b{color:var(--bad)}
+.mp-tile.mp-warn{border-top-color:#d97706} .mp-tile.mp-warn b{color:#b45309}
+.mp-tile.mp-info{border-top-color:#6366f1} .mp-tile.mp-info b{color:#4338ca}
+.mp-tile.active{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset}
+.mp-closed{margin-top:12px;background:var(--bg);border-radius:var(--radius);padding:10px 12px;font-size:13px;color:var(--muted);display:grid;gap:4px}
+.mp-emp{margin-top:10px}
+.mp-emp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.mp-emp-name{font-weight:800;font-size:16px}
+.mp-item{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.mp-badge{display:inline-block;white-space:nowrap;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:3px;padding:3px 7px;text-align:center}
+.mp-badge.mp-bad{background:#fee2e2;color:#991b1b}
+.mp-badge.mp-warn{background:#fef3c7;color:#92400e}
+.mp-badge.mp-info{background:#e0e7ff;color:#3730a3}
+.mp-when{font-weight:700;font-size:14px}
+.mp-what{font-size:14px;color:var(--ink)}
+@media(max-width:640px){
+  .mp-tiles{grid-template-columns:repeat(2,1fr)}
+  .mp-item{grid-template-columns:1fr;gap:4px}
+  .mp-badge{justify-self:start}
+}
+
 /* =========================================================================
    PRINT-CRITICAL — DO NOT MODIFY
    These rules control physical label/sign/badge sizing and typography for

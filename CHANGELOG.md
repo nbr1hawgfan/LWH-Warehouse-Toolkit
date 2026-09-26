@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.59.0
+- **New: Missed Punches (managers).** A passcode-protected page listing timeclock problems for any Sunday–Saturday week, grouped by employee, worst first:
+  - **Missing clock-out** — still "clocked in" longer than the hour limit (a shift in progress today isn't flagged).
+  - **Missing clock-in** — a clock-out with no clock-in.
+  - **Long shift** — any shift over the limit (8 / 10 / 12 / 14 hrs, default 10). Usually a missed clock-out that got closed the next day.
+  - **No punches** — a weekday the person usually works (3 of the previous 4 weeks) with no punches at all, labeled "Off, or missed?" so part-timers' normal days off don't show up. Only days that are over count.
+  - If most regulars have no punches on the same day, that day is set aside with a note (holiday, closed, or timeclock not synced yet) instead of listing everyone.
+  - Tap a count tile to filter to that problem; location/team chips; Download CSV; Print (with a "Fixed" checkbox column); **View week** opens that person's week in My Hours.
+- **Passcode is checked inside Supabase**, not in the page. 10 wrong tries locks the report for 10 minutes. The passcode stays unlocked only for the current browser tab.
+- **Requires running `sql/missed_punches.sql`** — change `CHANGE-ME` at the bottom to the manager passcode first. To change the passcode later, edit that last statement and run just it.
+
 ## v1.58.0
 - **New: Today's Dock.** One screen of the day's inbound and outbound loads, side by side. Each load shows Pro #, customer, carrier, trailer, warehouse, pallet count and status; tap a load to see its items, lots and quantities. Totals across the top (inbound, outbound, done), status counts, and warehouse filter chips. Arrows move to other days. Refreshes itself every 5 minutes.
   - **TV Mode** hides the header and menu, goes full screen and enlarges everything for a shipping-office TV. Esc or "Exit TV Mode" to leave.

@@ -72,7 +72,7 @@
     return res.json();
   }
 
-  async function load(){
+  async function load(opts){
     const id=cleanId();
     const out=el('mhResults');
     if(!/^\d{5}$/.test(id)){
@@ -80,7 +80,8 @@
       el('mhEmpId').focus();
       return;
     }
-    if(el('mhRemember').checked) LWHStorage.set(ID_KEY,id); else LWHStorage.remove(ID_KEY);
+    // Opened from the managers' Missed Punches page → don't touch this device's remembered ID.
+    if(!(opts&&opts.noSave)){ if(el('mhRemember').checked) LWHStorage.set(ID_KEY,id); else LWHStorage.remove(ID_KEY); }
 
     const seq=++requestSeq;
     status('Loading your hours…');
@@ -266,7 +267,7 @@
     if(saved){ el('mhEmpId').value=saved; el('mhRemember').checked=true; }
     renderWeekNav();
 
-    el('mhShowBtn').onclick=load;
+    el('mhShowBtn').onclick=()=>load();
     el('mhEmpId').oninput=()=>{ const v=cleanId().slice(0,5); if(el('mhEmpId').value!==v) el('mhEmpId').value=v; };
     el('mhEmpId').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); load(); } };
     el('mhPrevWeek').onclick=()=>changeWeek(-1);
@@ -280,4 +281,17 @@
       if(v && /^\d{5}$/.test(cleanId()) && !el('mhResults').innerHTML.trim()) load();
     });
   });
+
+  // Lets other pages (Missed Punches) open one employee's week here.
+  window.LWHMyHours={
+    open(empId,dateIso){
+      if(!el('mhEmpId')) return;
+      el('mhEmpId').value=String(empId||'').replace(/\D/g,'').slice(0,5);
+      const d=parseLocal(dateIso)||new Date();
+      weekStart=sundayOf(d);
+      renderWeekNav();
+      LWHUI.show('myHours');
+      load({noSave:true});
+    }
+  };
 })();
