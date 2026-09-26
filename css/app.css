@@ -588,3 +588,6 @@ summary{font-weight:700;cursor:pointer;color:var(--ink)}
   .mh-day b{font-size:1em}
   .mh-total-num{font-size:1.9em}
 }
+.mh-share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mh-share-row button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px}
+.mh-share-row .icon{width:18px;height:18px}

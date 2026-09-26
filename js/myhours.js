@@ -15,6 +15,7 @@
 
   let weekStart=sundayOf(new Date());
   let requestSeq=0;
+  let lastView=null; // what's on screen now — feeds Share / Save PDF
 
   function el(id){ return document.getElementById(id); }
   function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -133,6 +134,7 @@
 
     const synced=timeAgo(data.last_synced_at);
     const name=data.first_name||(data.full_name||'').split(' ')[0]||'';
+    lastView={empId:cleanId(),first:name,full:data.full_name||name,weekStart:new Date(weekStart),days,total,openPunch};
 
     out.innerHTML=`
       <div class="card mh-summary">
@@ -145,8 +147,98 @@
         <h3 style="margin-top:0">Clock-in / clock-out times</h3>
         ${detailRows||'<div class="hint">No punches recorded for this week.</div>'}
       </div>
+      <div class="mh-share-row no-print">
+        <button type="button" id="mhShareBtn"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share</button>
+        <button type="button" id="mhPdfBtn" class="ghost"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M12 11v6"/><path d="M9 14l3 3 3-3"/></svg>Save PDF</button>
+      </div>
       <div class="hint" style="margin-top:8px">Hours shown as decimal (7.50 = 7 hrs 30 min). Timeclock last synced: ${synced||'—'}. If something looks wrong, see your supervisor.</div>
     `;
+    el('mhShareBtn').onclick=share;
+    el('mhPdfBtn').onclick=savePdf;
+  }
+
+  // ---- Share / Save PDF ----
+  function fileBase(v){
+    const who=(v.full||'employee').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'')||'employee';
+    return `hours-${who}-week-of-${isoDate(v.weekStart)}`;
+  }
+  function summaryText(v){
+    const lines=[`${v.full||'Employee'} (ID ${v.empId}) — hours for ${weekLabel(v.weekStart)}`,''];
+    v.days.forEach(d=>{ lines.push(`${d.label} ${d.date.getMonth()+1}/${d.date.getDate()}: ${d.hours?fmtHours(d.hours):'—'}`); });
+    lines.push('',`Total: ${fmtHours(v.total)} hrs`);
+    if(v.openPunch) lines.push('(Currently clocked in — open shift not counted yet)');
+    return lines.join('\n');
+  }
+  function buildPdf(v){
+    if(!window.jspdf){ alert('The PDF library failed to load — check your internet connection.'); return null; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'pt',format:'letter'});
+    const brand=getComputedStyle(document.documentElement).getPropertyValue('--brand').trim()||'#c8102e';
+    const L=54, R=558; let y=64;
+    doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(28,28,43);
+    doc.text('Weekly Hours',L,y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(92,92,107);
+    doc.text('Logistics Warehouse',R,y,{align:'right'});
+    y+=26; doc.setFontSize(12); doc.setTextColor(28,28,43);
+    doc.setFont('helvetica','bold'); doc.text(`${v.full||'Employee'}`,L,y);
+    doc.setFont('helvetica','normal'); doc.text(`Employee ID ${v.empId}`,R,y,{align:'right'});
+    y+=18; doc.setTextColor(92,92,107); doc.text(`Week of ${weekLabel(v.weekStart)} (Sunday–Saturday)`,L,y);
+    y+=34; doc.setTextColor(brand); doc.setFont('helvetica','bold'); doc.setFontSize(28);
+    doc.text(fmtHours(v.total),L,y); const w=doc.getTextWidth(fmtHours(v.total));
+    doc.setFontSize(12); doc.setTextColor(28,28,43); doc.text('total hours',L+w+8,y);
+    y+=26;
+    // table header
+    doc.setDrawColor(brand); doc.setLineWidth(1); doc.line(L,y,R,y); y+=16;
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(92,92,107);
+    doc.text('DAY',L,y); doc.text('DATE',L+70,y); doc.text('CLOCK IN – CLOCK OUT',L+150,y); doc.text('HOURS',R,y,{align:'right'});
+    y+=8; doc.line(L,y,R,y);
+    doc.setDrawColor(226,224,228); doc.setLineWidth(.5);
+    v.days.forEach(d=>{
+      const rows=d.punches.length?d.punches:[null];
+      const top=y+16;
+      doc.setFontSize(11); doc.setTextColor(28,28,43);
+      doc.setFont('helvetica','bold'); doc.text(d.label,L,top);
+      doc.setFont('helvetica','normal'); doc.text(fmtShort(d.date),L+70,top);
+      rows.forEach((p,i)=>{
+        const ry=top+i*15;
+        doc.setTextColor(p?28:160,p?28:160,p?43:170);
+        doc.text(p?(p.out?`${fmtTime(p.in)} – ${fmtTime(p.out)}`:`${fmtTime(p.in)} – still clocked in`):'No punches',L+150,ry);
+        if(p&&p.out){ doc.setTextColor(92,92,107); doc.text(fmtHours(p.hours),R-70,ry,{align:'right'}); }
+      });
+      doc.setTextColor(28,28,43); doc.setFont('helvetica','bold');
+      doc.text(d.hours?fmtHours(d.hours):'—',R,top,{align:'right'});
+      y=top+(rows.length-1)*15+10; doc.line(L,y,R,y);
+    });
+    y+=30; doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(92,92,107);
+    doc.text('Hours shown as decimal (7.50 = 7 hrs 30 min), from the Logistics Warehouse timeclock. Hours only — no pay information.',L,y);
+    if(v.openPunch){ y+=13; doc.text('An open shift (still clocked in) is not counted in the total until it is clocked out.',L,y); }
+    y+=13; doc.text('Generated '+new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})+'. If something looks wrong, see your supervisor.',L,y);
+    return doc;
+  }
+  function savePdf(){
+    if(!lastView) return;
+    const doc=buildPdf(lastView); if(!doc) return;
+    doc.save(fileBase(lastView)+'.pdf');
+  }
+  async function share(){
+    if(!lastView) return;
+    const text=summaryText(lastView);
+    const title='Weekly hours — '+weekLabel(lastView.weekStart);
+    try{
+      const doc=window.jspdf?buildPdf(lastView):null;
+      if(doc){
+        const file=new File([doc.output('blob')],fileBase(lastView)+'.pdf',{type:'application/pdf'});
+        if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title,text}); return; }
+      }
+      if(navigator.share){ await navigator.share({title,text}); return; }
+      if(navigator.clipboard){ await navigator.clipboard.writeText(text); LWHUI.toast('Hours copied — paste them into a text or email'); return; }
+      savePdf();
+    }catch(e){
+      if(e && e.name==='AbortError') return; // closed the share menu
+      console.error('My Hours share failed',e);
+      try{ await navigator.clipboard.writeText(text); LWHUI.toast('Couldn\'t open sharing — hours copied instead'); }
+      catch{ LWHUI.toast('Sharing isn\'t available here — use Save PDF'); }
+    }
   }
 
   function changeWeek(delta){

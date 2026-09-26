@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.56.0
+- **New: Share and Save PDF on My Hours.** Two buttons under the results.
+  - **Share** opens the phone's normal share menu (Messages, email, Files, Drive, etc.) with a one-page PDF of the week plus a plain-text summary. On devices that can't share files it shares just the text, and on computers without a share menu it copies the summary so it can be pasted into an email.
+  - **Save PDF** downloads the same one-page timecard: name, employee ID, week, total, each day's clock-in/clock-out times and hours. Hours only, no pay information.
+  - Uses the jsPDF library the app already loads for BOL, so nothing new to set up. No Supabase change needed.
+
 ## v1.55.1
 - **My Hours entry panel restyled.** Large centered Employee ID box, a week picker with arrow buttons and a "This week / Last week / N weeks ago" subtitle, one full-width Show My Hours button, and "Back to this week" / "Clear / Not me" as small links underneath. Results side unchanged.
 - **Fixed: employees with punches showing as "not active."** The lookup no longer requires `emp_employees.is_active = true`. The flag wasn't always current (e.g. ID 52332), and having timeclock punches is what matters. An ID is found if it's in `emp_employees` or has any punches. **Re-run `sql/my_hours_function.sql` in Supabase** to pick this up.
