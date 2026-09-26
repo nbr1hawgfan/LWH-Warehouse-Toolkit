@@ -443,6 +443,102 @@ body.dock-tv .db-badge{font-size:14px}
 .mp-hours-card{max-width:100%}
 @media(max-width:640px){.mp-hours-tools{grid-template-columns:1fr}.mp-hours-table .mp-name-col{min-width:130px}}
 
+
+/* =========================================================================
+   GLASS LOOK (v1.61.0) — requested by Doug. iPhone-style frosted panels
+   floating over a soft, brand-tinted background. On by default; Settings →
+   Appearance switches back to Classic (html.glass class, set in <head> so
+   there's no flash). Tables, inputs and numbers stay on near-solid white so
+   data is still easy to read under warehouse lighting. Screen only — printing
+   is unaffected. All colors follow the Settings brand color.
+   ========================================================================= */
+@media screen{
+html.glass{
+  --glass:rgba(255,255,255,.58);
+  --glass-strong:rgba(255,255,255,.82);
+  --glass-edge:rgba(255,255,255,.75);
+  --glass-line:rgba(28,28,43,.08);
+  --glass-shadow:0 10px 36px rgba(40,20,40,.10),0 1px 0 rgba(255,255,255,.9) inset;
+  --glass-blur:saturate(170%) blur(18px);
+  --radius:16px;
+  --radius-sm:11px;
+}
+html.glass body{background:#eceef4}
+/* the colored "wallpaper" the glass floats over — fixed, so it doesn't scroll */
+html.glass body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(38rem 38rem at 8% -6%, color-mix(in srgb,var(--brand) 30%,transparent), transparent 70%),
+    radial-gradient(34rem 34rem at 96% 12%, rgba(99,102,241,.20), transparent 70%),
+    radial-gradient(40rem 40rem at 70% 104%, rgba(14,165,233,.16), transparent 70%),
+    radial-gradient(30rem 30rem at 0% 92%, color-mix(in srgb,var(--brand) 16%,transparent), transparent 70%),
+    linear-gradient(180deg,#f3f1f6 0%,#e9edf5 100%)}
+
+/* frosted panels */
+html.glass .card,html.glass .panel,html.glass .kpi-card,html.glass .hero,html.glass .db-col,html.glass .module-card{
+  background:var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+html.glass .module-card{transition:transform .15s ease,box-shadow .15s ease,background-color .15s ease}
+html.glass .module-card:hover{background:var(--glass-strong);transform:translateY(-2px);box-shadow:0 16px 40px rgba(40,20,40,.14),0 1px 0 #fff inset}
+html.glass .icon-badge{border-radius:12px}
+
+/* header: a touch more see-through, rounded bottom edge like an iOS bar */
+html.glass .app-header{border-bottom:1px solid rgba(255,255,255,.35);
+  background:color-mix(in srgb,var(--brand) 74%,transparent)}
+html.glass body.header-compact .app-header{background:color-mix(in srgb,var(--brand) 70%,transparent)}
+html.glass .header-actions .ghost{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.55);border-radius:999px}
+html.glass .header-actions .ghost:hover{background:rgba(255,255,255,.26)}
+
+/* sidebar: dark smoked glass */
+html.glass .nav{background:rgba(22,22,28,.72);border:1px solid rgba(255,255,255,.08);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:0 14px 40px rgba(0,0,0,.22)}
+html.glass .nav-btn{border-radius:10px;border-left-color:transparent!important}
+html.glass .nav-btn.active{box-shadow:0 6px 16px color-mix(in srgb,var(--brand) 40%,transparent)}
+
+/* controls */
+html.glass button{border-radius:12px}
+html.glass button.ghost{background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+html.glass button.ghost:hover{background:rgba(255,255,255,.85)}
+html.glass button:not(.ghost):not(.mh-link):not(.mp-name):not(.nav-btn):not(.mh-arrow):not(.ff-chip):not(.mp-tile):not(.module-card):not(.seg){box-shadow:0 6px 16px color-mix(in srgb,var(--brand) 28%,transparent)}
+html.glass input,html.glass textarea,html.glass select{background:var(--glass-strong);border-color:rgba(28,28,43,.12)}
+html.glass input:focus,html.glass textarea:focus,html.glass select:focus{background:#fff}
+html.glass .ff-tabs,html.glass .segmented{background:rgba(120,120,140,.12);border-color:transparent}
+html.glass .ff-tabs button.active,html.glass .seg.active{background:rgba(255,255,255,.92)}
+html.glass .ff-chip,html.glass .mp-tile{background:rgba(255,255,255,.6)}
+html.glass .ff-chip.active{background:var(--brand)}
+html.glass .mh-week-picker,html.glass .db-daypick{border-color:rgba(28,28,43,.1);background:rgba(255,255,255,.45)}
+html.glass .mh-entry-head{border-bottom-color:var(--glass-line)}
+html.glass .mp-closed,html.glass .panel details,html.glass .cust-field{background:rgba(255,255,255,.5)}
+
+/* things that must stay easy to read: keep them (nearly) solid */
+html.glass .pls-table,html.glass .mp-hours-table,html.glass .txn-print-table{background:rgba(255,255,255,.9)}
+html.glass .mp-hours-card{background:rgba(255,255,255,.9)}
+html.glass .mp-hours-table .mp-name-col{background:#fff}
+html.glass .mp-hours-table th,html.glass .mp-hours-table th.mp-name-col,html.glass .mp-hours-table tfoot td,html.glass .mp-hours-table tfoot .mp-name-col{background:#f6f5f8}
+html.glass .result-card,html.glass .db-load,html.glass .weather-day,html.glass .stats div{background:rgba(255,255,255,.86)}
+html.glass .ff-first{background:rgba(255,255,255,.86)}
+html.glass .scanner-card{background:#fff}
+
+/* keep the colored status edges the classic look has */
+html.glass .data-health{border-left:5px solid var(--good)}
+html.glass .data-health-good{background:rgba(236,249,236,.78)}
+html.glass .data-health-bad{border-left-color:var(--bad);background:rgba(253,236,234,.82)}
+html.glass .ff-first{border-left:5px solid var(--brand)}
+
+/* TV mode is read from across a room — keep it bold and solid */
+html.glass body.dock-tv .card,html.glass body.dock-tv .db-col{background:rgba(255,255,255,.92)}
+
+/* Older/slower devices or people who turn off transparency: same shape, no blur */
+@media (prefers-reduced-transparency: reduce){
+  html.glass .card,html.glass .panel,html.glass .kpi-card,html.glass .hero,html.glass .db-col,html.glass .module-card,html.glass .nav{
+    -webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.94)}
+  html.glass .nav{background:#1a1a20}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  html.glass .card,html.glass .panel,html.glass .kpi-card,html.glass .hero,html.glass .db-col,html.glass .module-card{background:rgba(255,255,255,.9)}
+  html.glass .nav{background:#1a1a20}
+}
+}
+
 /* =========================================================================
    PRINT-CRITICAL — DO NOT MODIFY
    These rules control physical label/sign/badge sizing and typography for

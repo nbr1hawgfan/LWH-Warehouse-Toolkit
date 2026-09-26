@@ -596,3 +596,15 @@ rackList.value=LWHStorage.get('rackList','');
   const t=document.getElementById('navToggle');
   if(t) t.addEventListener('click',()=>{ if(document.querySelector('.nav.open')) window.scrollTo({top:0,behavior:'smooth'}); });
 })();
+
+// GLASS LOOK (v1.61.0) — Settings → Appearance toggle. The <head> script
+// applies the class before first paint; this just wires the checkbox.
+(function(){
+  const box=document.getElementById('setGlass'); if(!box) return;
+  box.checked=document.documentElement.classList.contains('glass');
+  box.addEventListener('change',()=>{
+    document.documentElement.classList.toggle('glass',box.checked);
+    LWHStorage.set('glassTheme',box.checked);
+    LWHUI.toast(box.checked?'Glass look on':'Classic look on');
+  });
+})();

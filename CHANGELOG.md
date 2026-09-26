@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.61.0
+- **New: Glass look** (requested by Doug). iPhone-style frosted panels floating over a soft background tinted from the brand color: translucent cards, smoked-glass sidebar, see-through pinned header, rounded corners, pill buttons, and a gentle lift on Home cards. On for everyone by default.
+- **Readability kept:** tables, load cards, the hours grid, inputs and numbers stay on near-solid white; TV Mode stays solid for reading across a room; printing is unaffected (screen only).
+- **Settings → Appearance** has a "Glass look" switch to go back to the classic flat look on that device (good for older computers). Devices with reduced transparency turned on, or browsers without blur support, automatically get a solid version.
+- Corners are rounded in the glass look (the classic look keeps the squared corners from v1.52.0).
+
 ## v1.60.0
 - **New: Everyone's Hours tab on the Missed Punches page.** Same manager passcode and week picker. One row per employee who punched that week: total (right beside the name, highlighted over 40) and Sunday–Saturday hours by clock-in day, with a totals row. Search by name or ID, sort by name / most / fewest hours, location/team chips, Download CSV, Print (landscape). "Open punch" and "No clock-in" tags point to rows worth a look; tapping a name opens that person's week with punch times in My Hours. On phones the name and total stay put while the days scroll sideways. Hours only, no pay.
 - The passcode check is now one shared piece inside Supabase (`toolkit_manager_check`) used by both reports, so the lockout covers both. It can't be called from the app directly.
