@@ -444,6 +444,81 @@ body.dock-tv .db-badge{font-size:14px}
 @media(max-width:640px){.mp-hours-tools{grid-template-columns:1fr}.mp-hours-table .mp-name-col{min-width:130px}}
 
 
+
+/* ---- PAS Sheet Reader (v1.62.0) ---- */
+.ps-drop{border:2px dashed color-mix(in srgb,var(--brand) 45%,var(--line));border-radius:var(--radius);padding:22px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:color-mix(in srgb,var(--brand-tint) 45%,transparent);transition:background .15s ease,border-color .15s ease}
+.ps-drop.ps-drag{background:var(--brand-tint);border-color:var(--brand)}
+.ps-drop.ps-busy{opacity:.55;pointer-events:none}
+.ps-drop-text b{display:block;font-size:17px}
+.ps-drop-text span{font-size:13px;color:var(--muted)}
+.ps-drop-btns{display:flex;gap:8px;flex-wrap:wrap}
+.ps-drop-btns button{display:flex;align-items:center;gap:8px}
+.ps-drop-btns .icon{width:18px;height:18px}
+.ps-working{margin-top:14px}
+.ps-progress{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+#psBar{height:100%;width:0;background:var(--brand);transition:width .25s ease}
+.ps-working .hint{margin-top:6px}
+.ps-head-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ps-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ps-field{margin:0;font-weight:400}
+.ps-field span{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ps-field input{font-weight:700}
+.ps-headimg{margin-top:12px}
+.ps-headimg summary{cursor:pointer;font-weight:600;color:var(--brand);font-size:14px}
+.ps-headimg img{display:block;max-width:100%;margin-top:8px;border:1px solid var(--line);border-radius:6px}
+.ps-checks{display:flex;flex-wrap:wrap;gap:6px}
+.ps-pill{font-size:13px;font-weight:700;border-radius:99px;padding:6px 11px;background:var(--bg)}
+.ps-pill.ps-ok{background:#dcfce7;color:#166534}
+.ps-pill.ps-check{background:#fef3c7;color:#92400e}
+.ps-pill.ps-bad{background:#fee2e2;color:#991b1b}
+.ps-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.ps-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ps-list{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.ps-row{display:grid;grid-template-columns:70px minmax(300px,2fr) minmax(215px,1fr) 104px 92px 112px;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line)}
+.ps-row:first-child{border-top:0}
+.ps-row-head{background:var(--bg);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:9px;padding-bottom:9px}
+.ps-row.ps-check{background:#fffbeb}
+.ps-row.ps-bad{background:#fef2f2}
+.ps-pallet{display:flex;align-items:center;gap:8px}
+.ps-num{font-size:20px;font-weight:900;min-width:28px}
+.ps-status{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;color:#fff}
+.ps-status-ok{background:#16a34a}.ps-status-check{background:#d97706}.ps-status-bad{background:var(--bad)}
+.ps-img img{display:block;width:100%;height:auto;max-height:60px;cursor:zoom-in;object-fit:contain;object-position:left center;border-radius:4px;background:#fff;border:1px solid var(--line)}
+.ps-serial{font-family:"SFMono-Regular",Consolas,"Roboto Mono","Liberation Mono",Menlo,monospace;font-size:17px;font-weight:700;letter-spacing:.06em;font-variant-numeric:slashed-zero;font-feature-settings:"zero" 1;padding:8px 10px}
+.ps-small{font-variant-numeric:tabular-nums;padding:8px}
+.ps-cell-check{border-color:#d97706!important;background:#fffbeb!important}
+.ps-cell-bad,.ps-invalid{border-color:var(--bad)!important;background:#fef2f2!important}
+.ps-row-act{text-align:right}
+.ps-ok-btn{min-height:36px;padding:6px 10px;font-size:13px}
+.ps-notes{grid-column:2 / -1;display:grid;gap:3px;margin-top:-2px}
+.ps-note{font-size:12.5px}
+.ps-note-bad{color:#991b1b;font-weight:600}.ps-note-check{color:#92400e;font-weight:600}.ps-note-info{color:var(--muted)}
+.ps-note .mh-link{min-height:0;padding:0 4px;font-size:12.5px}
+.ps-raw summary{cursor:pointer;font-weight:600;color:var(--muted);font-size:14px}
+.ps-raw pre{white-space:pre-wrap;font-size:11px;max-height:260px;overflow:auto;background:var(--bg);padding:10px;border-radius:6px}
+@media screen{#psPrintArea{display:none}}
+@media(max-width:1100px){.ps-fields{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){
+  .ps-row{grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"p img img img" "s s s s" "d d t a";}
+  .ps-row>:nth-child(1){grid-area:p}.ps-row>:nth-child(2){grid-area:img}.ps-row>:nth-child(3){grid-area:s}.ps-row>:nth-child(4){grid-area:d}.ps-row>:nth-child(5){grid-area:t}.ps-row>:nth-child(6){grid-area:a}
+  .ps-notes{grid-column:1 / -1}
+  .ps-row-head{display:none}
+  .ps-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){ .ps-actions button{flex:1 1 45%} .ps-drop{padding:16px} .ps-drop-btns{width:100%} .ps-drop-btns button{flex:1} }
+/* barcode print sheet */
+.ps-bc-page{width:8.5in;padding:.45in .5in;box-sizing:border-box;font-family:Arial,sans-serif;color:#000;background:#fff}
+.ps-bc-head{display:flex;justify-content:space-between;gap:12px;font-size:12px;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:6px}
+.ps-bc-row{display:grid;grid-template-columns:.8in 1fr 1.1in;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid #999;break-inside:avoid;page-break-inside:avoid}
+.ps-bc-p{font-size:10px;text-align:center}.ps-bc-p b{font-size:22px}
+.ps-bc-code svg{display:block;max-width:100%;height:.52in}
+.ps-bc-txt{font-family:Consolas,"Courier New",monospace;font-size:14px;font-weight:700;letter-spacing:.08em;margin-top:2px}
+.ps-bc-dt{font-size:11px;text-align:right}
+html.glass .ps-list{background:rgba(255,255,255,.9)}
+.ps-bigimg{display:none;grid-column:1 / -1}
+.ps-bigimg img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:zoom-out}
+.ps-row.ps-zoomed .ps-bigimg{display:block}
+
 /* =========================================================================
    GLASS LOOK (v1.61.0) — requested by Doug. iPhone-style frosted panels
    floating over a soft, brand-tinted background. On by default; Settings →
