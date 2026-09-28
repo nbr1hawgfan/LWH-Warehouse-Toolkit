@@ -517,6 +517,8 @@ body.dock-tv .db-badge{font-size:14px}
 .ps-bc-txt{padding-left:.12in}
 .ps-bc-txt{font-family:Consolas,"Courier New",monospace;font-size:13px;font-weight:700;letter-spacing:.06em;margin-top:2px}
 html.glass .ps-list{background:rgba(255,255,255,.9)}
+.ps-fmt-iddate .ps-serial{font-size:15px;letter-spacing:.02em;padding:8px 8px}
+.ps-fmt-iddate .ps-row{grid-template-columns:70px minmax(300px,1.6fr) minmax(235px,1.1fr) 104px 80px 112px}
 .ps-bigimg{display:none;grid-column:1 / -1}
 .ps-bigimg img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:zoom-out}
 .ps-row.ps-zoomed .ps-bigimg{display:block}

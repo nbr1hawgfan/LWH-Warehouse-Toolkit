@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.63.0
+- **PAS Sheet Reader now also reads Ardagh Glass bills of lading** — recognized automatically, no setting to pick. Each pallet line like `00201925716200369113-20260813185147` becomes **Pallet ID** `00201925716200369113` (from "00" through the dash), **Date** `08/13/26` and **Time** `18:51` (hours and minutes only, as used in the WMS). Lines are kept in sheet order.
+  - Header: Bill of Lading, Shipment, Order, Ref #, Trailer, Seal, Material, Description, Batch, Bottles/pallet, Pallets on sheet, Scheduled Loading, Carrier, SCAC.
+  - **Check digit:** the pallet IDs are GS1 shipping codes, so every read is verified arithmetically — a misread digit fails the check and is thrown out instead of trusted. Sheet check: "Every pallet ID passes its check digit".
+  - **Production-order check:** IDs are numbered in the order pallets were made, so a date/time that's out of step with the IDs before and after it gets flagged.
+  - Every ID is read three times (whole page, the ID alone, enlarged close-up); IDs are split by their structure (20-digit ID, date starting "20") so a misread dash can't shift digits; if any ID in the three-column grid is missed, that gap is read on its own.
+  - Tested on the sample plus five degraded copies: the real sheet and four copies **66/66 correct**; the fax-quality copy found and verified all 22 IDs with one time off by an hour (the 9 had literally become an 8 in the image).
+  - Excel/CSV columns for this layout: Bill of Lading, Shipment, Order, Ref #, Trailer, Seal, Material, Description, Batch, Line, Pallet ID, Date, Time, Status. Barcode sheet prints Pallet ID · Date · Time per line — all 66 codes verified to decode.
+- Anchor Glass PAS sheets unchanged (re-verified 22/22).
+
 ## v1.62.1
 - **PAS barcode sheet now has date and time barcodes too.** Each pallet row prints three Code 128 barcodes, left to right: serial, date, time — so a full PAS row can be scanned into the WMS with no typing. Verified on the sample: all 66 codes (22 pallets × 3) decode exactly.
 - Barcodes are drawn at their true width (never squeezed to fit, which scanners dislike) with a blank quiet zone on each side so neighbouring codes don't run together. 12 pallets per letter page.

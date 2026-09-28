@@ -379,6 +379,8 @@
     await worker.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1',tessedit_char_whitelist:''});
     const page=await worker.recognize(image,{},{text:true,blocks:true});
     const lines=flattenLines(page.data);
+    // Which kind of sheet? "ID-YYYYMMDDHHMMSS" tokens = Ardagh-style bill of lading.
+    if(countIdDateTokens(lines)>=3) return extractIdDate(worker,canvas,image,lines,page,angle,env);
     const header=findHeader(lines);
     const rows=findRows(lines);
     rows.forEach(r=>{ r.reads={serial:[r.serialRaw],date:[r.dateRaw],time:[r.timeRaw]}; });
@@ -450,9 +452,211 @@
     const headerBottom=rows.length?Math.max(0,Math.min(...rows.map(r=>r.band.y0))-wordH*0.6):H*0.25;
     const checks=checkSheet(records,header);
     say('Done',1);
-    return {header,records,template,checks,angle,canvas,table:{x0:Math.max(0,tx0-wordH*0.4),x1:Math.min(W,tx1)},headerBottom,wordH,rawText:page.data.text,lines};
+    return {format:'pas',header,records,template,checks,angle,canvas,table:{x0:Math.max(0,tx0-wordH*0.4),x1:Math.min(W,tx1)},headerBottom,wordH,rawText:page.data.text,lines};
   }
 
-  const api={extract,straighten,skewAngle,closeUp,flattenLines,findHeader,findRows,learnTemplate,applyTemplate,normDate,normTime,assemble,checkSheet,serialTokens,vote};
+
+  // =================================================================
+  // FORMAT 2 — Ardagh Glass style bill of lading
+  // Pallets listed as  00201925716200369113-20260813185147
+  //   = 20-digit pallet ID ("00" + GS1 SSCC-18, last digit is a check digit)
+  //   - production date YYYYMMDD, time HHMMSS (only HH:MM is kept)
+  // The GS1 check digit lets every read of an ID be verified by arithmetic.
+  // =================================================================
+  const digitsOnly=s=>String(s||'').toUpperCase().replace(/[OQDU]/g,'0').replace(/[IL|!\]\[]/g,'1').replace(/[S]/g,'5').replace(/[B]/g,'8').replace(/[Z]/g,'2').replace(/[G]/g,'6');
+  function gs1Valid(d){ if(!/^\d{8,}$/.test(d)) return false; const n=[...d].map(Number), chk=n.pop(); const tot=n.reverse().reduce((t,v,i)=>t+v*(i%2===0?3:1),0); return (10-tot%10)%10===chk; }
+  function palletIdOk(id){ return /^00\d{18}$/.test(id)&&gs1Valid(id.slice(2)); }
+  // "id-datetime" out of any text (tolerates a lost/extra dash or spaces)
+  function parseIdDate(txt){
+    const t=digitsOnly(txt).replace(/[—–_~=]/g,'-').replace(/\s*-\s*/g,'-').replace(/\s+/g,'');
+    // Split by structure first (20-digit ID with a good check digit, then a
+    // date starting "20"), because a misread dash can land in the wrong spot.
+    const d=t.replace(/[^0-9]/g,'');
+    for(const k of [20,19,18,21,22,23]){
+      if(d.length<k+14) continue;
+      const id=d.slice(0,k), rest=d.slice(k);
+      if(!/^20\d\d(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/.test(rest)) continue;
+      if(!palletIdOk(fitId(id).value)) continue;
+      return {id,dt:rest.slice(0,14)};
+    }
+    let m=t.match(/(\d{18,22})-(\d{12,16})/);
+    if(!m){ if(d.length>=32&&d.length<=36) m=[0,d.slice(0,d.length-14),d.slice(-14)]; }
+    if(!m) return null;
+    return {id:m[1],dt:m[2]};
+  }
+  function idDateTokenRe(){ return /[0-9OQDIl|]{16,22}\s*[-—–_~=]?\s*[0-9OQDIl|]{12,16}/; }
+  function countIdDateTokens(lines){ let n=0; lines.forEach(l=>{ const m=clean(l.text).match(new RegExp(idDateTokenRe().source,'g')); if(m) n+=m.length; }); return n; }
+  function ymdToDate(ymd){ const m=String(ymd||'').match(/^(20\d\d)(\d\d)(\d\d)$/); if(!m) return ''; const mo=+m[2],da=+m[3]; if(mo<1||mo>12||da<1||da>31) return ''; return `${m[2]}/${m[3]}/${m[1].slice(2)}`; }
+  function hmsToTime(hms){ const m=String(hms||'').match(/^(\d\d)(\d\d)(\d\d)$/); if(!m||!validTime(+m[1],+m[2],+m[3])) return ''; return `${m[1]}:${m[2]}`; }
+  function splitDt(dt){ const d=String(dt||''); if(d.length===14) return {ymd:d.slice(0,8),hms:d.slice(8)}; if(d.length>14) return {ymd:d.slice(0,8),hms:d.slice(-6)}; return {ymd:d.slice(0,8),hms:d.slice(8)}; }
+  // fit an ID read: must be 20 digits "00"+SSCC with a valid check digit
+  function fitId(raw){
+    let d=String(raw||'').replace(/\D/g,'');
+    if(d.length===18) d='00'+d;                 // "00" dropped
+    if(d.length===19&&d[0]==='0') d='0'+d;     // one leading zero dropped
+    if(d.length===21&&d.startsWith('000')) d=d.slice(1);
+    // one stray character stuck on either end ("1002019…" / "…3" + junk)
+    if(d.length===21&&!palletIdOk(d)){ if(palletIdOk(d.slice(1))) d=d.slice(1); else if(palletIdOk(d.slice(0,20))) d=d.slice(0,20); }
+    return {value:d,ok:palletIdOk(d)};
+  }
+
+  function findIdTokens(lines){
+    const toks=[];
+    lines.forEach(l=>{
+      const ws=l.words||[];
+      for(let i=0;i<ws.length;i++){
+        // the token may be one word, or split in two where the dash was misread as a space
+        for(const span of [1,2,3]){
+          const grp=ws.slice(i,i+span); if(grp.length<span) break;
+          const txt=grp.map(w=>w.text).join(' ');
+          if(!idDateTokenRe().test(txt)) continue;
+          const p=parseIdDate(txt); if(!p) continue;
+          const bb={x0:Math.min(...grp.map(w=>w.bbox.x0)),x1:Math.max(...grp.map(w=>w.bbox.x1)),y0:Math.min(...grp.map(w=>w.bbox.y0)),y1:Math.max(...grp.map(w=>w.bbox.y1))};
+          toks.push({raw:txt,id:p.id,dt:p.dt,bbox:bb});
+          i+=span-1; break;
+        }
+      }
+    });
+    // reading order: top to bottom, then left to right within a printed row
+    const h=toks.length?toks.map(t=>t.bbox.y1-t.bbox.y0).sort((a,b)=>a-b)[Math.floor(toks.length/2)]:30;
+    toks.sort((a,b)=>Math.abs(a.bbox.y0-b.bbox.y0)>h*0.6?a.bbox.y0-b.bbox.y0:a.bbox.x0-b.bbox.x0);
+    return {toks,wordH:h};
+  }
+
+  function findHeaderIdDate(lines){
+    const text=lines.map(l=>l.text).join('\n');
+    const pick=re=>{ const m=text.match(re); return m?clean(m[1]):''; };
+    const h={};
+    h.bol=pick(/BILL\s+OF\s+LADING\s+(\d{6,12})/i);
+    h.shipment=pick(/Shipment\s*:?\s*(\d{5,12})/i);
+    h.order=pick(/\bOrder\s*:\s*(\d{6,12})/i)||pick(/\bOrder\s+(\d{8,12})/i);
+    const refLine=lines.find(l=>/BILL\s+OF\s+LADING/i.test(l.text));
+    if(refLine){ const m=refLine.text.match(/^\D*?(\d[\d ]{3,8}\d)\s+BILL/i); if(m) h.ref=m[1].replace(/\s/g,''); }
+    h.trailer=pick(/Trailer\s*No\.?\s*:?\s*([A-Z0-9-]+)/i);
+    h.seal=pick(/Seal\s*:?\s*([A-Z0-9-]{4,})/i);
+    h.carrier=pick(/Carrier\s*:?\s*(?:\d+\s+)?(.+?)(?:\s{2,}|\s+SCAC|\n|$)/i);
+    h.scac=pick(/SCAC\s*:?\s*([A-Z]{2,4})\b/i);
+    h.loading=pick(/Scheduled\s*Loading\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+    h.perPallet=pick(/([\d,]+)\s*Bottles?\s*\/\s*PAL/i);
+    const ex=text.match(/(\d{1,3})\s*PAL\s*[-\/]/i); h.expected=ex?+ex[1]:'';
+    const mi=lines.findIndex(l=>/DESCRIPTION/i.test(l.text)&&/QUANTITY/i.test(l.text));
+    if(mi>=0){
+      const ml=lines.slice(mi+1,mi+4).find(l=>/^\s*\d{6,9}\b/.test(l.text));
+      if(ml){ const m=clean(ml.text).match(/^(\d{6,9})\s+(.+?)(?:\s+[\d,]+\s*Bottles?.*)?$/i); if(m){ h.material=m[1]; h.description=clean(m[2]); } }
+      const bl=lines.slice(mi+1,mi+6).find(l=>/PAL\s*-/i.test(l.text));
+      if(bl){ const nums=clean(bl.text).split(' ').filter(x=>/^\d{4,6}$/.test(x)); h.batch=nums.length?nums[nums.length-1]:''; }
+    }
+    return h;
+  }
+
+  async function extractIdDate(worker,canvas,image,lines,page,angle,env){
+    const say=env.progress||(()=>{}), toImg=env.toImage||(c=>c);
+    const W=canvas.width,H=canvas.height;
+    const header=findHeaderIdDate(lines);
+    const {toks,wordH}=findIdTokens(lines);
+    say(`Found ${toks.length} pallet IDs — reading each one again…`,0.4);
+    const rectOf=b=>{ const px=Math.round(wordH*0.5),py=Math.round(wordH*0.35), left=Math.max(0,Math.round(b.x0-px)), top=Math.max(0,Math.round(b.y0-py));
+      return {left,top,width:Math.min(W-left,Math.round(b.x1-b.x0+2*px)),height:Math.min(H-top,Math.round(b.y1-b.y0+2*py))}; };
+    const rows=toks.map(t=>({tok:t,rect:rectOf(t.bbox),reads:[{id:t.id,dt:t.dt}]}));
+
+    // Gap recovery: the IDs sit in a neat grid (columns × printed rows). Any
+    // grid cell with no ID — or cells below the last row while we're short of
+    // the sheet's pallet count — gets read on its own.
+    const good=toks.filter(t=>palletIdOk(fitId(t.id).value));
+    if(good.length>=3){
+      const cl=(vals,tol)=>{ const g=[]; vals.slice().sort((a,b)=>a-b).forEach(v=>{ const last=g[g.length-1]; if(last&&v-last[last.length-1]<=tol) last.push(v); else g.push([v]); }); return g.map(a=>a[Math.floor(a.length/2)]); };
+      const tokW=good.map(t=>t.bbox.x1-t.bbox.x0).sort((a,b)=>a-b)[Math.floor(good.length/2)];
+      const colsX=cl(good.map(t=>t.bbox.x0),wordH*3);
+      let rowsY=cl(good.map(t=>t.bbox.y0),wordH*0.6);
+      const pitch=rowsY.length>1?rowsY.slice(1).map((y,i)=>y-rowsY[i]).sort((a,b)=>a-b)[Math.floor((rowsY.length-1)/2)]:wordH*1.3;
+      // fill interior gaps in the row list (a whole printed row missed)
+      const filled=[rowsY[0]]; for(let i=1;i<rowsY.length;i++){ let y=filled[filled.length-1]; while(rowsY[i]-y>pitch*1.5){ y+=pitch; filled.push(y); } filled.push(rowsY[i]); } rowsY=filled;
+      const exp=+header.expected||0;
+      const have=(cx,ry)=>toks.some(t=>Math.abs(t.bbox.x0-cx)<wordH*3&&Math.abs(t.bbox.y0-ry)<wordH*0.6);
+      const cells=[];
+      rowsY.forEach(ry=>colsX.forEach(cx=>{ if(!have(cx,ry)) cells.push({x0:cx,x1:cx+tokW,y0:ry,y1:ry+wordH}); }));
+      if(exp&&toks.length<exp){ let ry=rowsY[rowsY.length-1]; for(let k=0;k<Math.ceil((exp-toks.length)/colsX.length)+1;k++){ ry+=pitch; colsX.forEach(cx=>cells.push({x0:cx,x1:cx+tokW,y0:ry,y1:ry+wordH})); } }
+      if(cells.length){
+        say(`Checking ${cells.length} gap${cells.length===1?'':'s'} in the list…`,0.38);
+        await worker.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789-'});
+        for(const c of cells){
+          if(c.y1>H) continue;
+          const rect=rectOf(c);
+          const res=await worker.recognize(image,{rectangle:rect});
+          let pr=parseIdDate(res.data.text);
+          if(!pr||!palletIdOk(fitId(pr.id).value)){ const r2=await worker.recognize(toImg(closeUp(canvas,rect,env.makeCanvas,2))); const p2=parseIdDate(r2.data.text); if(p2&&palletIdOk(fitId(p2.id).value)) pr=p2; }
+          if(pr&&palletIdOk(fitId(pr.id).value)&&!rows.some(r=>fitId(r.reads[0].id).value===fitId(pr.id).value)){
+            const t={raw:res.data.text,id:pr.id,dt:pr.dt,bbox:c,recovered:true};
+            toks.push(t); rows.push({tok:t,rect,reads:[{id:pr.id,dt:pr.dt}]});
+          }
+        }
+        rows.sort((a,b)=>Math.abs(a.tok.bbox.y0-b.tok.bbox.y0)>wordH*0.6?a.tok.bbox.y0-b.tok.bbox.y0:a.tok.bbox.x0-b.tok.bbox.x0);
+      }
+    }
+
+    // Pass 2 — each token alone, digits and dash only
+    await worker.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789-'});
+    for(let i=0;i<rows.length;i++){ const res=await worker.recognize(image,{rectangle:rows[i].rect}); const p=parseIdDate(res.data.text); rows[i].reads.push(p||{id:'',dt:''}); say(`Second read… ${i+1}/${rows.length}`,0.4+0.35*(i+1)/rows.length); }
+
+    const decide=r=>{
+      const ids=r.reads.map(x=>fitId(x.id));
+      const parts=r.reads.map(x=>splitDt(x.dt));
+      const cons=consensus(rows.map(q=>fitId(q.reads[0].id)).filter(f=>f.ok).map(f=>f.value));
+      const iv=vote('id',ids.map(f=>({value:f.value,ok:f.ok})),v=>agree(v,cons),'Pallet ID');
+      const dv=vote('date',parts.map(p=>{ const v=ymdToDate(p.ymd); return {value:v,ok:!!v}; }),()=>0,'Date');
+      const tv=vote('time',parts.map(p=>{ const v=hmsToTime(p.hms); return {value:v,ok:!!v}; }),()=>0,'Time');
+      return {iv,dv,tv};
+    };
+    // Pass 3 — enlarged close-up only where the reads didn't settle it
+    // Third read — an enlarged close-up of EVERY row. These codes are long and
+    // all digits, so two reads agreeing on one wrong digit is possible on a bad
+    // copy; a third independent read makes that much less likely.
+    const need=rows.map((r,i)=>i);
+    if(need.length){
+      for(let k=0;k<need.length;k++){ const r=rows[need[k]]; const res=await worker.recognize(toImg(closeUp(canvas,r.rect,env.makeCanvas,2))); const p=parseIdDate(res.data.text); r.reads.push(p||{id:'',dt:''}); say(`Third read (close-up)… ${k+1}/${need.length}`,0.75+0.2*(k+1)/need.length); }
+    }
+    await worker.setParameters({tessedit_pageseg_mode:'6',tessedit_char_whitelist:''});
+
+    const loadDate=header.loading?normDate(header.loading):'';
+    const records=rows.map((r,i)=>{
+      const {iv,dv,tv}=decide(r), flags=[];
+      if(iv.level) flags.push({field:'serial',level:iv.level,msg:iv.msg,alt:iv.alt});
+      if(iv.value&&!palletIdOk(iv.value)) flags.push({field:'serial',level:'bad',msg:'Pallet ID fails its check digit — compare with the sheet'});
+      if(dv.level) flags.push({field:'date',level:dv.level,msg:dv.msg,alt:dv.alt});
+      if(dv.value&&loadDate){ const dd=dateDiffDays(loadDate,dv.value); if(dd!==null&&(dd<0||dd>180)) flags.push({field:'date',level:'check',msg:dd<0?'Date is after Scheduled Loading — check it':'Date is more than 6 months before loading — check it'}); }
+      if(tv.level) flags.push({field:'time',level:tv.level,msg:tv.msg,alt:tv.alt});
+      const b=r.tok.bbox;
+      return {idx:i,pallet:String(i+1),palletInferred:false,item:header.material||'',serial:iv.value,serialFixes:[],date:dv.value,time:tv.value,flags,
+        band:{y0:b.y0,y1:b.y1},crop:{x0:Math.max(0,b.x0-wordH*0.4),x1:Math.min(W,b.x1+wordH*0.4)}};
+    });
+    // Pallet IDs are numbered in production order, so date+time should rise
+    // with the ID. A timestamp out of step with its neighbours gets flagged.
+    const stamp=r=>{ const m=(r.date||'').match(/(\d\d)\/(\d\d)\/(\d\d)/), n=(r.time||'').match(/(\d\d):(\d\d)/); return m&&n?+(m[3]+m[1]+m[2]+n[1]+n[2]):null; };
+    const byId=records.filter(r=>palletIdOk(r.serial)).slice().sort((a,b)=>a.serial<b.serial?-1:1);
+    byId.forEach((r,i)=>{
+      const me=stamp(r), prev=i>0?stamp(byId[i-1]):null, next=i<byId.length-1?stamp(byId[i+1]):null;
+      if(me==null) return;
+      const tooLate=next!=null&&me>next&&(prev==null||prev<=next);
+      const tooEarly=prev!=null&&me<prev&&(next==null||prev<=next);
+      if(tooLate||tooEarly) r.flags.push({field:'time',level:'check',msg:`Date/time is out of step with the pallet IDs just before and after it (${tooLate?'later than the next one':'earlier than the one before'}) — check it`});
+    });
+
+    const checks=[];
+    const exp=+header.expected||0;
+    checks.push(exp?(records.length===exp?{level:'ok',msg:`All ${exp} pallets found`}:{level:'bad',msg:`Sheet says ${exp} pallets — found ${records.length}`}):{level:'check',msg:'Pallet count on the sheet wasn\'t read'});
+    const ser=records.map(r=>r.serial).filter(Boolean), dup=[...new Set(ser.filter((x,i,a)=>a.indexOf(x)!==i))];
+    checks.push(dup.length?{level:'bad',msg:'Duplicate pallet ID: '+dup.join(', ')}:{level:'ok',msg:'No duplicate pallet IDs'});
+    const badChk=records.filter(r=>r.serial&&!palletIdOk(r.serial)).length;
+    checks.push(badChk?{level:'bad',msg:`${badChk} ID${badChk===1?'':'s'} fail the check digit`}:{level:'ok',msg:'Every pallet ID passes its check digit'});
+    const needs=records.filter(r=>r.flags.some(f=>f.level==='bad'||f.level==='check')).length;
+    checks.push(needs?{level:'check',msg:`${needs} row${needs===1?'':'s'} to double-check`}:{level:'ok',msg:'Every field confirmed by at least two reads'});
+    const topY=toks.length?Math.min(...toks.map(t=>t.bbox.y0)):H*0.6;
+    // header picture: the top of the sheet down to the pallet list
+    say('Done',1);
+    return {format:'iddate',header,records,template:{length:20,pattern:'99999999999999999999'},checks,angle,canvas,
+      table:{x0:0,x1:W},headerBottom:Math.max(0,topY-wordH*0.6),wordH,rawText:page.data.text,lines};
+  }
+
+  const api={extract,palletIdOk,gs1Valid,parseIdDate,straighten,skewAngle,closeUp,flattenLines,findHeader,findRows,learnTemplate,applyTemplate,normDate,normTime,assemble,checkSheet,serialTokens,vote};
   if(typeof module!=='undefined'&&module.exports) module.exports=api; else root.LWHPasCore=api;
 })(typeof window!=='undefined'?window:this);

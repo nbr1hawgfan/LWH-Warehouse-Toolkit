@@ -97,32 +97,36 @@
     const recs=res.records.map(r=>({
       pallet:r.pallet,item:r.item,serial:r.serial,date:r.date,time:r.time,
       flags:r.flags,edited:{},accepted:false,palletInferred:r.palletInferred,
-      img:strip(res.canvas,res.table.x0,res.table.x1,Math.max(0,r.band.y0-pad),Math.min(res.canvas.height,r.band.y1+pad),120)
+      img:strip(res.canvas,r.crop?r.crop.x0:res.table.x0,r.crop?r.crop.x1:res.table.x1,Math.max(0,r.band.y0-pad),Math.min(res.canvas.height,r.band.y1+pad),120)
     }));
     const h=res.header;
     return {
-      fileName,page,pages,template:res.template,checks:res.checks,angle:res.angle,rawText:res.rawText,
+      fileName,page,pages,format:res.format||'pas',template:res.template,checks:res.checks,angle:res.angle,rawText:res.rawText,
       headerImg:strip(res.canvas,0,res.canvas.width,0,res.headerBottom,420),
       fullImg:null,canvas:res.canvas,
-      header:{order:h.order||'',trailer:h.trailer||'',customer:h.customer||'',item:h.itemHeader||'',product:h.product||'',
-        lotCode:h.lotCode||'',expected:h.expected||'',dateLoaded:h.dateLoaded||'',carrier:h.carrier||'',dockDoor:h.dockDoor||'',bayLocation:h.bayLocation||'',weight:h.weight||''},
+      header:res.format==='iddate'
+        ?Object.fromEntries(FMT.iddate.fields.map(([k])=>[k,h[k]!=null?String(h[k]):'']))
+        :{order:h.order||'',trailer:h.trailer||'',customer:h.customer||'',item:h.itemHeader||'',product:h.product||'',
+          lotCode:h.lotCode||'',expected:h.expected||'',dateLoaded:h.dateLoaded||'',carrier:h.carrier||'',dockDoor:h.dockDoor||'',bayLocation:h.bayLocation||'',weight:h.weight||''},
       records:recs
     };
   }
   const S=()=>sheets[cur];
   function openFlags(r){ return r.flags.filter(f=>f.level!=='info'&&!r.edited[f.field]&&!r.accepted); }
   function rowLevel(r){ const f=openFlags(r); return f.some(x=>x.level==='bad')?'bad':f.length?'check':'ok'; }
-  function patternOk(v){ const t=S().template; if(!t) return !!v; if(!v||v.length!==t.length) return false; return [...v].every((c,i)=>t.pattern[i]==='?'||(t.pattern[i]==='9'?/[0-9]/.test(c):/[A-Z]/.test(c))); }
+  function patternOk(v){ if(S().format==='iddate') return LWHPasCore.palletIdOk(v); const t=S().template; if(!t) return !!v; if(!v||v.length!==t.length) return false; return [...v].every((c,i)=>t.pattern[i]==='?'||(t.pattern[i]==='9'?/[0-9]/.test(c):/[A-Z]/.test(c))); }
 
   function liveChecks(){
     const s=S(), recs=s.records, exp=+s.header.expected||0, out=[];
-    const nums=recs.map(r=>+r.pallet).filter(Boolean);
-    const miss=[]; if(exp) for(let i=1;i<=exp;i++) if(!nums.includes(i)) miss.push(i);
+    const nums=s.format==='iddate'?[]:recs.map(r=>+r.pallet).filter(Boolean);
+    const miss=[]; if(exp&&s.format!=='iddate') for(let i=1;i<=exp;i++) if(!nums.includes(i)) miss.push(i);
     if(exp) out.push(recs.length===exp&&!miss.length?{level:'ok',msg:`All ${exp} pallets found`}:{level:'bad',msg:`Sheet says ${exp} pallets — found ${recs.length}`+(miss.length?` (missing #${miss.join(', #')})`:'')});
     else out.push({level:'check',msg:'Enter the pallet count from the sheet'});
     const dupP=[...new Set(nums.filter((n,i,a)=>a.indexOf(n)!==i))]; if(dupP.length) out.push({level:'bad',msg:'Pallet # listed twice: '+dupP.join(', ')});
     const ser=recs.map(r=>r.serial).filter(Boolean), dupS=[...new Set(ser.filter((x,i,a)=>a.indexOf(x)!==i))];
-    out.push(dupS.length?{level:'bad',msg:'Duplicate serial: '+dupS.join(', ')}:{level:'ok',msg:'No duplicate serials'});
+    const word=s.format==='iddate'?'pallet ID':'serial';
+    out.push(dupS.length?{level:'bad',msg:`Duplicate ${word}: `+dupS.join(', ')}:{level:'ok',msg:`No duplicate ${word}s`});
+    if(s.format==='iddate'){ const badC=recs.filter(r=>r.serial&&!LWHPasCore.palletIdOk(r.serial)).length; out.push(badC?{level:'bad',msg:`${badC} pallet ID${badC===1?'':'s'} fail the check digit`}:{level:'ok',msg:'Every pallet ID passes its check digit'}); }
     const bad=recs.filter(r=>rowLevel(r)==='bad').length, chk=recs.filter(r=>rowLevel(r)==='check').length;
     if(bad||chk) out.push({level:bad?'bad':'check',msg:`${bad+chk} row${bad+chk===1?'':'s'} to review`});
     else out.push({level:'ok',msg:'Every row confirmed'});
@@ -130,14 +134,21 @@
   }
 
   // ---------------------------------------------------------------- render
-  const HF=[['order','Order No.'],['trailer','Trailer #'],['item','Item #'],['expected','Pallets on sheet'],['product','Product'],['lotCode','Code'],['customer','Customer'],['dateLoaded','Date Loaded'],['carrier','Carrier'],['dockDoor','Dock Door'],['bayLocation','Bay Location'],['weight','Load Weight']];
+  // Each sheet layout the reader knows: its header fields and wording.
+  const FMT={
+    pas:{name:'Shipping P.A.S. Sheet',lineWord:'Pallet',idWord:'Serial',
+      fields:[['order','Order No.'],['trailer','Trailer #'],['item','Item #'],['expected','Pallets on sheet'],['product','Product'],['lotCode','Code'],['customer','Customer'],['dateLoaded','Date Loaded'],['carrier','Carrier'],['dockDoor','Dock Door'],['bayLocation','Bay Location'],['weight','Load Weight']]},
+    iddate:{name:'Ardagh Glass bill of lading',lineWord:'Line',idWord:'Pallet ID',
+      fields:[['bol','Bill of Lading'],['shipment','Shipment'],['order','Order'],['ref','Ref #'],['trailer','Trailer #'],['seal','Seal'],['material','Material'],['expected','Pallets on sheet'],['description','Description'],['batch','Batch'],['perPallet','Bottles / pallet'],['loading','Scheduled Loading'],['carrier','Carrier'],['scac','SCAC']]}
+  };
+  const HF=()=>FMT[S().format].fields;
   function render(){
     const out=el('psResults'); const s=S(); if(!s){ out.innerHTML=''; return; }
     const tabs=sheets.length>1?`<div class="ff-chips" style="margin-bottom:10px">${sheets.map((x,i)=>`<button type="button" class="ff-chip${i===cur?' active':''}" data-pspage="${i}">Page ${x.page}<span>${x.records.length} rows</span></button>`).join('')}</div>`:'';
     out.innerHTML=`${tabs}
       <div class="card">
-        <div class="ps-head-top"><div><h3 style="margin:0">Sheet details</h3><div class="db-sub">${safe(s.fileName)}${s.pages>1?' · page '+s.page:''}${s.angle?` · straightened ${Math.abs(s.angle)}°`:''} · fix anything that doesn't match the paper</div></div></div>
-        <div class="ps-fields">${HF.map(([k,l])=>`<label class="ps-field"><span>${l}</span><input data-hf="${k}" value="${safe(s.header[k])}" ${k==='expected'?'inputmode="numeric"':''} /></label>`).join('')}</div>
+        <div class="ps-head-top"><div><h3 style="margin:0">Sheet details</h3><div class="db-sub"><b>${FMT[s.format].name}</b> · ${safe(s.fileName)}${s.pages>1?' · page '+s.page:''}${s.angle?` · straightened ${Math.abs(s.angle)}°`:''} · fix anything that doesn't match the paper</div></div></div>
+        <div class="ps-fields">${HF().map(([k,l])=>`<label class="ps-field"><span>${l}</span><input data-hf="${k}" value="${safe(s.header[k])}" ${k==='expected'?'inputmode="numeric"':''} /></label>`).join('')}</div>
         <details class="ps-headimg"><summary>Show the sheet's header</summary><img src="${s.headerImg}" alt="Sheet header" /></details>
       </div>
       <div class="card" style="margin-top:10px">
@@ -147,12 +158,12 @@
           <div class="ps-actions">
             <button type="button" id="psXlsx">Download Excel</button>
             <button type="button" id="psCsv" class="ghost">CSV</button>
-            <button type="button" id="psCopy" class="ghost">Copy serials</button>
+            <button type="button" id="psCopy" class="ghost">Copy ${s.format==='iddate'?'IDs':'serials'}</button>
             <button type="button" id="psBarcodes" class="ghost">Print barcodes</button>
           </div>
         </div>
       </div>
-      <div class="ps-list" id="psList"></div>
+      <div class="ps-list ps-fmt-${s.format}" id="psList"></div>
       <details class="card ps-raw" style="margin-top:10px"><summary>Troubleshooting: everything the reader saw</summary><pre>${safe(s.rawText)}</pre></details>`;
     out.querySelectorAll('[data-pspage]').forEach(b=>b.onclick=()=>{ cur=+b.dataset.pspage; render(); });
     out.querySelectorAll('[data-hf]').forEach(i=>i.oninput=()=>{ S().header[i.dataset.hf]=i.value.trim(); renderChecks(); });
@@ -169,7 +180,7 @@
     if(!s.records.length){ list.innerHTML=`<div class="card" style="margin-top:10px"><b>No pallet rows were found.</b><div class="hint" style="margin-top:6px">Tips: use the original PDF from the scanner if you have it, or take the photo straight on, in good light, with the whole sheet filling the frame. The troubleshooting box below shows what the reader could see.</div></div>`; return; }
     const rows=s.records.map((r,i)=>({r,i})).filter(({r})=>!onlyIssues||rowLevel(r)!=='ok');
     if(!rows.length){ list.innerHTML='<div class="card" style="margin-top:10px">Nothing left to review.</div>'; return; }
-    list.innerHTML=`<div class="ps-row ps-row-head"><div>Pallet</div><div>On the sheet</div><div>Serial</div><div>Date</div><div>Time</div><div></div></div>`+rows.map(({r,i})=>rowHtml(r,i)).join('');
+    list.innerHTML=`<div class="ps-row ps-row-head"><div>${FMT[s.format].lineWord}</div><div>On the sheet</div><div>${FMT[s.format].idWord}</div><div>Date</div><div>Time</div><div></div></div>`+rows.map(({r,i})=>rowHtml(r,i)).join('');
     list.querySelectorAll('[data-f]').forEach(inp=>{
       inp.oninput=()=>{ const r=S().records[+inp.dataset.i], f=inp.dataset.f; let v=inp.value; if(f==='serial'){ v=v.toUpperCase().replace(/[^A-Z0-9]/g,''); if(inp.value!==v) inp.value=v; inp.classList.toggle('ps-invalid',!patternOk(v)); }
         r[f]=v.trim(); r.edited[f]=true; refreshRow(+inp.dataset.i); renderChecks(); };
@@ -206,11 +217,13 @@
   function unresolved(){ return S().records.filter(r=>rowLevel(r)!=='ok').length; }
   function okToExport(){ const n=unresolved(); return !n||confirm(`${n} row${n===1?' is':'s are'} still marked to review. Export anyway?`); }
   function exportRows(){
-    const h=S().header;
+    const h=S().header, st=r=>rowLevel(r)==='ok'?(Object.keys(r.edited).length?'Corrected':'Confirmed'):'Review';
+    if(S().format==='iddate') return S().records.map(r=>({'Bill of Lading':h.bol,'Shipment':h.shipment,'Order':h.order,'Ref #':h.ref,'Trailer':h.trailer,'Seal':h.seal,
+      'Material':h.material,'Description':h.description,'Batch':h.batch,'Line':r.pallet?+r.pallet:'','Pallet ID':r.serial,'Date':r.date,'Time':r.time,'Status':st(r)}));
     return S().records.map(r=>({'Order No.':h.order,'Trailer':h.trailer,'Customer':h.customer,'Item':r.item||h.item,'Product':h.product,'Code':h.lotCode,
       'Pallet':r.pallet?+r.pallet:'','Serial':r.serial,'Date':r.date,'Time':r.time,'Status':rowLevel(r)==='ok'?(Object.keys(r.edited).length?'Corrected':'Confirmed'):'Review'}));
   }
-  function fileBase(){ const h=S().header; return 'PAS_'+((h.order||'sheet').replace(/[^A-Za-z0-9]+/g,'_'))+(h.trailer?'_TR'+h.trailer.replace(/[^A-Za-z0-9]+/g,''):''); }
+  function fileBase(){ const h=S().header; if(S().format==='iddate') return 'BOL_'+((h.bol||h.shipment||'sheet').replace(/[^A-Za-z0-9]+/g,'_'))+(h.trailer?'_TR'+h.trailer.replace(/[^A-Za-z0-9]+/g,''):''); return 'PAS_'+((h.order||'sheet').replace(/[^A-Za-z0-9]+/g,'_'))+(h.trailer?'_TR'+h.trailer.replace(/[^A-Za-z0-9]+/g,''):''); }
   async function exportXlsx(){
     if(!okToExport()) return;
     try{ await loadScript(XLSXJS); }catch(e){ LWHUI.toast('Excel download needs internet — using CSV instead'); exportCsv(true); return; }
@@ -228,7 +241,7 @@
   }
   async function copySerials(){
     const txt=S().records.map(r=>r.serial).filter(Boolean).join('\n');
-    try{ await navigator.clipboard.writeText(txt); LWHUI.toast(`Copied ${S().records.length} serials`); }
+    try{ await navigator.clipboard.writeText(txt); LWHUI.toast(`Copied ${S().records.length} ${S().format==='iddate'?'pallet IDs':'serials'}`); }
     catch{ const t=document.createElement('textarea'); t.value=txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); LWHUI.toast('Serials copied'); }
   }
   function printBarcodes(){
@@ -238,8 +251,10 @@
     // One row per pallet: serial · date · time, each its own Code 128 barcode,
     // left to right in the order they're keyed into the WMS.
     out.innerHTML=`<div class="ps-bc-page">
-      <div class="ps-bc-head"><div><b>PAS Barcodes</b> — Order ${safe(h.order)} · Trailer ${safe(h.trailer)}</div><div>${safe(h.product)} · Item ${safe(h.item)} · ${s.records.length} pallets</div></div>
-      <div class="ps-bc-row ps-bc-cols"><div>Pallet</div><div>Serial</div><div>Date</div><div>Time</div></div>
+      ${s.format==='iddate'
+        ?`<div class="ps-bc-head"><div><b>Pallet Barcodes</b> — BOL ${safe(h.bol)} · Order ${safe(h.order)} · Trailer ${safe(h.trailer)}</div><div>${safe(h.description)} · Batch ${safe(h.batch)} · ${s.records.length} pallets</div></div>`
+        :`<div class="ps-bc-head"><div><b>PAS Barcodes</b> — Order ${safe(h.order)} · Trailer ${safe(h.trailer)}</div><div>${safe(h.product)} · Item ${safe(h.item)} · ${s.records.length} pallets</div></div>`}
+      <div class="ps-bc-row ps-bc-cols"><div>${FMT[s.format].lineWord}</div><div>${FMT[s.format].idWord}</div><div>Date</div><div>Time</div></div>
       ${s.records.map((r,i)=>`<div class="ps-bc-row">
         <div class="ps-bc-p"><b>${safe(r.pallet)}</b></div>
         <div class="ps-bc-code"><svg id="psBcS${i}"></svg><div class="ps-bc-txt">${safe(r.serial)}</div></div>
