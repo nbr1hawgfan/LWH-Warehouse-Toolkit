@@ -507,13 +507,15 @@ body.dock-tv .db-badge{font-size:14px}
 }
 @media(max-width:640px){ .ps-actions button{flex:1 1 45%} .ps-drop{padding:16px} .ps-drop-btns{width:100%} .ps-drop-btns button{flex:1} }
 /* barcode print sheet */
-.ps-bc-page{width:8.5in;padding:.45in .5in;box-sizing:border-box;font-family:Arial,sans-serif;color:#000;background:#fff}
+.ps-bc-page{width:8.5in;padding:.45in .35in;box-sizing:border-box;font-family:Arial,sans-serif;color:#000;background:#fff}
 .ps-bc-head{display:flex;justify-content:space-between;gap:12px;font-size:12px;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:6px}
-.ps-bc-row{display:grid;grid-template-columns:.8in 1fr 1.1in;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid #999;break-inside:avoid;page-break-inside:avoid}
-.ps-bc-p{font-size:10px;text-align:center}.ps-bc-p b{font-size:22px}
-.ps-bc-code svg{display:block;max-width:100%;height:.52in}
-.ps-bc-txt{font-family:Consolas,"Courier New",monospace;font-size:14px;font-weight:700;letter-spacing:.08em;margin-top:2px}
-.ps-bc-dt{font-size:11px;text-align:right}
+.ps-bc-row{display:grid;grid-template-columns:.55in 2.6in 2.2in 2.2in;justify-content:start;align-items:center;gap:0;padding:7px 0;border-bottom:1px solid #999;break-inside:avoid;page-break-inside:avoid}
+.ps-bc-cols>div:not(:first-child){padding-left:.12in}
+.ps-bc-cols{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#333;padding:3px 0;border-bottom:1px solid #000}
+.ps-bc-p{text-align:center}.ps-bc-p b{font-size:22px}
+.ps-bc-code svg{display:block;height:.5in;width:auto}
+.ps-bc-txt{padding-left:.12in}
+.ps-bc-txt{font-family:Consolas,"Courier New",monospace;font-size:13px;font-weight:700;letter-spacing:.06em;margin-top:2px}
 html.glass .ps-list{background:rgba(255,255,255,.9)}
 .ps-bigimg{display:none;grid-column:1 / -1}
 .ps-bigimg img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:zoom-out}

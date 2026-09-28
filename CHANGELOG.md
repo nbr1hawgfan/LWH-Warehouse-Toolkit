@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.62.1
+- **PAS barcode sheet now has date and time barcodes too.** Each pallet row prints three Code 128 barcodes, left to right: serial, date, time — so a full PAS row can be scanned into the WMS with no typing. Verified on the sample: all 66 codes (22 pallets × 3) decode exactly.
+- Barcodes are drawn at their true width (never squeezed to fit, which scanners dislike) with a blank quiet zone on each side so neighbouring codes don't run together. 12 pallets per letter page.
+
 ## v1.62.0
 - **New: PAS Sheet Reader.** Drop in a customer's scanned Shipping P.A.S. Sheet (PDF) or take a photo, and it reads the header (order no., trailer, item, product, code, pallet count, customer, carrier, date loaded, dock door, bay location, weight) and every pallet row (pallet #, serial, date, time). Built to replace keying 16-character serials into the WMS by hand. Runs entirely on the device — nothing is uploaded.
   - **Accuracy:** tested on the Anchor Glass / Henryetta sample plus five deliberately degraded copies (lower resolution, tilted 1.4° and 2.5°, blurred JPEG, fax-quality black-and-white): **every serial, date and time correct on all six**, with nothing silently wrong.

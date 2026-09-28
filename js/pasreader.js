@@ -235,11 +235,22 @@
     if(!okToExport()) return;
     if(!window.JsBarcode){ alert('The barcode library didn\'t load — check your internet connection.'); return; }
     const s=S(), h=s.header, out=el('psPrintArea');
+    // One row per pallet: serial · date · time, each its own Code 128 barcode,
+    // left to right in the order they're keyed into the WMS.
     out.innerHTML=`<div class="ps-bc-page">
       <div class="ps-bc-head"><div><b>PAS Barcodes</b> — Order ${safe(h.order)} · Trailer ${safe(h.trailer)}</div><div>${safe(h.product)} · Item ${safe(h.item)} · ${s.records.length} pallets</div></div>
-      ${s.records.map((r,i)=>`<div class="ps-bc-row"><div class="ps-bc-p">Pallet<br><b>${safe(r.pallet)}</b></div><div class="ps-bc-code"><svg id="psBc${i}"></svg><div class="ps-bc-txt">${safe(r.serial)}</div></div><div class="ps-bc-dt">${safe(r.date)}<br>${safe(r.time)}</div></div>`).join('')}
+      <div class="ps-bc-row ps-bc-cols"><div>Pallet</div><div>Serial</div><div>Date</div><div>Time</div></div>
+      ${s.records.map((r,i)=>`<div class="ps-bc-row">
+        <div class="ps-bc-p"><b>${safe(r.pallet)}</b></div>
+        <div class="ps-bc-code"><svg id="psBcS${i}"></svg><div class="ps-bc-txt">${safe(r.serial)}</div></div>
+        <div class="ps-bc-code"><svg id="psBcD${i}"></svg><div class="ps-bc-txt">${safe(r.date)}</div></div>
+        <div class="ps-bc-code"><svg id="psBcT${i}"></svg><div class="ps-bc-txt">${safe(r.time)}</div></div>
+      </div>`).join('')}
     </div>`;
-    s.records.forEach((r,i)=>{ if(r.serial){ try{ JsBarcode('#psBc'+i,r.serial,{format:'CODE128',height:46,width:1.6,margin:0,displayValue:false}); }catch(e){ console.error(e); } } });
+    // Bars are never squeezed to fit (scanners need even bar widths) and each
+    // code keeps a blank quiet zone on both sides so neighbours don't run together.
+    const draw=(id,val,w)=>{ if(!val) return; try{ JsBarcode('#'+id,val,{format:'CODE128',height:44,width:w,marginTop:0,marginBottom:0,marginLeft:12*w,marginRight:12*w,displayValue:false}); }catch(e){ console.error(e); } };
+    s.records.forEach((r,i)=>{ draw('psBcS'+i,r.serial,1.3); draw('psBcD'+i,r.date,1.15); draw('psBcT'+i,r.time,1.15); });
     if(window.LWHLabels&&LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
     setTimeout(()=>print(),150);
   }
