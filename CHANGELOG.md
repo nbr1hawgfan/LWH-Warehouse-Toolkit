@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.65.0
+- **Load Tag Scan: big "last scan" banner above the camera view** — shows the pallet number and the full tag in large type the instant it's read, so the scanner can confirm it grabbed the right barcode. Green when added, amber when added with a warning, red when refused ("Already scanned — not added").
+- **Load Tag Scan: every load is now saved to Supabase as a receiving record** — automatically, a moment after each scan, with no extra steps and no change to the print/PDF/Excel workflow. Records hold customer, load #, trailer, expected units, who scanned it (the name from Settings), device, start/finish times, and every tag with its scan time and order.
+  - If the connection drops, the load is marked "Not saved to records yet — will keep retrying" and catches up automatically (on reconnect, when the app is reopened, and on a timer). Finished loads waiting to save are retried too. A status line shows "✓ Saved to records 3:28 PM".
+  - Write-only by design: the app can only save its own loads through one function (`toolkit_save_load_scan`) using a private key per load. The tables aren't readable through the public key.
+- **New: Records lookup (managers)** at the bottom of Load Tag Scan — uses the same manager passcode as Missed Punches. List recent loads (7 / 30 / 90 days / year / everything) or search any tag, load #, trailer or customer; matching tags are highlighted with the load and exact scan time. Reprint any past load's barcode sheet, or download the results as CSV.
+- **Warning when a tag was already received on an earlier load** (checked against the recent loads on the device) — added but flagged, since it's usually a leftover tag.
+- **Requires running `sql/load_scan_records.sql` once in the Supabase SQL Editor.**
+
 ## v1.64.0
 - **New: Load Tag Scan.** Replaces scanning pallet tags into a spreadsheet to print a barcode column for SAP.
   - **Scan with anything:** a USB or Bluetooth scanner on a laptop or phone (it types the tag and presses Enter), or the phone's camera — camera mode keeps scanning tag after tag with no tapping in between. Works with scanners set to send no Enter (a fast burst of characters is recognized as one scan; slow hand typing isn't). Scanner prefixes like `]C1` and hidden separator characters are stripped.

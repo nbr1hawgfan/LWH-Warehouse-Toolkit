@@ -599,6 +599,42 @@ html.glass .ps-list{background:rgba(255,255,255,.9)}
 .ls-p-txt{font-family:Consolas,"Courier New",monospace;font-size:15px;font-weight:700;letter-spacing:.05em;margin-top:3px;padding-left:16px}
 .ls-p-qr img{display:block;width:.8in;height:.8in}
 
+
+/* ---- Load Tag Scan v1.65.0: last-scan banner, records ---- */
+.ls-last{border-radius:var(--radius);padding:10px 14px;margin-bottom:8px;border:2px solid var(--line);background:#fff}
+.ls-last-top{display:flex;align-items:baseline;gap:10px}
+.ls-last-n{font-size:24px;font-weight:900}
+.ls-last-lbl{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.ls-last-v{font-family:"SFMono-Regular",Consolas,"Roboto Mono",monospace;font-size:clamp(17px,5.4vw,24px);font-weight:800;letter-spacing:.03em;word-break:break-all;font-variant-numeric:slashed-zero;margin-top:2px}
+.ls-last-ok{background:#dcfce7;border-color:#16a34a;color:#14532d}
+.ls-last-warn{background:#fef3c7;border-color:#d97706;color:#78350f}
+.ls-last-bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.ls-last-idle{background:#fff;color:var(--ink)}
+.ls-last-pop{animation:lsPop .35s ease}
+@keyframes lsPop{0%{transform:scale(.97);filter:brightness(1.15)}100%{transform:scale(1);filter:none}}
+.ls-sync{margin-top:10px;font-size:13px;font-weight:700;border-radius:6px;padding:6px 10px}
+.ls-sync-ok{background:#dcfce7;color:#166534}
+.ls-sync-warn{background:#fef3c7;color:#92400e}
+.ls-sync-bad{background:#fee2e2;color:#991b1b}
+.ls-sync-idle{background:var(--bg);color:var(--muted)}
+.ls-rec-lock{margin-top:10px}
+.ls-rec-bar{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px}
+.ls-rec-bar input,.ls-rec-bar select{margin:0}
+.ls-rec-sum{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 4px;font-weight:700;font-size:14px}
+.ls-rec{border-top:1px solid var(--line);padding:2px 0}
+.ls-rec summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;cursor:pointer;list-style:none}
+.ls-rec summary::-webkit-details-marker{display:none}
+.ls-rec-n{font-size:20px;font-weight:900;text-align:right;white-space:nowrap}
+.ls-rec-n span{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.ls-rec-n.ls-rec-short{color:#b45309}
+.ls-rec-hit{background:#dcfce7;color:#14532d;border-radius:6px;padding:8px 10px;font-size:13px;margin-bottom:8px;font-variant-numeric:slashed-zero}
+.ls-rec-tags{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 14px;font-family:"SFMono-Regular",Consolas,"Roboto Mono",monospace;font-size:13px;font-variant-numeric:slashed-zero;max-height:260px;overflow:auto;padding:4px 0}
+.ls-rec-tags span{display:inline-block;width:2.4em;color:var(--muted);text-align:right;margin-right:8px}
+.ls-rec-m{background:#fef08a;border-radius:3px}
+.ls-rec-act{margin:8px 0 6px}
+.ls-rec-act button{min-height:36px;padding:6px 12px;font-size:13px}
+@media(max-width:640px){ .ls-rec-bar{grid-template-columns:1fr 1fr} .ls-rec-bar input{grid-column:1 / -1} }
+
 /* =========================================================================
    GLASS LOOK (v1.61.0) — requested by Doug. iPhone-style frosted panels
    floating over a soft, brand-tinted background. On by default; Settings →

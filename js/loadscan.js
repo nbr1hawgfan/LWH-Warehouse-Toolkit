@@ -11,6 +11,10 @@
   //    every tag, plus Excel / CSV.
   const DRAFT_KEY='loadScanDraft', HIST_KEY='loadScanHistory', KB_KEY='loadScanHideKb';
   const XLSXJS='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  // Records: every load is also saved to Supabase (sql/load_scan_records.sql)
+  const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
+  const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
+  const MGR_PASS_KEY='lwh_mgrPass';   // same tab-only passcode as Missed Punches
 
   let load=blankLoad();
   let cam=null, camLast={v:'',t:0}, audio=null;
@@ -18,8 +22,12 @@
 
   const el=id=>document.getElementById(id);
   const safe=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  function blankLoad(){ return {id:Date.now().toString(36),customer:'',loadNo:'',trailer:'',expected:'',scans:[],started:new Date().toISOString(),finished:null}; }
-  function save(){ LWHStorage.set(DRAFT_KEY,load); }
+  function rid(){ try{ return crypto.randomUUID(); }catch{ return Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2); } }
+  function deviceId(){ let d=LWHStorage.get('deviceId',''); if(!d){ d=rid(); LWHStorage.set('deviceId',d); } return d; }
+  // key = private, unguessable id for this load's record in Supabase
+  function blankLoad(){ return {id:Date.now().toString(36),key:rid(),customer:'',loadNo:'',trailer:'',expected:'',scans:[],started:new Date().toISOString(),finished:null,sync:null}; }
+  function ensureKey(L){ if(L&&!L.key) L.key=deviceId()+'-'+L.id; return L; }
+  function save(){ LWHStorage.set(DRAFT_KEY,load); scheduleSync(); }
   function fmtTime(iso){ const d=new Date(iso); return isNaN(d)?'':d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'}); }
   function fmtDate(iso){ const d=new Date(iso); return isNaN(d)?'':d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 
@@ -57,16 +65,20 @@
     const v=cleanScan(raw);
     if(!v) return false;
     const dupAt=load.scans.findIndex(s=>s.v===v);
-    if(dupAt>=0){ tone('bad'); flash('bad',`Already scanned as #${dupAt+1} — not added`); highlight(dupAt); return false; }
+    if(dupAt>=0){ tone('bad'); flash('bad',`Already scanned as #${dupAt+1} — not added`); showLast(dupAt+1,v,'bad','Already scanned — not added'); highlight(dupAt); return false; }
     const usual=usualLength();
     const odd=usual&&v.length!==usual;
-    load.scans.push({v,t:new Date().toISOString(),src:source||'scanner',odd:!!odd});
+    // Same tag already received on an earlier load (on this device)? Usually a mistake — warn.
+    const prior=history().find(h=>h.id!==load.id&&h.scans.some(x=>x.v===v));
+    load.scans.push({v,t:new Date().toISOString(),src:source||'scanner',odd:!!odd,prior:prior?(prior.loadNo||'an earlier load'):null});
     save();
     const n=load.scans.length, exp=+load.expected||0;
     if(exp&&n===exp){ tone('done'); flash('ok',`#${n} added — all ${exp} scanned!`); }
+    else if(prior){ tone('bad'); flash('warn',`#${n} added — but this tag was already received on load ${prior.loadNo||'(no load #)'} (${fmtDate(prior.finished||prior.started)}). Check it.`); }
     else if(odd){ tone('bad'); flash('warn',`#${n} added — but it's ${v.length} characters, the others are ${usual}. Wrong barcode on the label?`); }
     else { tone('ok'); flash('ok',`#${n} added`); }
     if(exp&&n>exp) flash('warn',`#${n} added — that's more than the ${exp} expected`);
+    showLast(n,v,(odd||prior)?'warn':'ok',prior?`Added — also on load ${prior.loadNo||'(no load #)'}`:odd?'Added — different length from the rest':exp&&n===exp?'Added — load complete':'Added');
     render();
     return true;
   }
@@ -74,6 +86,13 @@
     const inp=el('lsInput'); const v=inp.value; inp.value=''; burst=[];
     if(v.trim()) addScan(v,'scanner');
     inp.focus();
+  }
+  // Big "last scan" banner over the camera view — confirm the right barcode at a glance
+  function showLast(n,v,kind,label){
+    const b=el('lsLast'); if(!b) return;
+    b.hidden=false; b.className='ls-last ls-last-'+kind;
+    b.innerHTML=`<div class="ls-last-top"><span class="ls-last-n">#${n}</span><span class="ls-last-lbl">${safe(label)}</span></div><div class="ls-last-v">${safe(v)}</div>`;
+    void b.offsetWidth; b.classList.add('ls-last-pop');
   }
   function highlight(i){
     const row=document.querySelector(`[data-ls-row="${i}"]`);
@@ -85,6 +104,7 @@
     if(cam) return stopCamera();
     if(typeof Html5Qrcode==='undefined'){ alert('The camera scanner didn\'t load — check your internet connection. A plugged-in or Bluetooth scanner still works.'); return; }
     el('lsCamWrap').hidden=false; el('lsCamBtn').textContent='Stop camera';
+    const last=load.scans[load.scans.length-1]; if(last) showLast(load.scans.length,last.v,'idle','Last scan'); else el('lsLast').hidden=true;
     const formats=window.Html5QrcodeSupportedFormats?[Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.ITF,Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.QR_CODE,Html5QrcodeSupportedFormats.DATA_MATRIX]:undefined;
     const cfg={fps:12,qrbox:(w,h)=>({width:Math.min(w*0.9,420),height:Math.min(h*0.45,180)}),formatsToSupport:formats};
     cam=new Html5Qrcode('lsCam');
@@ -121,14 +141,15 @@
     const list=el('lsList');
     if(!n){ list.innerHTML='<div class="ls-empty">No tags yet. Scan the first pallet tag.</div>'; }
     else list.innerHTML=load.scans.map((s,i)=>({s,i})).reverse().map(({s,i})=>`
-      <div class="ls-row${s.odd?' ls-odd':''}" data-ls-row="${i}">
+      <div class="ls-row${s.odd||s.prior?' ls-odd':''}" data-ls-row="${i}">
         <div class="ls-n">${i+1}</div>
-        <div class="ls-v">${safe(s.v)}${s.odd?'<span class="ls-tag">different length</span>':''}</div>
+        <div class="ls-v">${safe(s.v)}${s.odd?'<span class="ls-tag">different length</span>':''}${s.prior?`<span class="ls-tag">also on load ${safe(s.prior)}</span>`:''}</div>
         <div class="ls-t">${fmtTime(s.t)}${s.src==='camera'?' · camera':''}</div>
         <button type="button" class="ls-del" data-ls-del="${i}" aria-label="Remove tag ${i+1}">✕</button>
       </div>`).join('');
     list.querySelectorAll('[data-ls-del]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.lsDel; if(confirm(`Remove #${i+1} (${load.scans[i].v})?`)){ load.scans.splice(i,1); recheckOdd(); save(); render(); flash('warn',`Removed — numbers after it moved up`); } });
     ['lsPrint','lsPdf','lsXlsx','lsCsv','lsFinish','lsUndo'].forEach(id=>{ const b=el(id); if(b) b.disabled=!n; });
+    renderSync();
     renderHistory();
   }
   function recheckOdd(){ const u=usualLength(); load.scans.forEach(s=>{ s.odd=!!(u&&s.v.length!==u); }); }
@@ -152,6 +173,116 @@
       if(load.scans.length&&!confirm('Open that load? The load you\'re scanning now will be saved to this list first.')) return;
       archive(); load=JSON.parse(JSON.stringify(history()[+b.dataset.lsOpen])); load.finished=null; save(); fieldsToUi(); render(); el('lsInput').focus();
     });
+  }
+
+  // ---------------------------------------------------------------- records sync
+  // Every load is saved to Supabase automatically a moment after each change.
+  // If the network is down the load is marked "not saved yet" and retried
+  // (every so often, when the connection comes back, and when the app opens).
+  let syncTimer=null, syncing=false, syncAgain=false, retryMs=10000, setupMissing=false;
+  async function rpc(fn,body){
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(res.status===404){ const e=new Error('not_set_up'); e.setup=true; throw e; }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  }
+  function deviceLabel(){ const u=navigator.userAgent||''; const k=/Android/i.test(u)?'Android':/iPhone|iPad/i.test(u)?'iPhone/iPad':/Windows/i.test(u)?'Windows':/Mac/i.test(u)?'Mac':'Other'; return k+' · '+deviceId().slice(0,6); }
+  function payload(L){
+    ensureKey(L);
+    return {client_key:L.key,customer:L.customer,load_no:L.loadNo,trailer:L.trailer,expected:L.expected,
+      scanned_by:(LWHStorage.get('userName','')||'').trim()||null,device:deviceLabel(),
+      started_at:L.started,finished_at:L.finished||'',
+      tags:L.scans.map(s=>({tag:s.v,scanned_at:s.t,source:s.src}))};
+  }
+  const sig=L=>[L.key,L.customer,L.loadNo,L.trailer,L.expected,L.finished||'',L.scans.length,L.scans.map(s=>s.v).join('|')].join('~');
+  function scheduleSync(delay){ clearTimeout(syncTimer); syncTimer=setTimeout(syncAll,delay??1500); renderSync(); }
+  function persist(L){
+    if(L.id===load.id){ load.sync=L.sync; LWHStorage.set(DRAFT_KEY,load); }
+    const h=history(); const i=h.findIndex(x=>x.id===L.id); if(i>=0){ h[i].sync=L.sync; h[i].key=L.key; LWHStorage.set(HIST_KEY,h); }
+  }
+  async function syncOne(L){
+    if(!L||!L.scans.length) return true;
+    ensureKey(L);
+    const s=sig(L);
+    if(L.sync&&L.sync.state==='saved'&&L.sync.sig===s) return true;
+    try{
+      const r=await rpc('toolkit_save_load_scan',{p_load:payload(L)});
+      if(!r||!r.ok) throw new Error(r&&r.error||'save failed');
+      L.sync={state:'saved',at:new Date().toISOString(),count:r.tag_count,sig:s}; setupMissing=false; persist(L); return true;
+    }catch(e){
+      if(e.setup) setupMissing=true;
+      L.sync={state:'error',at:new Date().toISOString(),msg:e.message,sig:(L.sync&&L.sync.sig)||''}; persist(L); return false;
+    }
+  }
+  async function syncAll(){
+    if(syncing){ syncAgain=true; return; }
+    syncing=true; renderSync();
+    let ok=await syncOne(load);
+    const h=history();
+    for(const L of h){ if(!(L.sync&&L.sync.state==='saved'&&L.sync.sig===sig(ensureKey(L)))){ const r=await syncOne(L); ok=ok&&r; } }
+    syncing=false;
+    if(syncAgain){ syncAgain=false; return syncAll(); }
+    if(!ok&&!setupMissing){ clearTimeout(syncTimer); syncTimer=setTimeout(syncAll,retryMs); retryMs=Math.min(retryMs*2,120000); } else retryMs=10000;
+    renderSync(); renderHistory();
+  }
+  function pendingCount(){ return history().filter(L=>L.scans.length&&!(L.sync&&L.sync.state==='saved'&&L.sync.sig===sig(ensureKey(L)))).length; }
+  function renderSync(){
+    const p=el('lsSync'); if(!p) return;
+    const n=load.scans.length, st=load.sync, cur=st&&st.state==='saved'&&st.sig===sig(ensureKey(load));
+    const older=pendingCount();
+    let cls='', txt='';
+    if(setupMissing){ cls='bad'; txt='Records not set up yet — run sql/load_scan_records.sql in Supabase'; }
+    else if(!n&&!older){ const h0=history()[0]; const prevOk=h0&&h0.sync&&h0.sync.state==='saved';
+      cls=prevOk?'ok':'idle'; txt=prevOk?`✓ Previous load (${h0.loadNo||'no load #'}) saved to records ${fmtTime(h0.sync.at)}`:'Each load is saved to records automatically'; }
+    else if(syncing){ cls='idle'; txt='Saving to records…'; }
+    else if(n&&cur&&!older){ cls='ok'; txt=`✓ Saved to records ${fmtTime(st.at)}`; }
+    else if(n&&st&&st.state==='error'||older){ cls='warn'; txt=`Not saved to records yet${older?` (${older+(n&&!cur?1:0)} load${older+(n&&!cur?1:0)===1?'':'s'})`:''} — will keep retrying${navigator.onLine===false?' when back online':''}`; }
+    else { cls='idle'; txt='Saving to records…'; }
+    p.className='ls-sync ls-sync-'+cls; p.textContent=txt;
+  }
+
+  // ---------------------------------------------------------------- records lookup (managers)
+  let recPass='', recData=null;
+  function getPass(){ try{ return sessionStorage.getItem(MGR_PASS_KEY)||''; }catch{ return ''; } }
+  function setPass(v){ try{ v?sessionStorage.setItem(MGR_PASS_KEY,v):sessionStorage.removeItem(MGR_PASS_KEY); }catch{} }
+  async function recSearch(){
+    const out=el('lsRecResults'); const st=el('lsRecStatus');
+    recPass=recPass||el('lsRecPass').value.trim()||getPass();
+    if(!recPass){ st.textContent='Enter the manager passcode.'; return; }
+    st.textContent='Looking up records…'; out.innerHTML='';
+    try{
+      const r=await rpc('toolkit_load_scan_records',{p_passcode:recPass,p_search:el('lsRecQ').value.trim(),p_days:+el('lsRecDays').value||30});
+      if(!r.ok){ const e=r.error; recPass=''; setPass(''); el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true;
+        st.textContent=e==='bad_passcode'?'That passcode isn\'t right.':e==='locked'?'Too many wrong tries — locked for a few minutes.':e==='not_set_up'?'The manager passcode hasn\'t been set up yet.':'Couldn\'t open records.'; return; }
+      setPass(recPass); el('lsRecLocked').hidden=true; el('lsRecOpen').hidden=false;
+      recData=r; renderRecords(); st.textContent='';
+    }catch(e){ st.textContent=e.setup?'Records not set up yet — run sql/load_scan_records.sql in Supabase.':'Couldn\'t reach records — check your connection.'; }
+  }
+  function renderRecords(){
+    const out=el('lsRecResults'); const L=recData.loads||[];
+    const q=recData.search;
+    if(!L.length){ out.innerHTML=`<div class="hint" style="margin-top:8px">${q?`Nothing found for "${safe(q)}".`:'No loads recorded in that time.'}</div>`; return; }
+    const tagHits=q?L.reduce((n,x)=>n+x.tags.filter(t=>t.match).length,0):0;
+    out.innerHTML=`<div class="ls-rec-sum">${L.length} load${L.length===1?'':'s'}${q?` matching "${safe(q)}"`:''}${tagHits?` · ${tagHits} matching tag${tagHits===1?'':'s'}`:''}<button type="button" class="mh-link" id="lsRecCsv">Download CSV</button></div>`+
+      L.map((x,i)=>{
+        const when=x.finished_at||x.updated_at, hits=x.tags.filter(t=>t.match);
+        const short=x.expected&&x.tag_count!==x.expected;
+        return `<details class="ls-rec"${hits.length&&L.length<=3?' open':''}>
+          <summary><div><b>${safe(x.load_no||'(no load #)')}</b>${x.customer?' · '+safe(x.customer):''}${x.trailer?' · Trailer '+safe(x.trailer):''}
+            <div class="db-sub">${fmtDate(when)} ${fmtTime(when)}${x.scanned_by?' · '+safe(x.scanned_by):''}${x.finished_at?'':' · <i>still being scanned</i>'}</div></div>
+            <div class="ls-rec-n${short?' ls-rec-short':''}">${x.tag_count}${x.expected?` / ${x.expected}`:''}<span>tags</span></div></summary>
+          ${hits.length?`<div class="ls-rec-hit">Found: ${hits.map(t=>`#${t.seq} <b>${safe(t.tag)}</b> scanned ${fmtDate(t.scanned_at)} ${fmtTime(t.scanned_at)}`).join('<br>')}</div>`:''}
+          <div class="ls-rec-tags">${x.tags.map(t=>`<div class="${t.match?'ls-rec-m':''}"><span>${t.seq}</span>${safe(t.tag)}</div>`).join('')}</div>
+          <div class="ls-rec-act"><button type="button" class="ghost" data-rec-print="${i}">Reprint sheet</button></div>
+        </details>`; }).join('');
+    out.querySelectorAll('[data-rec-print]').forEach(b=>b.onclick=()=>{ const x=L[+b.dataset.recPrint]; printSheet({customer:x.customer||'',loadNo:x.load_no||'',trailer:x.trailer||'',finished:x.finished_at||x.updated_at,scans:x.tags.map(t=>({v:t.tag,t:t.scanned_at}))}); });
+    el('lsRecCsv').onclick=()=>{
+      const head=['Load #','Customer','Trailer','Scanned by','Load finished','#','Tag','Tag scanned at'];
+      const esc=v=>{ const s=String(v??''); return /[",\n]/.test(s)||/^\d{12,}$/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+      const rows=[]; L.forEach(x=>x.tags.forEach(t=>rows.push([x.load_no,x.customer,x.trailer,x.scanned_by,x.finished_at?new Date(x.finished_at).toLocaleString('en-US'):'',t.seq,t.tag,t.scanned_at?new Date(t.scanned_at).toLocaleString('en-US'):''].map(esc).join(','))));
+      const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([[head.join(','),...rows].join('\r\n')],{type:'text/csv;charset=utf-8;'}));
+      a.download='load-records'+(q?'-'+q.replace(/[^A-Za-z0-9]+/g,'_'):'')+'.csv'; document.body.appendChild(a); a.click(); a.remove();
+    };
   }
 
   // ---------------------------------------------------------------- output
@@ -252,6 +383,17 @@
     [['lsCustomer','customer'],['lsLoadNo','loadNo'],['lsTrailer','trailer'],['lsExpected','expected']].forEach(([id,k])=>el(id).addEventListener('input',e=>{ load[k]=e.target.value.trim(); save(); render(); }));
     el('lsUndo').onclick=()=>{ const s=load.scans.pop(); if(s){ recheckOdd(); save(); render(); flash('warn',`Removed #${load.scans.length+1} (${s.v})`); } inp.focus(); };
     el('lsCamBtn').onclick=startCamera;
+    // records: retry when the connection comes back / app comes to the front
+    window.addEventListener('online',()=>scheduleSync(200));
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) scheduleSync(500); });
+    ensureKey(load); scheduleSync(800);
+    el('lsRecGo').onclick=recSearch;
+    el('lsRecPass').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); recSearch(); } };
+    el('lsRecQ').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); recSearch(); } };
+    el('lsRecSearch').onclick=recSearch;
+    el('lsRecDays').onchange=recSearch;
+    el('lsRecLock').onclick=()=>{ recPass=''; setPass(''); recData=null; el('lsRecResults').innerHTML=''; el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true; el('lsRecPass').value=''; };
+    el('lsRecDetails').addEventListener('toggle',()=>{ if(el('lsRecDetails').open&&getPass()&&!recData){ recPass=getPass(); recSearch(); } });
     el('lsPrint').onclick=()=>printSheet();
     el('lsPdf').onclick=()=>downloadPdf();
     el('lsXlsx').onclick=downloadXlsx;
@@ -259,10 +401,10 @@
     el('lsFinish').onclick=()=>{
       const exp=+load.expected||0, n=load.scans.length;
       if(exp&&n!==exp&&!confirm(`${n} scanned but ${exp} expected. Start a new load anyway? This one is saved under Recent loads.`)) return;
-      archive(); stopCamera(); load=blankLoad(); save(); fieldsToUi(); render(); LWHUI.toast('Saved — ready for the next load'); el('lsLoadNo').focus();
+      archive(); stopCamera(); load=blankLoad(); save(); fieldsToUi(); render(); scheduleSync(50); LWHUI.toast('Saved — ready for the next load'); el('lsLoadNo').focus();
     };
     // focus the scan box when the page opens; camera off when leaving it
     document.addEventListener('click',e=>{ const v=e.target.closest('[data-view]'); if(!v) return; setTimeout(()=>{ if(v.dataset.view==='loadScan') inp.focus(); else stopCamera(); },50); });
   });
-  window.LWHLoadScan={addScan:v=>addScan(v,'test')};
+  window.LWHLoadScan={addScan:v=>addScan(v,'test'),syncNow:()=>syncAll()};
 })();

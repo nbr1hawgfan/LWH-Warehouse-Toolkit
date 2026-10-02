@@ -73,7 +73,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.64.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.65.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -503,7 +503,7 @@
               <button type="button" id="lsUndo" class="ghost">Undo last</button>
             </div>
             <label class="mh-remember" style="margin:10px 0 0"><input type="checkbox" id="lsHideKb" /> Scanner attached to this phone — hide the on-screen keyboard</label>
-            <div id="lsCamWrap" class="ls-cam" hidden><div id="lsCam"></div><div id="lsCamHint" class="hint"></div></div>
+            <div id="lsCamWrap" class="ls-cam" hidden><div id="lsLast" class="ls-last" hidden aria-live="polite"></div><div id="lsCam"></div><div id="lsCamHint" class="hint"></div></div>
           </div>
         </div>
         <div class="ls-right">
@@ -518,10 +518,27 @@
               <button type="button" id="lsXlsx" class="ghost">Excel</button>
               <button type="button" id="lsCsv" class="ghost">CSV</button>
             </div>
+            <div id="lsSync" class="ls-sync" role="status"></div>
             <button type="button" id="lsFinish" class="mh-link ls-finish">Finish load &amp; start the next one</button>
           </div>
           <div class="card ls-list-card"><div class="ls-list-head"><b>Tags</b><span class="hint">newest first</span></div><div id="lsList" class="ls-list"></div></div>
           <details class="card ls-hist"><summary>Recent loads</summary><div id="lsHistory"></div></details>
+          <details class="card ls-hist" id="lsRecDetails"><summary>Records — look up past loads (managers)</summary>
+            <div id="lsRecLocked" class="ls-rec-lock">
+              <label for="lsRecPass" class="mh-field-label">Manager passcode</label>
+              <div class="ls-input-row"><input id="lsRecPass" type="password" autocomplete="current-password" placeholder="Same as Missed Punches" /><button type="button" id="lsRecGo">Open</button></div>
+            </div>
+            <div id="lsRecOpen" hidden>
+              <div class="ls-rec-bar">
+                <input id="lsRecQ" placeholder="Tag, load #, trailer or customer" autocomplete="off" spellcheck="false" />
+                <select id="lsRecDays"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option><option value="3650">Everything</option></select>
+                <button type="button" id="lsRecSearch">Search</button>
+              </div>
+              <div class="hint" style="margin-top:4px">Leave the box empty to list recent loads. The date range only applies when the box is empty. <button type="button" class="mh-link" id="lsRecLock">Lock</button></div>
+            </div>
+            <div id="lsRecStatus" class="hint" style="margin-top:6px"></div>
+            <div id="lsRecResults"></div>
+          </details>
         </div>
       </div>
       <div id="lsPrintArea" class="print-area"></div>
