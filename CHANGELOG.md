@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.65.1
+- Load Tag Scan **Records search now also matches the name of who scanned the load** (in addition to tag, load #, trailer and customer). Re-run `sql/load_scan_records.sql` in Supabase to pick it up.
+
 ## v1.65.0
 - **Load Tag Scan: big "last scan" banner above the camera view** — shows the pallet number and the full tag in large type the instant it's read, so the scanner can confirm it grabbed the right barcode. Green when added, amber when added with a warning, red when refused ("Already scanned — not added").
 - **Load Tag Scan: every load is now saved to Supabase as a receiving record** — automatically, a moment after each scan, with no extra steps and no change to the print/PDF/Excel workflow. Records hold customer, load #, trailer, expected units, who scanned it (the name from Settings), device, start/finish times, and every tag with its scan time and order.

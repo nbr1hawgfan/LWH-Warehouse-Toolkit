@@ -1,5 +1,5 @@
 -- ============================================================
--- LWH Toolkit v1.65.0 — Load Tag Scan records
+-- LWH Toolkit v1.65.1 — Load Tag Scan records (v1.65.1: search also matches who scanned it)
 -- Run this once in the Supabase SQL Editor (same project as inventory).
 -- Safe to re-run. Needs sql/missed_punches.sql to have been run first
 -- (the Records lookup uses the same manager passcode).
@@ -107,7 +107,8 @@ grant execute on function public.toolkit_save_load_scan(jsonb) to anon, authenti
 
 -- ------------------------------------------------------------
 -- Manager lookup (same passcode as Missed Punches).
---   p_search  — a tag (or part of one) or a load / trailer #; blank = recent
+--   p_search  — a tag (or part of one), load #, trailer, customer or the
+--               name of who scanned it; blank = recent
 --   p_days    — how far back to list when not searching (default 30)
 -- Returns loads (newest first) with their tags.
 -- ------------------------------------------------------------
@@ -137,6 +138,7 @@ begin
       else upper(coalesce(l.load_no,'')) like '%'||v_q||'%'
         or upper(coalesce(l.trailer,'')) like '%'||v_q||'%'
         or upper(coalesce(l.customer,'')) like '%'||v_q||'%'
+        or upper(coalesce(l.scanned_by,'')) like '%'||v_q||'%'
         or exists (select 1 from load_scan_tags t where t.load_id=l.id and upper(t.tag) like '%'||v_q||'%')
     end
     order by coalesce(l.finished_at,l.updated_at) desc
