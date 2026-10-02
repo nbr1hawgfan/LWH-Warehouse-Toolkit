@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.64.0
+- **New: Load Tag Scan.** Replaces scanning pallet tags into a spreadsheet to print a barcode column for SAP.
+  - **Scan with anything:** a USB or Bluetooth scanner on a laptop or phone (it types the tag and presses Enter), or the phone's camera — camera mode keeps scanning tag after tag with no tapping in between. Works with scanners set to send no Enter (a fast burst of characters is recognized as one scan; slow hand typing isn't). Scanner prefixes like `]C1` and hidden separator characters are stripped.
+  - **Running count** against the expected units (e.g. "47 of 72", progress bar, "25 to go"), with a chime when the load is complete. On phones a compact counter sits right in the scan box.
+  - **Mistake guards:** a tag scanned twice is refused with a buzz and "Already scanned as #12"; a tag that's a different length from the rest (e.g. the item UPC on the same label) is added but flagged. Undo last, or remove any tag. Beep/vibrate on every scan; red/green flash.
+  - **"Scanner attached — hide the on-screen keyboard"** option for phones with a Bluetooth scanner. A "Tap here to scan" bar turns green when the scan box is ready, so nobody scans into nowhere.
+  - **Never loses a load:** saved on the device after every scan (survives refresh, dead battery, a phone call). Finished loads are kept under Recent loads (last 20) to reprint or reopen.
+  - **Output:** Print sheet and Download PDF — every tag with its number, a Code 128 barcode, the tag text and a QR code (10 per page) — plus Excel and CSV (tags kept as text so Excel doesn't turn long numbers into 1.23E+19).
+  - Verified with a simulated 72-tag load: all 72 Code 128 barcodes and all 72 QR codes decode exactly on both the print sheet and the PDF.
+
 ## v1.63.0
 - **PAS Sheet Reader now also reads Ardagh Glass bills of lading** — recognized automatically, no setting to pick. Each pallet line like `00201925716200369113-20260813185147` becomes **Pallet ID** `00201925716200369113` (from "00" through the dash), **Date** `08/13/26` and **Time** `18:51` (hours and minutes only, as used in the WMS). Lines are kept in sheet order.
   - Header: Bill of Lading, Shipment, Order, Ref #, Trailer, Seal, Material, Description, Batch, Bottles/pallet, Pallets on sheet, Scheduled Loading, Carrier, SCAC.

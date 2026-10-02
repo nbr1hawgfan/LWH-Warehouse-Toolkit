@@ -65,6 +65,7 @@
   <script defer src="./js/dockboard.js"></script>
   <script defer src="./js/pasreader-core.js"></script>
   <script defer src="./js/pasreader.js"></script>
+  <script defer src="./js/loadscan.js"></script>
   <script defer src="./js/shipweights.js"></script>
   <script defer src="./js/locationoverview.js"></script>
   <script defer src="./js/customerview.js"></script>
@@ -72,7 +73,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.63.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.64.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -103,6 +104,7 @@
       <button class="nav-btn" data-view="pallet"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Pallet Labels</button>
       <button class="nav-btn" data-view="receiving"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>Receiving Print</button>
       <button class="nav-btn" data-view="pasReader"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M4 13h16"/><path d="M9 17h2M13 17h2M9 9h3"/></svg>PAS Sheet Reader</button>
+      <button class="nav-btn" data-view="loadScan"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5v10M7 5v10M10 5v10M13 5v10M16 5v10"/><path d="M19 5v4"/><path d="M4 19h8"/><path d="M17 15l2 2 3-4"/></svg>Load Tag Scan</button>
       <button class="nav-btn" data-view="trailer"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg>Trailer Checklist</button>
       <button class="nav-btn" data-view="picklist"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/><path d="M7 4v2M17 4v2"/></svg>Pick List</button>
       <button class="nav-btn" data-view="bol"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>Bill of Lading</button>
@@ -165,6 +167,7 @@
         <button class="module-card" data-view="pallet"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></div><b>Pallet Labels</b><span>Simple entry, bulk paste, and print from lookup.</span></button>
         <button class="module-card" data-view="receiving"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></div><b>Receiving Print</b><span>Enter an InvRec and print every pallet label from that load.</span></button>
         <button class="module-card" data-view="pasReader"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M4 13h16"/><path d="M9 17h2M13 17h2M9 9h3"/></svg></div><b>PAS Sheet Reader</b><span>Scan or photograph a PAS sheet or Ardagh bill of lading — get checked pallet IDs for Excel, or a barcode sheet to scan into the WMS instead of typing.</span></button>
+        <button class="module-card" data-view="loadScan"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5v10M7 5v10M10 5v10M13 5v10M16 5v10"/><path d="M19 5v4"/><path d="M4 19h8"/><path d="M17 15l2 2 3-4"/></svg></div><b>Load Tag Scan</b><span>Scan a load's pallet tags with a scanner or the camera — running count, duplicates blocked — then print or download a barcode + QR sheet to scan into SAP.</span></button>
         <button class="module-card" data-view="trailer"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg></div><b>Trailer Checklist</b><span>Pre-loading GMP and pre-shipment checklist, ready to print.</span></button>
         <button class="module-card" data-view="picklist"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/><path d="M7 4v2M17 4v2"/></svg></div><b>Pick List</b><span>Filter by customer/item/lot/bay/warehouse, print a scannable pick list table or a grouped Item Summary.</span></button>
         <button class="module-card" data-view="bol"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg></div><b>Bill of Lading</b><span>Fillable, printable BOL with your logo and drawable signatures.</span></button>
@@ -470,6 +473,58 @@
       </div>
       <div id="psResults" class="no-print" style="margin-top:10px"></div>
       <div id="psPrintArea" class="print-area"></div>
+    </section>
+
+    <section id="loadScan" class="view">
+      <div class="ls-layout no-print">
+        <div class="ls-left">
+          <div class="card mh-entry">
+            <div class="mh-entry-head">
+              <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5v10M7 5v10M10 5v10M13 5v10M16 5v10"/><path d="M19 5v4"/><path d="M4 19h8"/><path d="M17 15l2 2 3-4"/></svg></div>
+              <div><h2>Load Tag Scan</h2><div class="mh-entry-sub">Scan every pallet tag on the load, then print or download the barcode sheet for SAP. Saved on this device as you go.</div></div>
+            </div>
+            <div class="ls-fields">
+              <label class="ps-field"><span>Customer</span><input id="lsCustomer" autocomplete="off" /></label>
+              <label class="ps-field"><span>Load / Order #</span><input id="lsLoadNo" autocomplete="off" /></label>
+              <label class="ps-field"><span>Trailer #</span><input id="lsTrailer" autocomplete="off" /></label>
+              <label class="ps-field"><span>Expected units</span><input id="lsExpected" inputmode="numeric" placeholder="e.g. 72" autocomplete="off" /></label>
+            </div>
+          </div>
+          <div class="card ls-scan-card">
+            <div class="ls-mini" id="lsMini"><span id="lsMiniCount">0</span> <span id="lsMiniOf">scanned</span><div class="ls-mini-bar"><div id="lsMiniBar"></div></div></div>
+            <button type="button" id="lsReady" class="ls-ready">Tap here to scan</button>
+            <div class="ls-input-row">
+              <input id="lsInput" class="ls-input" placeholder="Scan or type a tag" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" />
+              <button type="button" id="lsAdd">Add</button>
+            </div>
+            <div id="lsFlash" class="ls-flash" role="status" aria-live="polite"></div>
+            <div class="ls-scan-tools">
+              <button type="button" id="lsCamBtn" class="ghost"><svg class="icon" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Use camera</button>
+              <button type="button" id="lsUndo" class="ghost">Undo last</button>
+            </div>
+            <label class="mh-remember" style="margin:10px 0 0"><input type="checkbox" id="lsHideKb" /> Scanner attached to this phone — hide the on-screen keyboard</label>
+            <div id="lsCamWrap" class="ls-cam" hidden><div id="lsCam"></div><div id="lsCamHint" class="hint"></div></div>
+          </div>
+        </div>
+        <div class="ls-right">
+          <div class="card ls-count-card" id="lsCountCard">
+            <div class="ls-count"><span id="lsCount">0</span> <span id="lsOf" class="ls-of">scanned</span></div>
+            <div class="ps-progress"><div id="lsBar"></div></div>
+            <div id="lsCountNote" class="hint" style="margin-top:6px"></div>
+            <div id="lsOddNote" class="ls-odd-note" hidden></div>
+            <div class="ls-out">
+              <button type="button" id="lsPrint">Print sheet</button>
+              <button type="button" id="lsPdf" class="ghost">Download PDF</button>
+              <button type="button" id="lsXlsx" class="ghost">Excel</button>
+              <button type="button" id="lsCsv" class="ghost">CSV</button>
+            </div>
+            <button type="button" id="lsFinish" class="mh-link ls-finish">Finish load &amp; start the next one</button>
+          </div>
+          <div class="card ls-list-card"><div class="ls-list-head"><b>Tags</b><span class="hint">newest first</span></div><div id="lsList" class="ls-list"></div></div>
+          <details class="card ls-hist"><summary>Recent loads</summary><div id="lsHistory"></div></details>
+        </div>
+      </div>
+      <div id="lsPrintArea" class="print-area"></div>
     </section>
 
     <section id="fifo" class="view">
