@@ -1,0 +1,29 @@
+-- One Source Inbound sync — ALREADY APPLIED to LWH Companion on 2026-10-05
+-- (migration "os_inbound_scan_sync"). Kept here for the record; do not re-run blindly.
+--
+-- Tables (RLS on, no policies, no anon/authenticated grants):
+--   os_inbound_loads   (id text pk, load_no, carrier, item_no, bin_class, status, deleted,
+--                       created_at, client_updated_at, device, synced_at)
+--   os_inbound_pallets (load_id fk, pallet_key = upper(trim(pallet_id)), pallet_id, pgid, qty,
+--                       scanned_at, device, deleted, synced_at; pk (load_id, pallet_key))
+--   os_inbound_access  (single row: sha256 of the dock sync code, failed attempts, lockout)
+--
+-- Functions:
+--   os_inbound_check(code)  internal only; 25 wrong codes locks sync for 10 minutes
+--   os_inbound_sync(p_code, p_loads, p_since, p_device)  the only function the app calls;
+--     pushes pending changes (pallets upsert by load + key, removals soft-delete, headers
+--     last-edit-wins) then returns loads changed since p_since.
+--
+-- Change the sync code:
+--   update os_inbound_access
+--      set code_hash = encode(sha256(convert_to('NEWCODE','UTF8')),'hex'),
+--          failed_attempts = 0, locked_until = null
+--    where id = 1;
+--
+-- Everything received during the outage:
+--   select l.load_no, l.carrier, l.item_no, l.bin_class, l.status,
+--          p.pallet_id, p.pgid, p.qty, p.scanned_at, p.device
+--     from os_inbound_loads l
+--     join os_inbound_pallets p on p.load_id = l.id and not p.deleted
+--    where not l.deleted
+--    order by l.created_at, p.scanned_at;
