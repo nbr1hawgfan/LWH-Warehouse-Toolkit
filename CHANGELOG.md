@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.66.0
+- **New: Outbound Loads / BOL** — a stripped-down outbound WMS for warehouses that can't reach the WMS (built for the October 2026 network outage). Build a load, scan its pallets, print a detailed BOL, and keep every pallet for re-entry into the WMS later.
+  - **Load setup:** warehouse, sub-customer, BOL # (auto, editable), Bill To Ref #, carrier, PRO #, trailer, seal, appointment, comments, loaded by.
+  - **Ship from / Ship to / Bill to with smart save:** every address used is saved (on the device and in Supabase for every device). Start typing a name and saved addresses pop up — tap one to fill the whole block. Ship-from fills itself from the last load out of that warehouse; bill-to from the last load for that sub-customer; ship-to suggestions list that sub-customer's usual consignees first. Carriers autocomplete too.
+  - **Order lines from the sub-customer's own items only**, with live available pallets/units in that warehouse. Order by number of pallets, number of units, or specific pallet IDs (scanned or pasted, each one checked when the line is added). Optional PO # per line.
+  - **Every scan is checked before it's accepted** (LWH ID or Customer ID, USB/Bluetooth scanner or phone camera; AIM prefixes and SSCC "00" variations handled):
+    - not in inventory → refused; a manager can add it as an **exception** (new receipt) with qty/lot — flagged everywhere
+    - belongs to another sub-customer → refused, no override
+    - already on this load, or on **any other load from any device** → refused, says which BOL
+    - item not on an order line, or its line already full → refused
+    - inventory shows it in a different warehouse → refused; manager override
+    - Big red/green banner, distinct error sound and long buzz on every refusal.
+  - **Manager approvals** use the Missed Punches passcode (checked in Supabase): exceptions, warehouse overrides, shipping short, reopening a closed load, voiding. If the hotspot is down, exceptions/overrides can be recorded as "not verified" so the dock isn't stuck.
+  - **Close load** checklist (ship to, bill to, carrier, trailer, seal, no pallet on another BOL…). Closed loads are locked. The BOL prints automatically on close.
+  - **Detailed BOL** laid out like the WMS BOL: appointment/BOL/PRO/carrier/trailer/seal block, BOL number box, Ship From / Consignee / Bill To / Comments boxes, every pallet with Customer ID, LWH ID, description, item, PO, lot and qty, lot totals, item totals, shipment summary, and signature lines. Unclosed loads print with a DRAFT watermark.
+  - **WMS entry sheet:** every pallet on the load with a Code 128 barcode of its LWH ID so it can be scanned into the WMS instead of typed (verified: all 24 test barcodes decode). Excel/CSV with IDs kept as text.
+  - **Saved to Supabase automatically** after every change; if the hotspot drops, loads stay on the device and retry. The server refuses a pallet that's already on another load (two devices can't ship the same pallet).
+  - **Records (managers):** every load from every device — filter "Closed — not in WMS yet", search by BOL, ref, trailer, seal, customer, ship-to or pallet ID; reprint BOL or WMS sheet, Excel of everything, **Mark entered in WMS**, Void (frees its pallets).
+  - **Requires running `sql/outbound_loads.sql` once in the Supabase SQL Editor** (after `sql/missed_punches.sql`).
+
 ## v1.65.1
 - Load Tag Scan **Records search now also matches the name of who scanned the load** (in addition to tag, load #, trailer and customer). Re-run `sql/load_scan_records.sql` in Supabase to pick it up.
 
