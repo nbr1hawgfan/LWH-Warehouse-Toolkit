@@ -1,30 +1,27 @@
-# Outbound Loads / BOL — v1.66.0
+# One Source Inbound + offline libraries — v1.67.0
 
-## 1. Run the SQL (once)
-Supabase → SQL Editor → paste all of `sql/outbound_loads.sql` → Run.
-Safe to re-run. It uses the manager passcode from Missed Punches, so
-`sql/missed_punches.sql` must already be in place (it is, if Missed
-Punches works today).
+## 1. SQL
+Nothing to run. The Supabase objects (`os_inbound_loads`, `os_inbound_pallets`,
+`os_inbound_access`, `os_inbound_sync`) are already live in LWH Companion.
+`sql/os_inbound_sync.sql` is kept here for the record.
 
 ## 2. Upload these files (everything else is unchanged)
-- `index.html` — replace
-- `css/app.css` — replace
-- `service-worker.js` — replace (cache bumped so phones pick up the update)
-- `js/outbound.js` — **new file**
-- `sql/outbound_loads.sql` — **new file** (for the record; it runs in Supabase, not the site)
-- `CHANGELOG.md`, `README.md`, `REDEPLOY_NOTES.md`, `docs/OUTBOUND_LOADS_GUIDE.md` — docs
+- `index.html` — replace (new menu item, Home card, section; libraries now load from `vendor/`)
+- `css/app.css` — replace (One Source Inbound styles appended at the end)
+- `service-worker.js` — replace (cache bumped to v1-67-0 so phones pick up the update)
+- `js/osinbound.js` — **new file**
+- `vendor/JsBarcode.all.min.js`, `vendor/html5-qrcode.min.js`, `vendor/qrcode.min.js` — **new folder**
+- `sql/os_inbound_sync.sql` — **new file** (record only)
+- `CHANGELOG.md`, `README.md`, `REDEPLOY_NOTES.md` — docs
 
-Hard refresh after upload. On phones, close and reopen the app once.
+Hard refresh after upload. On phones, close and reopen the app once **while it has signal**
+so the new version and the libraries are cached for offline use.
 
-## 3. Before the first real load
-- In **Settings**, each device should have the person's name set (it's
-  stamped on every scan). The app also asks on the load ("Loaded by").
-- Open **Outbound Loads / BOL** → "BOL header" and check the company name,
-  address and phone printed at the top of the BOL.
-- Do one practice load on a pallet or two, close it, and void it from
-  Records (manager) so the pallets free up.
+## 3. On each dock device
+- Settings → make sure the person's name is set (stamped on every pallet).
+- One Source Inbound → "Sync between devices" → enter the sync code → Save sync settings.
+- Loads already scanned in the standalone app on the same device show up automatically.
 
 ## NOT touched
-Load Tag Scan, the existing Bill of Lading form, inventory sync, and every
-other module are unchanged. Outbound Loads only *reads* the same live
-inventory the rest of the app uses.
+Load Tag Scan, Outbound Loads, Master Lookup and every other module are unchanged.
+The only shared change is where the three libraries load from (same versions).

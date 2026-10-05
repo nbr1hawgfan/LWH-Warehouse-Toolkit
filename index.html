@@ -16,9 +16,9 @@
   </script>
   <link rel="stylesheet" href="./css/app.css" />
   <link rel="stylesheet" href="./css/print.css" media="print" />
-  <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script defer src="./vendor/JsBarcode.all.min.js"></script>
+  <script defer src="./vendor/qrcode.min.js"></script>
+  <script defer src="./vendor/html5-qrcode.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -67,6 +67,7 @@
   <script defer src="./js/pasreader.js"></script>
   <script defer src="./js/loadscan.js"></script>
   <script defer src="./js/outbound.js"></script>
+  <script defer src="./js/osinbound.js"></script>
   <script defer src="./js/shipweights.js"></script>
   <script defer src="./js/locationoverview.js"></script>
   <script defer src="./js/customerview.js"></script>
@@ -74,7 +75,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.66.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.67.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -107,6 +108,7 @@
       <button class="nav-btn" data-view="pasReader"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M4 13h16"/><path d="M9 17h2M13 17h2M9 9h3"/></svg>PAS Sheet Reader</button>
       <button class="nav-btn" data-view="loadScan"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5v10M7 5v10M10 5v10M13 5v10M16 5v10"/><path d="M19 5v4"/><path d="M4 19h8"/><path d="M17 15l2 2 3-4"/></svg>Load Tag Scan</button>
       <button class="nav-btn" data-view="outbound"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/><path d="M5 10.5h5M8 8l2 2.5L8 13"/></svg>Outbound Loads / BOL</button>
+      <button class="nav-btn" data-view="osInbound"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16V7H11v9"/><path d="M11 10H7l-4 3.5V16h2"/><circle cx="17" cy="18" r="1.6"/><circle cx="6.5" cy="18" r="1.6"/><path d="M19 10.5h-5M16 8l-2 2.5 2 2.5"/></svg>One Source Inbound</button>
       <button class="nav-btn" data-view="trailer"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg>Trailer Checklist</button>
       <button class="nav-btn" data-view="picklist"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/><path d="M7 4v2M17 4v2"/></svg>Pick List</button>
       <button class="nav-btn" data-view="bol"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>Bill of Lading</button>
@@ -171,6 +173,7 @@
         <button class="module-card" data-view="pasReader"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M4 13h16"/><path d="M9 17h2M13 17h2M9 9h3"/></svg></div><b>PAS Sheet Reader</b><span>Scan or photograph a PAS sheet or Ardagh bill of lading — get checked pallet IDs for Excel, or a barcode sheet to scan into the WMS instead of typing.</span></button>
         <button class="module-card" data-view="loadScan"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5v10M7 5v10M10 5v10M13 5v10M16 5v10"/><path d="M19 5v4"/><path d="M4 19h8"/><path d="M17 15l2 2 3-4"/></svg></div><b>Load Tag Scan</b><span>Scan a load's pallet tags with a scanner or the camera — running count, duplicates blocked — then print or download a barcode + QR sheet to scan into SAP.</span></button>
         <button class="module-card" data-view="outbound"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/><path d="M5 10.5h5M8 8l2 2.5L8 13"/></svg></div><b>Outbound Loads / BOL</b><span>Build an outbound load from a sub-customer's own items, scan pallets with every tag checked against inventory, and print a detailed BOL. Saved for WMS re-entry.</span></button>
+        <button class="module-card" data-view="osInbound"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16V7H11v9"/><path d="M11 10H7l-4 3.5V16h2"/><circle cx="17" cy="18" r="1.6"/><circle cx="6.5" cy="18" r="1.6"/><path d="M19 10.5h-5M16 8l-2 2.5 2 2.5"/></svg></div><b>One Source Inbound</b><span>Unload One Source trailers without the WMS: scan Pallet ID, PGID and QTY per pallet, then print a scan sheet with a barcode for every Pallet ID. Syncs between devices.</span></button>
         <button class="module-card" data-view="trailer"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 3h6v2H9z"/><path d="M9 12l2 2 4-4"/></svg></div><b>Trailer Checklist</b><span>Pre-loading GMP and pre-shipment checklist, ready to print.</span></button>
         <button class="module-card" data-view="picklist"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/><path d="M7 4v2M17 4v2"/></svg></div><b>Pick List</b><span>Filter by customer/item/lot/bay/warehouse, print a scannable pick list table or a grouped Item Summary.</span></button>
         <button class="module-card" data-view="bol"><div class="icon-badge"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg></div><b>Bill of Lading</b><span>Fillable, printable BOL with your logo and drawable signatures.</span></button>
@@ -674,6 +677,101 @@
       </div>
       <div id="obPrintArea" class="print-area ob-print-area"></div>
       <div id="obModal" class="ob-modal no-print" hidden><div class="ob-modal-card card" id="obModalBody"></div></div>
+    </section>
+
+    <section id="osInbound" class="view">
+      <div class="no-print">
+        <div id="osiListScreen">
+          <div class="card mh-entry">
+            <div class="mh-entry-head">
+              <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16V7H11v9"/><path d="M11 10H7l-4 3.5V16h2"/><circle cx="17" cy="18" r="1.6"/><circle cx="6.5" cy="18" r="1.6"/><path d="M19 10.5h-5M16 8l-2 2.5 2 2.5"/></svg></div>
+              <div><h2>One Source Inbound</h2><div class="mh-entry-sub">Unload a One Source trailer without the WMS: enter the load once, scan Pallet ID, PGID and QTY for each pallet, then print a scan sheet with a barcode for every Pallet ID to key into the WMS later.</div></div>
+            </div>
+            <div class="ob-list-actions"><button type="button" id="osiNew">+ New load</button></div>
+            <div id="osiListSync" class="ls-sync ls-sync-idle" role="status"></div>
+          </div>
+          <div class="card"><div class="ob-list-h">Loads</div><div id="osiLoadList"></div>
+            <div class="hint" id="osiStorageInfo" style="margin-top:8px"></div></div>
+          <details class="card ls-hist" id="osiSyncDetails"><summary>Sync between devices</summary>
+            <div class="hint" style="margin:8px 0 10px">Every scan saves on this device first. With a sync code, loads also save to the server so every phone and laptop sees the same loads.</div>
+            <div class="ob-grid2">
+              <label class="ps-field"><span>Sync code</span><input id="osiCode" type="password" inputmode="numeric" autocomplete="off" /></label>
+              <label class="ps-field"><span>This device's name</span><input id="osiDevice" autocomplete="off" maxlength="60" placeholder="Dock laptop" /></label>
+            </div>
+            <div class="ob-list-actions" style="margin-top:10px"><button type="button" id="osiSaveSync">Save sync settings</button><button type="button" id="osiSyncNow" class="ghost">Sync now</button></div>
+            <div id="osiSyncStatus" class="hint" style="margin-top:8px"></div>
+          </details>
+          <details class="card ls-hist"><summary>Backup and export</summary>
+            <div class="hint" style="margin:8px 0 10px">Use a backup file if a device can't sync. Restore merges loads and skips pallets that are already here.</div>
+            <div class="ob-list-actions">
+              <button type="button" id="osiExportAll" class="ghost">CSV of all loads</button>
+              <button type="button" id="osiBackup" class="ghost">Back up (file)</button>
+              <button type="button" id="osiRestoreBtn" class="ghost">Restore / merge backup</button>
+              <input id="osiRestore" type="file" accept=".json,application/json" hidden />
+            </div>
+          </details>
+        </div>
+
+        <div id="osiForm" hidden>
+          <div class="card">
+            <div class="ob-card-h"><span class="ob-step">1</span><b id="osiFormTitle">New load</b></div>
+            <div class="hint" style="margin:-4px 0 10px">These stay the same for every pallet on the load. Each field accepts a scan.</div>
+            <div class="ob-grid2">
+              <label class="ps-field"><span>Load # or BOL</span><input id="osiFLoad" autocomplete="off" enterkeyhint="next" /></label>
+              <label class="ps-field"><span>Carrier name</span><input id="osiFCarrier" autocomplete="off" enterkeyhint="next" /></label>
+              <label class="ps-field"><span>Item number</span><input id="osiFItem" autocomplete="off" enterkeyhint="next" /></label>
+              <label class="ps-field"><span>Bin class</span><input id="osiFBin" autocomplete="off" enterkeyhint="done" /></label>
+            </div>
+            <div id="osiFormMsg" class="ob-err" hidden></div>
+            <div class="ob-list-actions" style="margin-top:12px"><button type="button" id="osiFormSave">Save and start scanning</button><button type="button" id="osiFormCancel" class="ghost">Cancel</button></div>
+          </div>
+        </div>
+
+        <div id="osiEditor" hidden>
+          <div class="card ob-titlebar">
+            <button type="button" id="osiBack" class="ghost">&larr; All loads</button>
+            <div class="ob-title"><div><span class="ob-title-l">LOAD / BOL</span> <b id="osiTitle"></b> <span id="osiStatus" class="ob-pill"></span></div><div id="osiTitleSub" class="hint"></div></div>
+            <div id="osiSync" class="ls-sync ls-sync-idle" role="status"></div>
+          </div>
+          <div class="ls-layout ob-layout">
+            <div class="ls-left">
+              <div id="osiClosedNote" class="card ob-closed-note" hidden>This load is closed. Reopen it to add pallets.</div>
+              <div class="card ls-scan-card" id="osiScanCard">
+                <div class="ob-card-h"><span class="ob-step">2</span><b>Scan each pallet</b></div>
+                <div class="osi-step" data-step="pallet">
+                  <label for="osiInPallet" class="osi-lbl">Pallet ID</label>
+                  <div class="osi-row"><input id="osiInPallet" class="ls-input" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" /><button type="button" class="ghost osi-cam" data-osi-cam="osiInPallet" aria-label="Scan Pallet ID with camera">Camera</button></div>
+                </div>
+                <div class="osi-step" data-step="pgid">
+                  <label for="osiInPgid" class="osi-lbl">PGID</label>
+                  <div class="osi-row"><input id="osiInPgid" class="ls-input" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" /><button type="button" class="ghost osi-cam" data-osi-cam="osiInPgid" aria-label="Scan PGID with camera">Camera</button></div>
+                </div>
+                <div class="osi-step" data-step="qty">
+                  <label for="osiInQty" class="osi-lbl">QTY</label>
+                  <div class="osi-row"><input id="osiInQty" class="ls-input" autocomplete="off" inputmode="numeric" spellcheck="false" enterkeyhint="done" /><button type="button" class="ghost osi-cam" data-osi-cam="osiInQty" aria-label="Scan QTY with camera">Camera</button></div>
+                </div>
+                <div id="osiFlash" class="ls-flash" role="status" aria-live="assertive"></div>
+                <div class="ls-scan-tools"><button type="button" id="osiClearRow" class="ghost">Clear this pallet</button></div>
+                <label class="mh-remember" style="margin:10px 0 0"><input type="checkbox" id="osiHideKb" /> Scanner attached to this phone &mdash; hide the on-screen keyboard</label>
+              </div>
+            </div>
+            <div class="ls-right">
+              <div class="card ls-count-card">
+                <div class="ob-counts"><div><div class="ob-big" id="osiCount">0</div><div class="hint">pallets</div></div><div><div class="ob-big ob-big2" id="osiQty">0</div><div class="hint">total qty</div></div></div>
+                <div class="ls-out ob-out">
+                  <button type="button" id="osiPrint">Print scan sheet</button>
+                  <button type="button" id="osiCsv" class="ghost">CSV</button>
+                  <button type="button" id="osiEdit" class="ghost">Edit load info</button>
+                  <button type="button" id="osiClose" class="ghost">Close load</button>
+                </div>
+                <button type="button" id="osiDelete" class="mh-link ob-danger-link">Delete this load</button>
+              </div>
+              <div class="card ls-list-card"><div class="ls-list-head"><b>Pallets</b><span class="hint">newest first</span></div><div id="osiList" class="ls-list"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="osiPrintArea" class="print-area"></div>
     </section>
 
     <section id="fifo" class="view">
@@ -1520,7 +1618,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>Appearance</h2><label class="mh-remember" style="font-size:15px;color:var(--ink);font-weight:600;margin:6px 0 8px"><input id="setGlass" type="checkbox" /> Glass look (frosted, iPhone-style)</label><p class="hint">Translucent panels floating over a soft color background. Turn off for the classic flat look — handy on older computers, or if you find it easier to read. This only changes your own device.</p></div><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><label>Your accent color<input id="setColor" type="color" value="#c8102e" /></label><p class="hint" style="margin-top:-10px">Pick whatever color fits your mood — it changes buttons and highlights for you. The black header/sidebar always stays the same for everyone, since that's company branding.</p><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div id="ttsVoiceRow" style="margin-top:8px"><label>Read-aloud voice<select id="setTtsVoice"><option value="">Loading voices…</option></select></label><div class="actions" style="margin-top:6px"><button type="button" id="testTtsVoice" class="ghost">Test Voice</button></div><p class="hint" style="margin-top:6px">Voices come from your own device/browser, so the options (and how natural they sound) vary computer to computer. Chrome and Edge usually offer the most natural-sounding choices — try a few and pick whichever sounds best.</p></div><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one source now. Default is live inventory, refreshed from birdsEye every ~15 minutes. Auto-loads fresh every time the app opens.</p><label>CSV export URL (Supabase, Google Sheet, or any plain CSV)<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default (Live Inventory)</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.66.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Outbound Loads / BOL, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Doc Scanner, Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.67.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Outbound Loads / BOL, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Doc Scanner, Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

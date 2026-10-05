@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.67.0
+- **New: One Source Inbound** — receive One Source trailers while the WMS is down (built for the October 2026 network outage; same tool as the standalone LWH-OneSource-Inbound app, now inside the toolkit).
+  - **Load info once:** Load # / BOL, carrier, item number, bin class (each field accepts a scan).
+  - **Scan each pallet:** Pallet ID → PGID → QTY. The scanner's Enter (or Tab) moves to the next field and QTY saves the pallet. Camera buttons use the shared scanner for phones without a scanner. "Hide the on-screen keyboard" option for phones with a Bluetooth scanner.
+  - **Checks on every scan:** duplicate Pallet ID on this load or any load from any synced device (refused, names the load), PGID equal to the Pallet ID, QTY must be a whole number 1–9999 (catches a wrong label scanned into QTY). Error buzz + red banner on every refusal.
+  - **Scan sheet:** one page per load with a Code 128 barcode for every Pallet ID (verified: all barcodes decode), PGID, QTY, an "In WMS" checkbox and sign-off lines. CSV per load or all loads.
+  - **Saved on the device first, then synced to Supabase** (`os_inbound_sync`, gated by the dock sync code). Keeps working with no signal and catches up on reconnect. Removals, close/reopen and deletes sync too; two devices can work the same trailer.
+  - **Shares storage with the standalone app** on the same device, so loads scanned there appear here.
+  - No SQL to run — the Supabase tables and function were set up on 2026-10-05 (see `sql/os_inbound_sync.sql`).
+- **Works offline more reliably:** the barcode (JsBarcode 3.11.6), QR (qrcodejs 1.0.0) and camera-scanner (html5-qrcode 2.3.8) libraries are now served from the app itself (`vendor/`) instead of outside websites, and cached by the service worker. Same versions as before. Fixes barcodes, QR codes and the camera failing without signal in every module (Load Tag Scan, Outbound Loads, labels, Scan Code…).
+
 ## v1.66.0
 - **New: Outbound Loads / BOL** — a stripped-down outbound WMS for warehouses that can't reach the WMS (built for the October 2026 network outage). Build a load, scan its pallets, print a detailed BOL, and keep every pallet for re-entry into the WMS later.
   - **Load setup:** warehouse, sub-customer, BOL # (auto, editable), Bill To Ref #, carrier, PRO #, trailer, seal, appointment, comments, loaded by.
