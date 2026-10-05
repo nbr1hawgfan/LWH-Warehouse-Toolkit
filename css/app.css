@@ -1223,3 +1223,49 @@ button.ob-danger{color:var(--bad);border-color:var(--bad)}
 .obw-page{width:8.5in}
 .obw-row{display:grid;grid-template-columns:.5in 3.4in 1fr;align-items:center;gap:.12in;padding:.06in 0;border-bottom:1px solid #999;break-inside:avoid;page-break-inside:avoid}
 .obw-info{font-size:10pt}
+
+/* ===================== One Source Inbound (v1.67.0) ===================== */
+#osInbound .ps-field input{width:100%;box-sizing:border-box}
+.osi-step{padding:8px 10px 10px;border-left:6px solid transparent;border-radius:6px;opacity:.5;transition:opacity .12s,background-color .12s}
+.osi-step+.osi-step{margin-top:4px}
+.osi-step.active{opacity:1;border-left-color:var(--brand);background:var(--brand-tint)}
+.osi-step.done{opacity:.8}
+.osi-lbl{display:block;font-weight:800;font-size:16px;margin-bottom:6px}
+.osi-row{display:grid;grid-template-columns:1fr auto;gap:8px}
+.osi-row .ls-input{min-width:0;width:100%;box-sizing:border-box}
+.osi-cam{min-width:92px}
+#osiFlash{font-size:15px;min-height:26px}
+.osi-tbl{width:100%;border-collapse:collapse;font-size:15px}
+.osi-tbl th{position:sticky;top:0;background:var(--frame-black);color:#fff;text-align:left;font-size:12px;letter-spacing:.04em;padding:8px 10px}
+.osi-tbl td{padding:8px 10px;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.osi-tbl tr.osi-fresh td{background:#dcfce7}
+.osi-num{text-align:right}
+.osi-mono{font-family:"SFMono-Regular",Consolas,"Roboto Mono",monospace;font-variant-numeric:slashed-zero}
+.osi-rm{min-height:30px;padding:2px 4px;margin:0;white-space:nowrap}
+@media(max-width:640px){ .osi-time{display:none} .osi-cam{min-width:78px} }
+@media(prefers-reduced-motion:reduce){ .osi-step{transition:none} }
+
+/* ---- printed scan sheet (8.5x11) ---- */
+@media screen{ #osiPrintArea{display:none} }
+@media print{
+  #osiPrintArea{display:block!important}
+  .osi-p-page{width:8.5in;padding:.45in .4in;box-sizing:border-box;font-family:Arial,sans-serif;color:#000;background:#fff;font-size:11pt}
+  .osi-p-head{border-bottom:3pt solid #000;padding-bottom:6pt;margin-bottom:8pt}
+  .osi-p-title{display:flex;justify-content:space-between;align-items:baseline}
+  .osi-p-title b{font-size:17pt}.osi-p-title span{font-size:12pt;font-weight:700}
+  .osi-p-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4pt 12pt;margin-top:6pt}
+  .osi-p-grid span{display:block;font-size:8.5pt;color:#333}.osi-p-grid b{font-size:12.5pt;overflow-wrap:anywhere}
+  .osi-p-loadbc svg{height:46px;max-width:100%}
+  .osi-p-tbl{width:100%;border-collapse:collapse}
+  .osi-p-tbl thead{display:table-header-group}
+  .osi-p-tbl th{text-align:left;border-bottom:1.5pt solid #000;font-size:9.5pt;padding:3pt 4pt}
+  .osi-p-tbl td{border-bottom:.75pt solid #999;padding:3pt 4pt;vertical-align:middle;font-size:11pt}
+  .osi-p-tbl tr{break-inside:avoid;page-break-inside:avoid}
+  .osi-p-n{width:5%;font-weight:700}
+  .osi-p-bc{width:58%}.osi-p-bc svg{display:block;max-width:100%;height:auto}
+  .osi-p-q{text-align:right;font-weight:700;font-size:13pt}
+  .osi-p-box{display:inline-block;width:14pt;height:14pt;border:1.25pt solid #000}
+  .osi-p-foot{margin-top:14pt;display:grid;grid-template-columns:1fr 1fr;gap:16pt 24pt;font-size:10.5pt;break-inside:avoid}
+  .osi-p-foot div{border-bottom:1pt solid #000;padding-top:18pt}
+}
+#osInbound .ob-out{grid-template-columns:1fr 1fr}
