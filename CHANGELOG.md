@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.68.0
+- **Company colors locked in** (requested by the team — colors looked "off" on PCs and phones). Everyone now sees the same company theme: **red, maroon and black on a bright white background.**
+  - Removed the per-person "Your accent color" picker from Settings. Any color someone picked before is cleared automatically the next time the app opens.
+  - **Bright white background** in both looks — the Glass look used to float over a purple/blue tinted wallpaper that shifted with each person's accent color.
+  - **Header is solid company red** with the black underline in both looks (it was see-through, which made it read as washed-out pink).
+  - Sidebar is solid black; panels are white with a thin border.
+  - Phone status bar / installed-app color is company red (was an old teal left over from an earlier theme).
+  - Employee ID badges use company red for the name/department text (they defaulted to the old teal).
+  - Settings → Appearance: "Glass look" is now **"Rounded look"** — same colors, just rounded corners and soft panels vs. the classic squared-off look.
+  - Printed labels, BOLs and sheets are unchanged.
+
 ## v1.67.0
 - **New: One Source Inbound** — receive One Source trailers while the WMS is down (built for the October 2026 network outage; same tool as the standalone LWH-OneSource-Inbound app, now inside the toolkit).
   - **Load info once:** Load # / BOL, carrier, item number, bin class (each field accepts a scan).
