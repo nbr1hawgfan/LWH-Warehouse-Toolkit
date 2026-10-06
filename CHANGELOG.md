@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.69.0
+- **New: Paper Forms** — the last-resort fallback when devices, hotspots or the network are down. Print a stack ahead of time and keep it with the hotspot/printer kit.
+  - **Blank BOL** in the same layout as the Outbound Loads BOL (company header, APPT/BOL/PRO/Carrier/Trailer/Seal block, BOL number box, Ship From / Consignee / Bill To / Comments, 18 lines of Customer ID · LWH ID · Description · Item · PO · Lot/Date · Qty, totals, signatures). Optional:
+    - **Pre-numbered BOLs** (e.g. PB10-001, PB10-002…) — the next starting number is remembered after each print so numbers don't repeat on that device. Use a different prefix per warehouse.
+    - **Ship-from filled in** from the last outbound load out of that warehouse.
+    - **Continuation page** (30 more lines).
+  - **Receiving tally** (landscape) for any customer — including those whose pallets have nothing to scan until the WMS generates their LWH ID: date, warehouse, customer, customer BOL/PO, carrier, trailer, door, seal (intact/broken/none), appointment/arrival/unload times, pallets expected/received, received by; 16 lines of Item · Description · Lot/Date · Qty · Customer Pallet ID (if any) · Bay/Loc · Condition OK/DMG · **LWH ID (assign in WMS)**; Over/Short/Damaged box; totals; driver, receiver and "entered in WMS" signatures. Optional continuation page (25 more lines).
+  - Preview on screen; prints at the right size and orientation automatically.
+
 ## v1.68.1
 - **Outbound Loads: "units" is now "Qty" everywhere** (requested from the floor — some customers call a physical pallet a "unit", so "units" was confusing). Pallets = physical pallets; Qty = pieces on the pallets.
   - Order lines: "Order by" choices are now *Number of pallets*, *Total qty (pieces)* or *Specific pallet IDs*.
