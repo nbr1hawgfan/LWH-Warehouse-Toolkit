@@ -161,7 +161,7 @@
     if(open.length) return {line:open[0]};
     if(forItem.every(l=>l.mode==='ids')) return {err:`Pallet ${r.lwh} isn't one of the pallet IDs ordered for item ${r.item}`};
     const l=forItem.find(x=>x.mode!=='ids'); const p=lineProgress(l);
-    return {err:`Item ${r.item} line is already complete (${fmtN(p.have)} of ${fmtN(p.need)} ${l.mode==='units'?'units':'pallets'}) — change the line to ship more`};
+    return {err:`Item ${r.item} line is already complete (${fmtN(p.have)} of ${fmtN(p.need)} ${l.mode==='units'?'qty':'pallets'}) — change the line to ship more`};
   }
 
   // ================================================================ feedback
@@ -231,7 +231,7 @@
     save();
     const p=lineProgress(line), all=load.lines.every(l=>lineProgress(l).done);
     const n=load.scans.length;
-    const lineTxt=`Item ${line.item}: ${fmtN(p.have)} of ${fmtN(p.need)} ${line.mode==='units'?'units':'pallets'}`;
+    const lineTxt=`Item ${line.item}: ${fmtN(p.have)} of ${fmtN(p.need)} ${line.mode==='units'?'qty':'pallets'}`;
     if(all){ tone('done'); flash('ok',`Pallet #${n} added — every line is complete. Ready to close the load.`); showLast('#'+n,r.lwh,'ok','Added — load complete'); }
     else if(p.over){ tone('bad'); flash('warn',`Pallet #${n} added — ${lineTxt}, over by ${fmtN(p.over)}`); showLast('#'+n,r.lwh,'warn','Added — line over'); }
     else if(extra.ovr){ tone('ok'); flash('warn',`Pallet #${n} added with manager ${extra.exc?'exception':'override'} — ${lineTxt}`); showLast('#'+n,r.lwh,'warn','Added — '+(extra.exc?'exception':'override')); }
@@ -409,7 +409,7 @@
     const items=(load.warehouse&&load.subCust)?itemsForLoad():[];
     const shown=items.filter(it=>!q||(it.item+' '+it.desc).toLowerCase().includes(q));
     s.innerHTML=(!load.subCust?'<option value="">Pick the sub-customer first</option>':`<option value="">${shown.length?'Select item…':'No matching items in stock'}</option>`)+
-      shown.map(it=>`<option value="${safe(it.item)}">${safe(it.item)}${it.desc?' — '+safe(it.desc):''}  (${it.pallets} plt · ${fmtN(it.units)} units)</option>`).join('')+
+      shown.map(it=>`<option value="${safe(it.item)}">${safe(it.item)}${it.desc?' — '+safe(it.desc):''}  (${it.pallets} plt · ${fmtN(it.units)} qty)</option>`).join('')+
       (load.subCust?'<option value="__other">Item not listed…</option>':'');
     if(s._keep&&[...s.options].some(o=>o.value===s._keep)) s.value=s._keep;
     updateLineForm();
@@ -417,9 +417,9 @@
   function updateLineForm(){
     const mode=el('obMode').value;
     el('obIdsWrap').hidden=mode!=='ids'; el('obAmtWrap').hidden=mode==='ids';
-    el('obAmtLabel').textContent=mode==='units'?'Units':'Pallets';
+    el('obAmtLabel').textContent=mode==='units'?'Total qty (pieces)':'Pallets';
     const item=el('obItem').value, hint=el('obItemHint');
-    if(item&&item!=='__other'){ const a=availableFor(item); hint.textContent=`${a.length} pallet${a.length===1?'':'s'} · ${fmtN(a.reduce((x,r)=>x+r.qty,0))} units available for ${load.subCust} in ${load.warehouse}`; }
+    if(item&&item!=='__other'){ const a=availableFor(item); hint.textContent=`${a.length} pallet${a.length===1?'':'s'} · ${fmtN(a.reduce((x,r)=>x+r.qty,0))} qty available for ${load.subCust} in ${load.warehouse}`; }
     else hint.textContent='';
   }
   function addLine(){
@@ -447,13 +447,13 @@
       if(bad.length) return err('Fix these IDs first — '+bad.join(' · '));
       line.ids=ids; line.target=ids.length;
     } else {
-      const n=num(el('obAmt').value); if(!(n>0)) return err(`Enter how many ${mode==='units'?'units':'pallets'}.`);
+      const n=num(el('obAmt').value); if(!(n>0)) return err(`Enter how many ${mode==='units'?'qty':'pallets'}.`);
       if(mode==='pallets'&&n!==Math.floor(n)) return err('Pallets must be a whole number.');
       line.target=n;
       const avail=availableFor(item); const have=mode==='units'?avail.reduce((a,r)=>a+r.qty,0):avail.length;
-      if(item===el('obItem').value&&n>have&&!confirm(`Only ${fmtN(have)} ${mode} of ${item} show as available. Add the line anyway?`)) return;
+      if(item===el('obItem').value&&n>have&&!confirm(`Only ${fmtN(have)} ${mode==='units'?'qty':'pallets'} of ${item} show as available. Add the line anyway?`)) return;
     }
-    load.lines.push(line); logEvent(load,`Added line ${item} — ${mode==='ids'?line.ids.length+' pallet IDs':fmtN(line.target)+' '+mode}${po?' · PO '+po:''}`);
+    load.lines.push(line); logEvent(load,`Added line ${item} — ${mode==='ids'?line.ids.length+' pallet IDs':fmtN(line.target)+' '+(mode==='units'?'qty':mode)}${po?' · PO '+po:''}`);
     el('obAmt').value=''; el('obIds').value=''; el('obPo').value=''; el('obItem').value=''; el('obItem')._keep=''; el('obItemFilter').value='';
     save(); render(); el('obInput').focus();
   }
@@ -463,9 +463,9 @@
     box.innerHTML=load.lines.map(l=>{ const p=lineProgress(l), pct=p.need?Math.min(100,Math.round(p.have/p.need*100)):0;
       return `<div class="ob-line${p.done?' ob-line-done':''}">
         <div class="ob-line-top"><div><b>${safe(l.item)}</b>${l.desc?` <span class="ob-desc">${safe(l.desc)}</span>`:''}${l.po?` <span class="ls-tag">PO ${safe(l.po)}</span>`:''}</div>
-          <div class="ob-line-n">${fmtN(p.have)} / ${fmtN(p.need)} <span>${l.mode==='units'?'units':'pallets'}</span></div></div>
+          <div class="ob-line-n">${fmtN(p.have)} / ${fmtN(p.need)} <span>${l.mode==='units'?'qty':'pallets'}</span></div></div>
         <div class="ps-progress"><div style="width:${pct}%" class="${p.done?'ls-bar-done':''}"></div></div>
-        <div class="ob-line-sub">${p.pallets} pallet${p.pallets===1?'':'s'} · ${fmtN(p.units)} units${l.mode==='ids'?` · specific IDs: ${l.ids.map(safe).join(', ')}`:''}${p.over?` · <b class="ob-over">over by ${fmtN(p.over)}</b>`:''}
+        <div class="ob-line-sub">${p.pallets} pallet${p.pallets===1?'':'s'} · ${fmtN(p.units)} qty${l.mode==='ids'?` · specific IDs: ${l.ids.map(safe).join(', ')}`:''}${p.over?` · <b class="ob-over">over by ${fmtN(p.over)}</b>`:''}
           ${load.status==='open'?`<span class="ob-line-act">${l.mode!=='ids'?`<button type="button" class="mh-link" data-line-edit="${l.id}">Change</button>`:''}<button type="button" class="mh-link" data-line-del="${l.id}">Remove</button></span>`:''}</div>
       </div>`; }).join('');
     box.querySelectorAll('[data-line-del]').forEach(b=>b.onclick=()=>{ const l=load.lines.find(x=>x.id===b.dataset.lineDel);
@@ -473,9 +473,9 @@
       if(!confirm(`Remove the line for item ${l.item}?`)) return;
       load.lines=load.lines.filter(x=>x!==l); logEvent(load,`Removed line ${l.item}`); save(); render(); });
     box.querySelectorAll('[data-line-edit]').forEach(b=>b.onclick=()=>{ const l=load.lines.find(x=>x.id===b.dataset.lineEdit);
-      const v=prompt(`New ${l.mode} quantity for item ${l.item}:`,l.target); if(v===null) return; const n=num(v);
+      const v=prompt(`New ${l.mode==='units'?'total qty':'pallet count'} for item ${l.item}:`,l.target); if(v===null) return; const n=num(v);
       if(!(n>0)||(l.mode==='pallets'&&n!==Math.floor(n))) return alert('Enter a valid number.');
-      logEvent(load,`Changed line ${l.item} from ${l.target} to ${n} ${l.mode}`); l.target=n; save(); render(); });
+      logEvent(load,`Changed line ${l.item} from ${l.target} to ${n} ${l.mode==='units'?'qty':l.mode}`); l.target=n; save(); render(); });
   }
   function renderScans(){
     const box=el('obScanList'), n=load.scans.length;
@@ -662,9 +662,9 @@
     let shortOk=null;
     if(short.length){
       shortOk=await overrideDialog({kind:'short_ship',title:'Ship short?',ok:'Approve short ship',reasonLabel:'Reason for shipping short',reasonPh:'e.g. customer cut the order',
-        detail:short.map(l=>{ const p=lineProgress(l); return `${l.item}: ${fmtN(p.have)} of ${fmtN(p.need)} ${l.mode==='units'?'units':'pallets'}`; }).join(' · ')});
+        detail:short.map(l=>{ const p=lineProgress(l); return `${l.item}: ${fmtN(p.have)} of ${fmtN(p.need)} ${l.mode==='units'?'qty':'pallets'}`; }).join(' · ')});
       if(!shortOk) return;
-    } else if(!confirm(`Close BOL ${load.bol}? ${totals().pallets} pallets, ${fmtN(totals().units)} units.\n\nAfter closing, the load is locked (a manager can reopen it).`)) return;
+    } else if(!confirm(`Close BOL ${load.bol}? ${totals().pallets} pallets, ${fmtN(totals().units)} qty.\n\nAfter closing, the load is locked (a manager can reopen it).`)) return;
     if(!clean(load.billRef)&&!confirm('No Bill To Ref # entered. Close anyway?')) return;
     load.status='closed'; load.closed=new Date().toISOString(); load.closedBy=load.by||userName();
     if(shortOk) logEvent(load,`Closed short — approved by ${shortOk.by}: ${shortOk.reason}${shortOk.verified?'':' (not verified, offline)'}`);
@@ -752,7 +752,7 @@
     const mini=pg=>`<div class="obp-mini"><b>BOL ${safe(L.bol)}</b><span>${safe(L.shipTo.name)}</span><span>Carrier ${safe(L.carrier)}</span><span>Trailer ${safe(L.trailer)}</span><span>Seal ${safe(L.seal)}</span><span>Page ${pg} of ${total}</span></div>`;
     const foot=pg=>`<div class="obp-foot"><span>${printed}</span><span>${draft?'DRAFT — load not closed':''}</span><span>Page ${pg} of ${total}</span></div>`;
     const sumHtml=`<div class="obp-sum">
-        <table class="obp-sumt"><tr><th>ITEM NUMBER</th><th>DESCRIPTION</th><th>PO</th><th class="r">PALLETS</th><th class="r">UNITS</th></tr>
+        <table class="obp-sumt"><tr><th>ITEM NUMBER</th><th>DESCRIPTION</th><th>PO</th><th class="r">PALLETS</th><th class="r">QTY</th></tr>
           ${sum.map(x=>`<tr><td>${safe(x.item)}</td><td>${safe(x.desc)}</td><td>${safe(x.po)}</td><td class="r">${x.pallets}</td><td class="r">${fmtN(x.units)}</td></tr>`).join('')}
           <tr class="obp-grand"><td colspan="3">TOTAL</td><td class="r">${t.pallets}</td><td class="r">${fmtN(t.units)}</td></tr></table>
         ${L.scans.some(s=>s.exc)?'<div class="obp-note">* Pallet added by manager exception (not in inventory data at time of shipping).</div>':''}
@@ -781,7 +781,7 @@
     if(!window.JsBarcode){ alert('The barcode library didn\'t load — check your connection, or use the Excel/CSV download.'); return; }
     const t=totals(L);
     el('obPrintArea').innerHTML=`<div class="ls-p-page obw-page"><div class="ls-p-head"><div><b>WMS re-entry — BOL ${safe(L.bol)}</b> — ${safe(L.subCust)}</div>
-      <div>${safe(L.warehouse)} · Trailer ${safe(L.trailer)} · Seal ${safe(L.seal)} · ${t.pallets} pallets · ${fmtN(t.units)} units · ${L.billRef?'Ref '+safe(L.billRef)+' · ':''}${fmtDate(L.closed||new Date().toISOString())}</div></div>
+      <div>${safe(L.warehouse)} · Trailer ${safe(L.trailer)} · Seal ${safe(L.seal)} · ${t.pallets} pallets · ${fmtN(t.units)} qty · ${L.billRef?'Ref '+safe(L.billRef)+' · ':''}${fmtDate(L.closed||new Date().toISOString())}</div></div>
       ${L.scans.map((s,i)=>`<div class="obw-row"><div class="ls-p-n">${i+1}</div><div class="ls-p-bc"><svg id="obBc${i}"></svg><div class="ls-p-txt">${safe(s.lwh)}</div></div>
         <div class="obw-info"><b>${safe(s.item)}</b> · qty ${fmtN(s.qty)}${s.lot?' · lot '+safe(s.lot):''}<br>${s.cust?'Cust ID '+safe(s.cust):''}${s.exc?' <b>· EXCEPTION</b>':''}${s.ovr&&!s.exc?' · override':''}</div></div>`).join('')}</div>`;
     L.scans.forEach((s,i)=>{ try{ JsBarcode('#obBc'+i,s.lwh,{format:'CODE128',height:48,width:1.6,margin:0,marginLeft:14,marginRight:14,displayValue:false}); }catch(e){ console.error(e); } });
