@@ -1264,3 +1264,56 @@ button.ob-danger{color:var(--bad);border-color:var(--bad)}
   .osi-p-foot div{border-bottom:1pt solid #000;padding-top:18pt}
 }
 #osInbound .ob-out{grid-template-columns:1fr 1fr}
+
+/* ===================== Paper Forms (v1.69.0) ===================== */
+.pf-layout{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:18px;align-items:start}
+.pf-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.pf-actions button{min-height:52px;font-size:17px;padding:10px 28px}
+.pf-preview-card{padding:0;overflow:hidden}
+.pf-preview{background:#e5e7eb;padding:16px;overflow:auto;max-height:80vh}
+.pf-scale{zoom:.62;transform-origin:top left}
+.pf-scale>*{box-shadow:0 4px 18px rgba(0,0,0,.18);margin-bottom:18px}
+@media(max-width:900px){ .pf-layout{grid-template-columns:1fr} .pf-scale{zoom:.42} }
+@media screen{ #pfPrintArea{display:none} }
+@media print{ #pfPrintArea{display:block!important} }
+/* handwriting space */
+.pf-box{min-height:1.1in}
+.pf-wline{border-bottom:1px solid #999;height:.24in}
+.pf-fill{display:inline-block;min-width:1.4in;border-bottom:1px solid #000;height:.9em;vertical-align:bottom}
+.pf-fill-s{min-width:.8in}
+.pf-hdr td{height:.25in}
+.pf-bolno{min-height:.3in}
+.pf-ref{text-align:left;margin-top:6px}
+.pf-lines td{height:.3in;border-bottom:1px solid #bbb;border-right:1px solid #e3e3e3}
+.pf-lines td:last-child{border-right:0}
+.pf-totals{display:flex;gap:.5in;justify-content:flex-end;font-weight:700;font-size:9pt;margin-top:.12in}
+.pf-sigs{margin-top:.3in}
+.pf-mini{align-items:baseline}
+/* receiving tally — landscape */
+.pf-tpage{position:relative;width:11in;height:8.5in;box-sizing:border-box;padding:.3in .35in .28in;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;page-break-after:always;break-after:page;overflow:hidden;font-size:9pt}
+.pf-tpage:last-child{page-break-after:auto;break-after:auto}
+.pf-thead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:4px}
+.pf-tco{font-size:18pt}
+.pf-ttitle{font-size:18pt;font-weight:900;text-align:right;letter-spacing:.04em}
+.pf-ttitle small{display:block;font-size:7.5pt;font-weight:400;letter-spacing:0}
+.pf-fields{display:grid;grid-template-columns:repeat(8,1fr);gap:4px 8px;margin-top:6px}
+.pf-f{border:1px solid #000;padding:2px 4px;min-height:.36in;position:relative}
+.pf-f span{display:block;font-size:6.5pt;font-weight:700;text-transform:uppercase}
+.pf-f div{font-size:10pt;font-weight:700;min-height:.16in}
+.pf-f em{position:absolute;right:4px;bottom:2px;font-style:normal;font-size:7pt}
+.pf-f2{grid-column:span 2}
+.pf-tally{width:100%;border-collapse:collapse;margin-top:6px;table-layout:fixed}
+.pf-tally th{font-size:7pt;text-align:left;border:1px solid #000;padding:2px 3px;background:#f0f0f0;-webkit-print-color-adjust:exact;print-color-adjust:exact;line-height:1.1}
+.pf-tally td{border:1px solid #888;height:.27in;font-size:8pt;padding:0 3px}
+.pf-tally .c{text-align:center}.pf-tally .r{text-align:right}.pf-tally td.n{color:#666;font-size:7.5pt}
+.pf-tally th:nth-child(1){width:.32in}.pf-tally th:nth-child(2){width:1.05in}.pf-tally th:nth-child(4){width:.9in}.pf-tally th:nth-child(5){width:.65in}.pf-tally th:nth-child(6){width:1.9in}.pf-tally th:nth-child(7){width:.8in}.pf-tally th:nth-child(8){width:.7in}.pf-tally th:nth-child(9){width:1.25in}
+.pf-tally th.pf-wms,.pf-tally td.pf-wms{background:#f7f7f7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pf-tfoot{display:grid;grid-template-columns:1fr auto;gap:.3in;margin-top:6px;align-items:start}
+.pf-osd{border:1px solid #000;padding:3px 6px;font-size:8pt}
+.pf-tsum{display:grid;gap:6px;font-weight:700;font-size:9pt}
+.pf-tsum-row{display:flex;gap:.5in;justify-content:flex-end;margin-top:6px}
+.pf-tsigs{display:grid;grid-template-columns:repeat(3,1fr);gap:.4in;margin-top:.12in;font-size:8pt}
+.pf-tsigs .obp-line{height:.26in}
+.pf-tfoot2{position:absolute;left:.35in;right:.35in;bottom:.18in;display:flex;justify-content:space-between;font-size:7.5pt;font-weight:700}
+.pf-mini2{display:flex;gap:.3in;align-items:baseline;border-bottom:2px solid #000;padding-bottom:4px;font-size:9pt}
+.pf-mini2 b{font-size:12pt}.pf-mini2 span:last-child{margin-left:auto}
