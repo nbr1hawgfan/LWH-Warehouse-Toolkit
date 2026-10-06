@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.68.1
+- **Outbound Loads: "units" is now "Qty" everywhere** (requested from the floor — some customers call a physical pallet a "unit", so "units" was confusing). Pallets = physical pallets; Qty = pieces on the pallets.
+  - Order lines: "Order by" choices are now *Number of pallets*, *Total qty (pieces)* or *Specific pallet IDs*.
+  - Item list, line progress ("120 of 120 qty"), counters, refusal messages, the close prompt, the WMS entry sheet header and the BOL shipment summary (PALLETS / QTY) all say Qty.
+  - Loads already saved keep working — only the wording changed.
+
 ## v1.68.0
 - **Company colors locked in** (requested by the team — colors looked "off" on PCs and phones). Everyone now sees the same company theme: **red, maroon and black on a bright white background.**
   - Removed the per-person "Your accent color" picker from Settings. Any color someone picked before is cleared automatically the next time the app opens.
