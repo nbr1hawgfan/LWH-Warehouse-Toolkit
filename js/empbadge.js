@@ -67,7 +67,7 @@
     const logo=LWHStorage.get('companyLogo','');
     const tagline=LWHStorage.get('companyTagline','');
     const companyName=LWHStorage.get('companyName','Logistics Warehouse');
-    const brand=LWHStorage.get('primaryColor','#0f4a45');
+    const brand='#c8102e';   // company red (theme locked v1.68.0)
     return `<div class="employee-badge id-badge-card">
       ${logo?`<img class="id-logo" src="${logo}" />`:`<div class="id-company-name" style="color:${safe(brand)}">${safe(companyName)}</div>`}
       ${tagline?`<div class="id-tagline" style="color:${safe(brand)}">${safe(tagline)}</div>`:''}

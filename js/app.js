@@ -172,13 +172,16 @@ async function refreshDataHealth(){
 function hexToRgb(hex){hex=String(hex||'').trim().replace('#',''); if(hex.length===3)hex=hex.split('').map(c=>c+c).join(''); const n=parseInt(hex,16)||0; return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
 function rgbToHex(r,g,b){return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
 function shadeColor(hex,percent){const {r,g,b}=hexToRgb(hex); const t=percent<0?0:255; const p=Math.abs(percent); return rgbToHex(r+(t-r)*p,g+(t-g)*p,b+(t-b)*p);}
+const COMPANY_RED='#c8102e';
 function applySettings(){
   const company=LWHStorage.get('companyName','Logistics Warehouse'); document.getElementById('companyTitle').textContent=company+' Toolkit'; setCompany.value=company;
-  const color=LWHStorage.get('primaryColor','#c8102e');
+  // Company theme is locked (v1.68.0): red / maroon / black on bright white.
+  // Any accent color someone picked on an older version is cleared.
+  if(LWHStorage.get('primaryColor',null)!==null) LWHStorage.remove('primaryColor');
+  const color=COMPANY_RED;
   document.documentElement.style.setProperty('--brand',color);
   document.documentElement.style.setProperty('--brand-dark',shadeColor(color,-0.28));
   document.documentElement.style.setProperty('--brand-tint',shadeColor(color,0.88));
-  setColor.value=color;
   if(window.setWeatherLoc) setWeatherLoc.value=LWHStorage.get('weatherLoc','');
   if(window.setReadAloud) setReadAloud.checked=LWHStorage.get('readAloudEnabled',true);
   const logo=LWHStorage.get('companyLogo','')||'./icons/company-logo.png'; brandLogoBox.style.backgroundImage=`url(${logo})`;
@@ -561,7 +564,7 @@ if(window.recInvRec){recInvRec.onkeydown=e=>{if(e.key==='Enter'){e.preventDefaul
 if(window.recClearBtn){recClearBtn.onclick=()=>{recInvRec.value=''; if(window.receivingResults) receivingResults.innerHTML=''; if(window.receivingPrintOutput) receivingPrintOutput.innerHTML=''; if(window.recStatus) recStatus.textContent='Enter an InvRec to begin.'; recInvRec.focus();};}
 if(window.recPrintBtn){recPrintBtn.onclick=()=>{const list=LWHInventory.findReceiving(); if(list && list.length) LWHInventory.printRows(list,receivingPrintOutput);};}
 if(window.recPasteBtn){recPasteBtn.onclick=()=>{const rows=LWHInventory.parseCustomerDelimited(recPaste.value);LWHStorage.set('customerLookupRows',rows);LWHInventory.loadCached();LWHUI.toast(`Loaded ${rows.length} row(s)`);};}
-saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');LWHStorage.set('primaryColor',setColor.value||'#c8102e');if(window.setTagline)LWHStorage.set('companyTagline',setTagline.value||'');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}if(window.setReadAloud)LWHStorage.set('readAloudEnabled',setReadAloud.checked);LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};
+saveBrand.onclick=()=>{LWHStorage.set('companyName',setCompany.value||'Logistics Warehouse');if(window.setTagline)LWHStorage.set('companyTagline',setTagline.value||'');if(window.setWeatherLoc){LWHStorage.set('weatherLoc',setWeatherLoc.value||'');LWHStorage.remove('weatherCache');}if(window.setReadAloud)LWHStorage.set('readAloudEnabled',setReadAloud.checked);LWHUI.readFile(setLogo,logo=>{if(logo)LWHStorage.set('companyLogo',logo);applySettings();refreshHero();LWHUI.toast('Branding saved')})};
 clearLogo.onclick=()=>{LWHStorage.set('companyLogo','');applySettings();LWHUI.toast('Logo cleared')};
 if(window.setTtsVoice){setTtsVoice.onchange=()=>{if(window.LWHInventory)LWHInventory.saveTtsVoice(setTtsVoice.value);LWHUI.toast('Voice saved')};}
 if(window.testTtsVoice){testTtsVoice.onclick=()=>{if(window.LWHInventory)LWHInventory.speakText('Bulk seven fifty M L Kahlua. Bay X L F zero two three. Quantity nineteen forty six.');};}
