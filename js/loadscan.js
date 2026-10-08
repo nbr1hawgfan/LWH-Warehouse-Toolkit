@@ -285,6 +285,42 @@
     };
   }
 
+
+  // ---------------------------------------------------------------- clear this device (managers)
+  // Wipes this device's Load Tag Scan history and the load on screen, so old
+  // test loads can't be reopened and synced back into records. Doesn't touch
+  // records in Supabase (that's a separate SQL clear-out) or anything else.
+  function clearInfo(){
+    const h=history(), unsaved=h.filter(L=>L.scans.length&&!(L.sync&&L.sync.state==='saved'&&L.sync.sig===sig(ensureKey(L)))).length
+      +(load.scans.length&&!(load.sync&&load.sync.state==='saved'&&load.sync.sig===sig(ensureKey(load)))?1:0);
+    return {count:h.length+(load.scans.length?1:0),unsaved};
+  }
+  function showClearBox(){
+    const box=el('lsClearBox'); box.hidden=!box.hidden; if(box.hidden) return;
+    const i=clearInfo();
+    el('lsClearInfo').innerHTML=`Removes <b>${i.count}</b> load${i.count===1?'':'s'} from this device${load.scans.length?' (including the one on screen)':''}. Records already saved in Supabase are not touched.`+
+      (i.unsaved?` <b style="color:var(--bad)">${i.unsaved} of them ${i.unsaved===1?'has':'have'} not been saved to records yet and will be lost.</b>`:'');
+    el('lsClearStatus').textContent=''; el('lsClearPass').value=getPass(); el('lsClearPass').focus();
+  }
+  async function clearDevice(){
+    const st=el('lsClearStatus'), pass=el('lsClearPass').value.trim();
+    if(!pass){ st.textContent='Enter the manager passcode.'; return; }
+    st.textContent='Checking passcode…';
+    try{
+      const r=await rpc('toolkit_load_scan_records',{p_passcode:pass,p_search:'',p_days:1});
+      if(!r.ok){ st.textContent=r.error==='bad_passcode'?'That passcode isn\'t right.':r.error==='locked'?'Too many wrong tries — locked for a few minutes.':r.error==='not_set_up'?'The manager passcode hasn\'t been set up yet.':'Couldn\'t check the passcode.'; return; }
+    }catch(e){ st.textContent=e.setup?'Records not set up yet — run sql/load_scan_records.sql in Supabase.':'Needs a connection to check the passcode — try again when online.'; return; }
+    setPass(pass);
+    const i=clearInfo();
+    if(!confirm(`Clear ${i.count} load${i.count===1?'':'s'} from this device?${i.unsaved?`\n\n${i.unsaved} not saved to records yet — they will be lost.`:''}\n\nThis can't be undone.`)){ st.textContent='Cancelled.'; return; }
+    clearTimeout(syncTimer); stopCamera();
+    LWHStorage.remove(HIST_KEY);
+    load=blankLoad(); LWHStorage.set(DRAFT_KEY,load);
+    fieldsToUi(); render();
+    el('lsLast').hidden=true; el('lsClearBox').hidden=true; el('lsClearPass').value='';
+    LWHUI.toast('This device\'s Load Tag Scan history is cleared');
+  }
+
   // ---------------------------------------------------------------- output
   function outName(L){ return 'Tags_'+[L.loadNo||'load',L.trailer?'TR'+L.trailer:''].filter(Boolean).join('_').replace(/[^A-Za-z0-9_-]+/g,'_'); }
   function qrDataUrl(text,px){
@@ -394,6 +430,9 @@
     el('lsRecDays').onchange=recSearch;
     el('lsRecLock').onclick=()=>{ recPass=''; setPass(''); recData=null; el('lsRecResults').innerHTML=''; el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true; el('lsRecPass').value=''; };
     el('lsRecDetails').addEventListener('toggle',()=>{ if(el('lsRecDetails').open&&getPass()&&!recData){ recPass=getPass(); recSearch(); } });
+    el('lsClearDev').onclick=showClearBox;
+    el('lsClearGo').onclick=clearDevice;
+    el('lsClearPass').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); clearDevice(); } };
     el('lsPrint').onclick=()=>printSheet();
     el('lsPdf').onclick=()=>downloadPdf();
     el('lsXlsx').onclick=downloadXlsx;

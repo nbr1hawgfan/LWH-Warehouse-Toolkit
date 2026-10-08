@@ -1317,3 +1317,9 @@ button.ob-danger{color:var(--bad);border-color:var(--bad)}
 .pf-tfoot2{position:absolute;left:.35in;right:.35in;bottom:.18in;display:flex;justify-content:space-between;font-size:7.5pt;font-weight:700}
 .pf-mini2{display:flex;gap:.3in;align-items:baseline;border-bottom:2px solid #000;padding-bottom:4px;font-size:9pt}
 .pf-mini2 b{font-size:12pt}.pf-mini2 span:last-child{margin-left:auto}
+
+/* Load Tag Scan — clear this device (v1.69.1) */
+.ls-clear-dev{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.ls-clear-btn{color:var(--bad)!important}
+#lsClearBox{margin-top:8px;display:grid;gap:6px}
+button.ls-clear-go{background:var(--bad)}
