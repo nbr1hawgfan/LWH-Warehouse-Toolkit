@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.69.1
+- **Load Tag Scan: "Clear recent loads on this device (managers)"** at the bottom of Recent loads. Needs the manager passcode (checked online). Removes this device's Recent loads list and the load on screen so old test loads can't be reopened and synced back into records. Warns first if any of them were never saved to records. Doesn't touch records in Supabase or any other tool.
+- To clear the records in Supabase itself, run in the SQL Editor:
+  `truncate table public.load_scan_tags, public.load_scan_loads restart identity;`
+
 ## v1.69.0
 - **New: Paper Forms** — the last-resort fallback when devices, hotspots or the network are down. Print a stack ahead of time and keep it with the hotspot/printer kit.
   - **Blank BOL** in the same layout as the Outbound Loads BOL (company header, APPT/BOL/PRO/Carrier/Trailer/Seal block, BOL number box, Ship From / Consignee / Bill To / Comments, 18 lines of Customer ID · LWH ID · Description · Item · PO · Lot/Date · Qty, totals, signatures). Optional:
