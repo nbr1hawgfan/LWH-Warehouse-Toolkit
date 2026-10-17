@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.69.2
+- **PTO Requests quick link now opens the new LWH PTO app** (https://nbr1hawgfan.github.io/LWH_PTO/). Saved Quick Links that still point at the old Apps Script PTO page are updated automatically, once.
+
 ## v1.69.1
 - **Load Tag Scan: "Clear recent loads on this device (managers)"** at the bottom of Recent loads. Needs the manager passcode (checked online). Removes this device's Recent loads list and the load on screen so old test loads can't be reopened and synced back into records. Warns first if any of them were never saved to records. Doesn't touch records in Supabase or any other tool.
 - To clear the records in Supabase itself, run in the SQL Editor:
