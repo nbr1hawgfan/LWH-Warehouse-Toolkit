@@ -1323,3 +1323,95 @@ button.ob-danger{color:var(--bad);border-color:var(--bad)}
 .ls-clear-btn{color:var(--bad)!important}
 #lsClearBox{margin-top:8px;display:grid;gap:6px}
 button.ls-clear-go{background:var(--bad)}
+
+
+/* ===================== v1.70.0 — Hub-style Home + Toolkit accent =====================
+   Same layout family as the LWH Hub (hub.logisticswarehouse.net): search, category
+   chips, starred "My Tools" first, square tiles, Oswald headings. To tell the two
+   apart at a glance the Toolkit uses BLACK as its lead color (header bar, tile edges,
+   section rules) with red accents, where the Hub leads with RED. */
+@font-face{font-family:'Oswald';font-style:normal;font-weight:500;font-display:swap;src:url(../fonts/oswald-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:600;font-display:swap;src:url(../fonts/oswald-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Oswald';font-style:normal;font-weight:700;font-display:swap;src:url(../fonts/oswald-latin-700-normal.woff2) format('woff2')}
+:root{--tk-head:'Oswald','Arial Narrow','Roboto Condensed',sans-serif}
+
+/* Header: black bar with a red rule underneath (Hub = red bar). */
+.app-header,html.glass .app-header,body.header-compact .app-header,html.glass body.header-compact .app-header{
+  background:var(--frame-black);border-bottom:4px solid var(--brand)}
+.app-header h1{font-family:var(--tk-head);font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.app-header .eyebrow{color:#ff9aa9;opacity:1}
+
+/* Top: greeting + search beside current conditions */
+#home{min-width:0;max-width:100%}
+#home .tk-top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;margin-bottom:20px;align-items:stretch}
+#home .tk-eyebrow{font-family:var(--tk-head);font-weight:500;font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--brand)}
+#home .tk-hello h2{font-family:var(--tk-head);font-weight:700;font-size:34px;line-height:1.05;text-transform:uppercase;margin:2px 0 0;letter-spacing:.2px}
+#home .tk-clock{font-family:var(--tk-head);font-weight:600;font-size:20px;color:var(--ink);margin-top:2px}
+#home .tk-search{position:relative;margin-top:16px}
+#home .tk-search input{height:52px;padding-left:46px;font-size:16px;border:2px solid var(--frame-black);border-radius:0;background:#fff}
+#home .tk-search input:focus{outline:none;box-shadow:inset 0 -3px 0 var(--brand)}
+#home .tk-search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted)}
+#home .tk-wx{margin:0;border-radius:0;border-top:4px solid var(--frame-black);padding:16px 18px}
+#home .tk-wx-h{font-family:var(--tk-head);font-weight:500;font-size:15px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+#home .tk-wx .hero-weather{font-size:1.1em}
+
+/* Category chips */
+#home .tk-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+#home .tk-chips{display:flex;gap:8px;flex-wrap:wrap}
+#home .tk-chip,html.glass #home .tk-chip{background:#fff;color:var(--ink);border:1.5px solid var(--line);border-radius:0;min-height:38px;padding:7px 14px;font-weight:700;font-size:13.5px;box-shadow:none}
+#home .tk-chip:hover{border-color:var(--frame-black)}
+#home .tk-chip.on,html.glass #home .tk-chip.on{background:var(--frame-black);border-color:var(--frame-black);color:#fff}
+#home .tk-hint{font-size:12.5px;color:var(--muted)}
+
+/* Section titles */
+#home .tk-sec{font-family:var(--tk-head);font-weight:600;font-size:18px;text-transform:uppercase;letter-spacing:.6px;margin:24px 0 12px;display:flex;align-items:center;gap:10px}
+#home .tk-sec::after{content:'';flex:1;height:2px;background:var(--line)}
+#home .tk-sec .n{font-family:inherit;font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0}
+#home .tk-sec.mine{color:var(--brand)}
+#home .tk-sec.mine::after{background:var(--brand);opacity:.35}
+#home .tk-all-head{font-family:var(--tk-head);font-weight:700;font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:30px 0 -10px;padding-top:14px;border-top:3px solid var(--frame-black)}
+
+/* Tiles */
+#home .tk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+#home .tk-tile,html.glass #home .tk-tile{position:relative;display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-left:4px solid var(--frame-black);border-radius:0;padding:14px 44px 14px 14px;min-height:86px;cursor:pointer;color:var(--ink);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;transition:border-color .15s,transform .15s,box-shadow .15s}
+#home .tk-tile:hover,#home .tk-tile:focus-visible{border-color:#cfcfcf;border-left-color:var(--brand);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08);outline:none}
+#home .tk-tile.pinned,html.glass #home .tk-tile.pinned{border-left-color:var(--brand)}
+#home .tk-ic{width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;background:#f3f3f3;color:var(--frame-black)}
+#home .tk-tile.pinned .tk-ic{background:var(--brand-tint);color:var(--brand)}
+#home .tk-ic .icon{width:22px;height:22px}
+#home .tk-tx{min-width:0}
+#home .tk-tx b{display:block;font-family:var(--tk-head);font-weight:600;font-size:16.5px;letter-spacing:.2px;line-height:1.2}
+#home .tk-tx .d{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;color:var(--muted);margin-top:3px;line-height:1.35}
+#home .tk-cat{display:inline-block;margin-top:7px;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 7px;background:var(--frame-black);color:#fff}
+#home .tk-star,html.glass #home .tk-star{position:absolute;top:6px;right:6px;background:none;border:0;border-radius:0;box-shadow:none;min-height:0;padding:6px;font-size:20px;line-height:1;color:#c9c9c9;cursor:pointer}
+#home .tk-star:hover,#home .tk-star.on,html.glass #home .tk-star:hover,html.glass #home .tk-star.on{color:#f5b700;background:none}
+#home .tk-fav-empty{display:flex;gap:14px;align-items:center;border:2px dashed #c9c9c9;background:#fff;padding:16px 18px;color:var(--muted);font-size:14px;line-height:1.45}
+#home .tk-fav-empty b{display:block;color:var(--ink);font-family:var(--tk-head);font-weight:600;font-size:17px;letter-spacing:.2px}
+#home .tk-fav-empty .tk-big{font-size:34px;color:#f5b700;line-height:1}
+#home .tk-none{background:#fff;border:1px dashed var(--line);text-align:center;color:var(--muted);padding:28px 12px;margin-top:16px}
+#home .tk-glance{margin-top:34px}
+#home #quickLinksHome{margin-top:26px}
+
+@media(max-width:860px){ #home .tk-top{grid-template-columns:minmax(0,1fr)} }
+@media(max-width:640px){
+  #home .tk-hello h2{font-size:26px}
+  #home .tk-clock{font-size:17px}
+  #home .tk-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -10px;padding:0 10px 4px}
+  #home .tk-chips::-webkit-scrollbar{display:none}
+  #home .tk-chip{flex:0 0 auto}
+  #home .tk-hint{display:none}
+  #home .tk-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+  #home .tk-tile{min-height:0}
+}
+/* Quick Links in the same square tile style (blue edge = opens another app/site, like the Hub) */
+#home #quickLinksHome,html.glass #home #quickLinksHome{background:none;border:0;box-shadow:none;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:0}
+#home #quickLinksHome h3{font-family:var(--tk-head);font-weight:600;font-size:18px;text-transform:uppercase;letter-spacing:.6px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+#home #quickLinksHome h3::after{content:'';flex:1;height:2px;background:var(--line)}
+#home #quickLinksGrid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+#home #quickLinksGrid .module-card,html.glass #home #quickLinksGrid .module-card{flex-direction:row;align-items:center;min-height:64px;padding:12px 14px;gap:12px;border-radius:0;border:1px solid var(--line);border-left:4px solid #1f4e8c;background:#fff;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+#home #quickLinksGrid .module-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+#home #quickLinksGrid .icon-badge{border-radius:0;background:#e8f0fa;color:#1f4e8c;flex:0 0 auto}
+#home #quickLinksGrid .module-card b{font-family:var(--tk-head);font-weight:600;font-size:16px}
+#home #quickLinksGrid .module-card span{display:none}
+#home #quickLinksGrid .module-card b::after{content:' ↗';color:var(--muted);font-family:var(--body,inherit);font-size:13px}
+@media(max-width:640px){ #home #quickLinksGrid{grid-template-columns:minmax(0,1fr);gap:10px} }

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.70.0
+- **New Home screen in the LWH Hub style.** Same layout family as hub.logisticswarehouse.net so the two feel like one company:
+  - **☆ My Tools** — tap the star on any tool and it pins to the top of Home, first thing you see. Saved on this device (like the Hub's pinned tiles). Nothing pinned yet shows a short "pick your go-to tools" prompt.
+  - **Search box** — type part of a tool name or what it does ("label", "hours", "BOL", "aging"). Enter opens the first match, Esc clears, "/" jumps to the box on a computer.
+  - **Category chips** — All tools, Inventory & Lookup, Shipping & Receiving, Labels & Badges, Time & Hours, Scan & Utilities. Remembers the last one picked.
+  - Square tiles with Oswald headings; Quick Links restyled to match (blue edge = opens another app). KPIs, pallets by location and inventory tables moved below the tools as "Warehouse at a Glance".
+- **Toolkit accent so it's easy to tell apart from the Hub:** black header bar with a red rule (the Hub uses a red bar), black tile edges, black phone status bar. Company colors are unchanged.
+- To add a tool to Home now, add one line to `TOOLS` in `js/hometiles.js`.
+
 ## v1.69.3
 - **Safety Training quick link now opens the new LWH Safety Training app** (https://nbr1hawgfan.github.io/LWH_Safety_Training/). Saved Quick Links that still point at the old Apps Script page are updated automatically, once.
 
