@@ -158,7 +158,7 @@ let renderQuickLinksList=()=>{};
 const QUICK_LINKS_DEFAULT=[
   {name:'Forklift Inspection',url:'https://script.google.com/macros/s/AKfycbyqgmk0BG_YoJIQcjCdVyMsR878-J1k0EQODinxxvQSx8CYzW2xZHIRLDbbua9TGup9/exec'},
   {name:'PTO Requests',url:'https://nbr1hawgfan.github.io/LWH_PTO/'},
-  {name:'Safety Training',url:'https://script.google.com/a/macros/logisticswarehouse.net/s/AKfycbxY_tZyajeHo00TH_EWaFgHBhG-fOWN8uxeXwxufDBzVnA8cOZxCdDtkdJ7N_O0uKfK/exec'}
+  {name:'Safety Training',url:'https://nbr1hawgfan.github.io/LWH_Safety_Training/'}
 ];
 function renderQuickLinksHome(){
   const wrap=document.getElementById('quickLinksHome'), grid=document.getElementById('quickLinksGrid');

@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.69.3
+- **Safety Training quick link now opens the new LWH Safety Training app** (https://nbr1hawgfan.github.io/LWH_Safety_Training/). Saved Quick Links that still point at the old Apps Script page are updated automatically, once.
+
 ## v1.69.2
 - **PTO Requests quick link now opens the new LWH PTO app** (https://nbr1hawgfan.github.io/LWH_PTO/). Saved Quick Links that still point at the old Apps Script PTO page are updated automatically, once.
 

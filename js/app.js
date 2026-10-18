@@ -283,7 +283,7 @@ let renderQuickLinksList=()=>{};
 const QUICK_LINKS_DEFAULT=[
   {name:'Forklift Inspection',url:'https://nbr1hawgfan.github.io/LWH_Forklift_Inspections/'},
   {name:'PTO Requests',url:'https://nbr1hawgfan.github.io/LWH_PTO/'},
-  {name:'Safety Training',url:'https://script.google.com/a/macros/logisticswarehouse.net/s/AKfycbxY_tZyajeHo00TH_EWaFgHBhG-fOWN8uxeXwxufDBzVnA8cOZxCdDtkdJ7N_O0uKfK/exec'},
+  {name:'Safety Training',url:'https://nbr1hawgfan.github.io/LWH_Safety_Training/'},
   {name:'Mobile Scan Portal',url:'http://mobile.logistics-warehouse.biz/'},
   {name:'Customer Portal',url:'https://portal.logistics-warehouse.biz/Default.aspx'}
 ];
@@ -342,6 +342,17 @@ function initQuickLinks(){
     links.forEach(l=>{ if(def && String(l.url||'').indexOf('AKfycbwXblseav0VCgynTXxL6BYTLniZ4xJAiYholbDgnFPXBqL46_sxP1Rc49MWMga52QsV')!==-1){ l.url=def.url; changed=true; } });
     if(changed) LWHStorage.set('quickLinks',links);
     LWHStorage.set('quickLinksMigratedPTOPwa',true);
+  }
+  // One-time migration: Safety Training moved from the Apps Script web app to
+  // the LWH_Safety_Training GitHub app. Rewrites only saved links that point at
+  // the old address; doesn't add one back if someone removed it (flagged).
+  if(!LWHStorage.get('quickLinksMigratedSafetyPwa',false)){
+    const links=LWHStorage.get('quickLinks',[]);
+    const def=QUICK_LINKS_DEFAULT.find(l=>l.name==='Safety Training');
+    let changed=false;
+    links.forEach(l=>{ if(def && String(l.url||'').indexOf('AKfycbxY_tZyajeHo00TH_EWaFgHBhG')!==-1){ l.url=def.url; changed=true; } });
+    if(changed) LWHStorage.set('quickLinks',links);
+    LWHStorage.set('quickLinksMigratedSafetyPwa',true);
   }
   renderQuickLinksList=function render(){
     const links=LWHStorage.get('quickLinks',[]);
