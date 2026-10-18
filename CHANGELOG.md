@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.71.0
+- **Hub styling carried through the whole app** so every screen matches the new Home: square corners, Oswald headings, black header rows on data tables (were pink), black top edge on panels and KPI cards, Hub-style section titles. "Warehouse at a Glance" and the inventory tables on Home now match the tools above them.
+- **Screen only** — printed labels, signs, BOLs, pick lists and badges are unchanged. No tool behavior changed.
+
 ## v1.70.0
 - **New Home screen in the LWH Hub style.** Same layout family as hub.logisticswarehouse.net so the two feel like one company:
   - **☆ My Tools** — tap the star on any tool and it pins to the top of Home, first thing you see. Saved on this device (like the Hub's pinned tiles). Nothing pinned yet shows a short "pick your go-to tools" prompt.

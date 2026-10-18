@@ -1415,3 +1415,55 @@ button.ls-clear-go{background:var(--bad)}
 #home #quickLinksGrid .module-card span{display:none}
 #home #quickLinksGrid .module-card b::after{content:' ↗';color:var(--muted);font-family:var(--body,inherit);font-size:13px}
 @media(max-width:640px){ #home #quickLinksGrid{grid-template-columns:minmax(0,1fr);gap:10px} }
+
+
+/* ===================== v1.71.0 — Hub styling across the whole app =====================
+   Screen only: nothing in here applies when printing, so labels, signs, BOLs and pick
+   lists print exactly as before. Layout and tool behavior are untouched — this only
+   changes corners, headings, table headers and panel edges to match the Home screen. */
+@media screen {
+  /* square corners everywhere (glass theme had 16px) */
+  html, html.glass { --radius:0; --radius-sm:0; }
+  html.glass button, html.glass .header-actions .ghost, html.glass .icon-badge, html.glass .nav-btn,
+  .module-card .icon-badge, .scanner-card, input, textarea, select { border-radius:0; }
+
+  /* headings in the Hub's Oswald */
+  .panel h2, .card > h2, .card > h3, .card h3:first-child, .view > h2 {
+    font-family:var(--tk-head); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .panel h2 { font-size:21px; }
+  .card > h3, .card h3:first-child { font-size:18px; }
+
+  /* section labels: Hub-style title with a rule, instead of a red side bar */
+  .section-label { font-family:var(--tk-head); font-weight:600; font-size:18px; letter-spacing:.6px;
+    border-left:0; padding-left:0; }
+  .section-label::after { content:''; flex:1; height:2px; background:var(--line); }
+
+  /* panels & cards: solid white with a black top edge (Toolkit accent) */
+  .panel, html.glass .panel { border-top:4px solid var(--frame-black); }
+  html.glass .card, html.glass .panel, html.glass .kpi-card, html.glass .module-card { background:#fff; }
+
+  /* KPI cards + pallets-by-location tiles */
+  .kpi-card, html.glass .kpi-card { border-top:4px solid var(--frame-black); }
+  .kpi-card.kpi-primary, html.glass .kpi-card.kpi-primary { border-top-color:var(--brand); }
+  .kpi-label { font-family:var(--tk-head); font-weight:500; font-size:13px; letter-spacing:1px; opacity:1; }
+  .kpi-value { font-family:var(--tk-head); font-weight:700; letter-spacing:.5px; }
+  .stats div, html.glass .stats div { border-left:4px solid var(--frame-black); background:#fff; }
+  .stats b { font-family:var(--tk-head); font-weight:700; letter-spacing:.4px; }
+  .stats span { font-weight:700; letter-spacing:.3px; }
+
+  /* data tables: black header row like the Hub/Trailer Shop (was pink) */
+  .pls-table th { background:var(--frame-black); color:#fff; border-color:var(--frame-black);
+    font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .pls-table tbody tr:nth-child(even) td { background:#fafafa; }
+  .pls-table tbody tr:hover td { background:var(--brand-tint); }
+
+  /* data health strip: square, keeps its green/red status edge */
+  .data-health-head { font-family:var(--tk-head); font-weight:600; font-size:17px; letter-spacing:.3px; }
+
+  /* sidebar nav: square buttons, red bar on the active tool */
+  html.glass .nav-btn.active, .nav-btn.active { border-left:4px solid #fff !important; box-shadow:none; }
+  .nav-btn { font-weight:600; }
+
+  /* segmented tabs inside tools */
+  .seg.active, html.glass .seg.active { background:var(--frame-black); color:#fff; box-shadow:none; }
+}
