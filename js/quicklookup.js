@@ -159,6 +159,24 @@
     const terms=q.toLowerCase().split(/\s+/).filter(Boolean);
     return {rows:sortTxns(all.filter(t=>{ const h=txnHay(t); return terms.every(x=>h.includes(x)); })),note:''};
   }
+  // Bill-to-Ref isn't in the inventory feed, only in transaction history.
+  // Each pallet's INBOUND Bill-to-Ref is looked up from history (rolling
+  // ~90 days), so pallets received before that window show it blank.
+  let inboundMap=null, inboundSrc=null;
+  async function inboundBillToRef(){
+    const all=await allTxns();
+    if(inboundMap && inboundSrc===all) return inboundMap;
+    const m=new Map();
+    all.forEach(t=>{
+      if(!/^in/i.test(t.transactionType||'')) return;
+      const id=clean(t.lwhId), ref=clean(t.billToRef); if(!id||!ref) return;
+      const prev=m.get(id);
+      if(!prev || String(t.transactionDate||'')>prev.date) m.set(id,{ref,date:String(t.transactionDate||'')});
+    });
+    inboundMap=m; inboundSrc=all; return m;
+  }
+  const btrOf=(m,r)=>{ const x=m&&m.get(clean(r.controlNumber)); return x?x.ref:''; };
+
   async function palletHistory(id){
     const all=await allTxns(); id=norm(id);
     return sortTxns(all.filter(t=>norm(t.lwhId)===id||norm(t.madeFrom)===id));
@@ -230,9 +248,9 @@
 
   function txnTable(rows,cap){
     const shown=cap?rows.slice(0,cap):rows;
-    return `<div class="ql-table-wrap"><table class="ql-table"><thead><tr><th>Date</th><th>Type</th><th>LWH ID</th><th>Item #</th><th>Description</th><th class="r">Qty</th><th>Lot #</th><th>Bill-to-Ref</th><th>INV Receipt</th><th>Location</th><th>Made From</th></tr></thead><tbody>${
+    return `<div class="ql-table-wrap"><table class="ql-table"><thead><tr><th>Date</th><th>Type</th><th>LWH ID</th><th>Item #</th><th>Description</th><th class="r">Qty</th><th>Lot #</th><th>Bill-to-Ref</th><th>INV Receipt</th><th>Location</th><th>Made From</th><th>Customer ID</th><th>Unique2</th></tr></thead><tbody>${
       shown.map(t=>{ const type=clean(t.transactionType); const cls=/^in/i.test(type)?'in':(/^out/i.test(type)?'out':'');
-        return `<tr><td>${esc(clean(t.transactionDate))}</td><td><span class="ql-type ${cls}">${esc(type)}</span></td><td><b>${esc(clean(t.lwhId))}</b></td><td>${esc(clean(t.itemNm))}</td><td>${esc(clean(t.itemDesc))}</td><td class="r">${fmt(num(t.qty))}</td><td>${esc(clean(t.lotNum))}</td><td>${esc(clean(t.billToRef))}</td><td>${esc(clean(t.invReceipt))}</td><td>${esc(clean(t.location))}</td><td>${esc(clean(t.madeFrom))}</td></tr>`; }).join('')
+        return `<tr><td>${esc(clean(t.transactionDate))}</td><td><span class="ql-type ${cls}">${esc(type)}</span></td><td><b>${esc(clean(t.lwhId))}</b></td><td>${esc(clean(t.itemNm))}</td><td>${esc(clean(t.itemDesc))}</td><td class="r">${fmt(num(t.qty))}</td><td>${esc(clean(t.lotNum))}</td><td>${esc(clean(t.billToRef))}</td><td>${esc(clean(t.invReceipt))}</td><td>${esc(clean(t.location))}</td><td>${esc(clean(t.madeFrom))}</td><td>${esc(clean(t.customerId))}</td><td>${esc(clean(t.unique2))}</td></tr>`; }).join('')
     }</tbody></table></div>`;
   }
   function histTotals(rows){
@@ -265,8 +283,8 @@
     const out=$('qlResults');
     const id=clean(r.controlNumber);
     const labels=window.LWHInventory?LWHInventory.customerLabels():{};
-    const fields=[['controlNumber','LWH ID'],['subCustNm','Customer'],['comments','Customer ID'],['itemNm','Item #'],['itemDesc','Description'],['lotNum','Lot #'],['qty','Qty'],['warehouse','Warehouse'],['bayName','Bay'],['invReceipt','INV Receipt'],['vendor','Vendor'],['unique2',''],['unique3',''],['unique5',''],['unique6',''],['unique7',''],['unique8','']]
-      .map(([k,l])=>{ const v=k==='bayName'?bayOf(r):(k==='warehouse'?whOf(r):clean(r[k])); return v?`<div><small>${esc(l||labels[k]||k)}</small><b>${esc(v)}</b></div>`:''; }).join('');
+    const fields=[['controlNumber','LWH ID'],['_btr','Bill-to-Ref (Inbound)'],['subCustNm','Customer'],['comments','Customer ID'],['itemNm','Item #'],['itemDesc','Description'],['lotNum','Lot #'],['qty','Qty'],['warehouse','Warehouse'],['bayName','Bay'],['invReceipt','INV Receipt'],['vendor','Vendor'],['unique2',''],['unique3',''],['unique5',''],['unique6',''],['unique7',''],['unique8','']]
+      .map(([k,l])=>{ const v=k==='_btr'?'__BTR__':(k==='bayName'?bayOf(r):(k==='warehouse'?whOf(r):clean(r[k]))); if(v==='__BTR__') return `<div id="qlDetailBtr"><small>${esc(l)}</small><b>…</b></div>`; return v?`<div><small>${esc(l||labels[k]||k)}</small><b>${esc(v)}</b></div>`:''; }).join('');
     out.innerHTML=`<div class="ql-detail">
       <button type="button" class="ghost ql-back" data-ql-back>← Back to results</button>
       <div class="ql-detail-head">
@@ -280,8 +298,10 @@
     </div>`;
     const svg=out.querySelector('.ql-detail-bc'); if(svg&&window.LWHBarcode) LWHBarcode.make(svg,id,{height:56,width:2});
     window.scrollTo({top:$('qlBar').offsetTop-70,behavior:'smooth'});
-    const hist=await palletHistory(id);
+    const [hist,bm]=await Promise.all([palletHistory(id),inboundBillToRef()]);
     if(S.detail!==r) return;
+    r._btr=btrOf(bm,r);
+    const bEl=$('qlDetailBtr'); if(bEl) bEl.querySelector('b').textContent=r._btr||'— (older than ~90 days)';
     r._hist=hist;
     $('qlDetailHist').innerHTML=hist.length?txnTable(hist):'<div class="ql-empty">No transactions for this pallet in the last ~90 days.</div>';
   }
@@ -382,7 +402,7 @@
   }
   function printDetailSheet(r){
     const id=clean(r.controlNumber);
-    const rows=[['Customer',clean(r.subCustNm)],['Customer ID',clean(r.comments)],['Item #',clean(r.itemNm)],['Description',clean(r.itemDesc)],['Lot #',clean(r.lotNum)],['Qty',fmt(num(r.qty))],['Warehouse',whOf(r)],['INV Receipt',clean(r.invReceipt)],['Vendor',clean(r.vendor)]].filter(x=>x[1]);
+    const rows=[['Customer',clean(r.subCustNm)],['Customer ID',clean(r.comments)],['Item #',clean(r.itemNm)],['Description',clean(r.itemDesc)],['Lot #',clean(r.lotNum)],['Qty',fmt(num(r.qty))],['Warehouse',whOf(r)],['INV Receipt',clean(r.invReceipt)],['Bill-to-Ref (Inbound)',r._btr||''],['Vendor',clean(r.vendor)],['Unique2',clean(r.unique2)],['Unique3',clean(r.unique3)],['Unique5',clean(r.unique5)],['Unique6',clean(r.unique6)],['Unique7',clean(r.unique7)],['Unique8',clean(r.unique8)]].filter(x=>x[1]);
     const hist=r._hist||[];
     doPrint(`<div class="qlp-sheet">${sheetHead('Pallet '+id,`Bay <b>${esc(bayOf(r))}</b> · ${esc(whOf(r))}`)}
       <div class="qlp-pallet"><div><svg data-barcode="${esc(id)}" data-h="70" data-w="2.4"></svg><div class="qlp-pid">${esc(id)}</div></div><div class="qlp-pbay"><small>BAY</small>${esc(bayOf(r))}</div></div>
@@ -400,27 +420,28 @@
     const d=new Date(), p=n=>String(n).padStart(2,'0');
     return `LWH-Lookup-${String(S.query||'all').replace(/[^\w-]+/g,'_').slice(0,30)}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
   }
-  const PALLET_COLS=[{label:'LWH ID',type:'n',width:11},{label:'Bay',width:12},{label:'Warehouse',width:11},{label:'Customer',width:12},{label:'Customer ID',width:22},{label:'Item #',width:16},{label:'Description',width:32},{label:'Lot #',width:15},{label:'Qty',type:'n',width:10},{label:'INV Receipt',type:'n',width:12},{label:'Vendor',width:16},{label:'Unique2'},{label:'Unique8'}];
-  const palletRow=r=>[clean(r.controlNumber),bayOf(r),whOf(r),clean(r.subCustNm),clean(r.comments),clean(r.itemNm),clean(r.itemDesc),clean(r.lotNum),clean(r.qty),clean(r.invReceipt),clean(r.vendor),clean(r.unique2),clean(r.unique8)];
+  const PALLET_COLS=[{label:'LWH ID',type:'n',width:11},{label:'Bay',width:12},{label:'Warehouse',width:11},{label:'Customer',width:12},{label:'Customer ID',width:22},{label:'Item #',width:16},{label:'Description',width:32},{label:'Lot #',width:15},{label:'Qty',type:'n',width:10},{label:'INV Receipt',type:'n',width:12},{label:'Bill-to-Ref (Inbound)',width:20},{label:'Vendor',width:16},{label:'Unique2'},{label:'Unique3'},{label:'Unique5'},{label:'Unique6'},{label:'Unique7'},{label:'Unique8'}];
+  const palletRow=(r,bm)=>[clean(r.controlNumber),bayOf(r),whOf(r),clean(r.subCustNm),clean(r.comments),clean(r.itemNm),clean(r.itemDesc),clean(r.lotNum),clean(r.qty),clean(r.invReceipt),btrOf(bm,r),clean(r.vendor),clean(r.unique2),clean(r.unique3),clean(r.unique5),clean(r.unique6),clean(r.unique7),clean(r.unique8)];
   const SUM_COLS=[{label:'Item #',width:16},{label:'Description',width:32},{label:'Customer',width:12},{label:'Lot #',width:15},{label:'Warehouse',width:11},{label:'Bay',width:12},{label:'Pallets',type:'n',width:9},{label:'Qty',type:'n',width:11}];
-  const TXN_COLS=[{label:'Date',width:11},{label:'Type',width:9},{label:'LWH ID',type:'n',width:11},{label:'Item #',width:16},{label:'Description',width:30},{label:'Qty',type:'n',width:10},{label:'Lot #',width:14},{label:'Bill-to-Ref',width:18},{label:'INV Receipt',type:'n',width:12},{label:'Customer',width:11},{label:'Customer ID',width:22},{label:'Location',width:18},{label:'Made From',type:'n',width:11}];
-  const txnRow=t=>[clean(t.transactionDate),clean(t.transactionType),clean(t.lwhId),clean(t.itemNm),clean(t.itemDesc),clean(t.qty),clean(t.lotNum),clean(t.billToRef),clean(t.invReceipt),clean(t.subCustNm),clean(t.customerId),clean(t.location),clean(t.madeFrom)];
+  const TXN_COLS=[{label:'Date',width:11},{label:'Type',width:9},{label:'LWH ID',type:'n',width:11},{label:'Item #',width:16},{label:'Description',width:30},{label:'Qty',type:'n',width:10},{label:'Lot #',width:14},{label:'Bill-to-Ref',width:18},{label:'INV Receipt',type:'n',width:12},{label:'Customer',width:11},{label:'Customer ID',width:22},{label:'Location',width:18},{label:'Made From',type:'n',width:11},{label:'Unique2',width:12}];
+  const txnRow=t=>[clean(t.transactionDate),clean(t.transactionType),clean(t.lwhId),clean(t.itemNm),clean(t.itemDesc),clean(t.qty),clean(t.lotNum),clean(t.billToRef),clean(t.invReceipt),clean(t.subCustNm),clean(t.customerId),clean(t.location),clean(t.madeFrom),clean(t.unique2)];
 
   async function exportExcel(){
     if(!window.LWHXlsx){ LWHUI.toast('Excel export not available'); return; }
     LWHUI.toast('Building Excel file…');
     const rows=S.res.rows, t=totals(rows), g=summarize(rows);
+    let bm=null; try{ bm=await inboundBillToRef(); }catch(e){ console.error(e); }
     let h={rows:[]}; try{ h=await ensureHistory(); }catch(e){ console.error(e); }
     const ht=histTotals(h.rows);
     const sheets=[
-      {name:'Pallets',columns:PALLET_COLS,rows:rows.map(palletRow),totals:['Total','','','','','','','',t.qty,'','','','']},
+      {name:'Pallets',columns:PALLET_COLS,rows:rows.map(r=>palletRow(r,bm)),totals:['Total','','','','','','','',t.qty,'','','','','','','','','']},
       {name:'Summary',columns:SUM_COLS,rows:g.map(x=>[x.item,x.desc,x.customer,x.lot,x.wh,x.bay,x.pallets,x.qty]),totals:['Total','','','','','',t.pallets,t.qty]},
       {name:'History',columns:TXN_COLS,rows:h.rows.map(txnRow)},
       {name:'Search Info',columns:[{label:'Field',width:18},{label:'Value',width:44}],rows:[
         ['Search',S.query],['Searched by',S.res.how==='exact'?FIELDS[S.res.field].label+' (exact match)':FIELDS[S.res.field].label],['Warehouse',S.wh==='all'?'All warehouses':S.wh],
         ['Pallets',String(t.pallets)],['Total Qty',String(t.qty)],['Bays',String(t.bays)],['Items',String(t.items)],
         ['History inbound',`${ht.inP} pallets / ${ht.inQ} qty`],['History outbound',`${ht.outP} pallets / ${ht.outQ} qty`],
-        ['Inventory data as of',syncedLabel(invRows())],['Exported',new Date().toLocaleString()],['Source','LWH Warehouse Toolkit — Quick Lookup']]}
+        ['Bill-to-Ref (Inbound)','From transaction history — rolling ~90 days. Pallets received earlier show it blank.'],['Inventory data as of',syncedLabel(invRows())],['Exported',new Date().toLocaleString()],['Source','LWH Warehouse Toolkit — Quick Lookup']]}
     ];
     LWHXlsx.download(fileBase()+'.xlsx',sheets);
   }
@@ -428,7 +449,7 @@
     let cols,rows,suffix;
     if(S.tab==='summary'){ cols=SUM_COLS; rows=summarize(S.res.rows).map(x=>[x.item,x.desc,x.customer,x.lot,x.wh,x.bay,x.pallets,x.qty]); suffix='-summary'; }
     else if(S.tab==='history'){ const h=await ensureHistory(); cols=TXN_COLS; rows=h.rows.map(txnRow); suffix='-history'; }
-    else { cols=PALLET_COLS; rows=S.res.rows.map(palletRow); suffix=''; }
+    else { let bm=null; try{ bm=await inboundBillToRef(); }catch(e){} cols=PALLET_COLS; rows=S.res.rows.map(r=>palletRow(r,bm)); suffix=''; }
     const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
     const csv='﻿'+[cols.map(c=>q(c.label)).join(','),...rows.map(r=>r.map(q).join(','))].join('\r\n');
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=fileBase()+suffix+'.csv'; document.body.append(a); a.click(); a.remove();

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.72.1
+- **Quick Lookup: every column in the exports.**
+  - **Pallets** (Excel and CSV) now include **Unique3, Unique5, Unique6 and Unique7** alongside Unique2 and Unique8.
+  - **Bill-to-Ref (Inbound)** added to Pallets, the pallet detail page and the printed pallet sheet. It isn't in the inventory feed, so it's looked up from each pallet's inbound transaction. Transaction history is a rolling ~90 days, so pallets received before that show it blank (the detail page says so).
+  - **History** (screen, Excel and CSV) now includes **Unique2**; the on-screen history table also shows Customer ID.
+  - Printed pallet sheet lists every Unique that has a value.
+- About screen version fixed (it still said 1.69.1) and Quick Lookup added to its module list.
+
 ## v1.72.0
 - **New: Quick Lookup** — the slimmed-down Toolkit screen for managers and the floor. One big search box, nothing else in the way.
   - **Type, scan or speak.** Scanner guns work straight into the box (Enter searches and highlights the box for the next scan). **Scan** uses the camera. **Speak** uses the browser's voice input; on phones where that isn't available, the keyboard's microphone works the same. Saying "bay X L F zero one nine" or "item 869731" picks the field for you and drops the spaces.
