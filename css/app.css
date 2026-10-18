@@ -1467,3 +1467,126 @@ button.ls-clear-go{background:var(--bad)}
   /* segmented tabs inside tools */
   .seg.active, html.glass .seg.active { background:var(--frame-black); color:#fff; box-shadow:none; }
 }
+
+/* ---- Quick Lookup (v1.72.0) — the slim search-scan-print screen ---- */
+body.ql-direct .app-shell{grid-template-columns:1fr}
+body.ql-direct .nav:not(.open){display:none}
+.ql-wrap{max-width:1100px}
+.ql-search{background:#fff;border:1px solid var(--line);border-top:4px solid var(--frame-black);padding:16px 18px 12px}
+.ql-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.ql-title h2{margin:0;font-family:var(--tk-head,inherit);font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:24px}
+.ql-title-actions{display:flex;gap:6px}
+button.ql-mini{min-height:34px;padding:5px 10px;font-size:12.5px}
+.ql-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.ql-chip,html.glass .ql-chip{background:#fff;color:var(--ink);border:1.5px solid var(--line);border-radius:0;min-height:36px;padding:6px 12px;font-size:13.5px;font-weight:700;box-shadow:none}
+.ql-chip:hover{background:#fff;border-color:var(--frame-black)}
+.ql-chip.on,html.glass .ql-chip.on{background:var(--frame-black);border-color:var(--frame-black);color:#fff}
+.ql-inputrow{display:grid;grid-template-columns:1fr 180px;gap:8px}
+.ql-inputrow input{font-size:22px;font-weight:700;padding:12px 14px;border:2px solid var(--frame-black);border-radius:0;min-height:56px;letter-spacing:.02em;width:100%}
+.ql-inputrow input:focus{outline:3px solid var(--brand-tint);border-color:var(--brand)}
+.ql-inputrow select{border:2px solid var(--line);border-radius:0;min-height:56px;padding:0 10px;font-weight:600;background:#fff}
+.ql-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 6px}
+.ql-btns button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;font-size:16px;border-radius:0}
+.ql-btns .icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+#qlVoiceBtn.listening{background:var(--brand);color:#fff;animation:qlPulse 1s ease-in-out infinite}
+@keyframes qlPulse{50%{opacity:.7}}
+.ql-bar{margin-top:14px;background:#fff;border:1px solid var(--line);padding:12px 14px}
+.ql-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ql-kpis>div{border-left:3px solid var(--brand);padding-left:10px}
+.ql-kpis b{display:block;font-size:28px;font-weight:900;line-height:1.1;color:var(--ink)}
+.ql-kpis span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ql-how{grid-column:1/-1;margin:2px 0 0;font-size:13px;color:var(--muted)}
+.ql-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.ql-tabs{display:flex;border:2px solid var(--frame-black)}
+.ql-tabs button{background:#fff;color:var(--ink);border-radius:0;min-height:40px;padding:6px 16px}
+.ql-tabs button.on{background:var(--frame-black);color:#fff}
+.ql-actions{display:flex;gap:6px;flex-wrap:wrap}
+.ql-actions button{border-radius:0;min-height:40px;padding:6px 14px}
+.ql-actions [hidden]{display:none}
+.ql-results{margin-top:12px}
+.ql-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.ql-card{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-left:5px solid var(--frame-black);border-radius:0;padding:12px 14px;font-weight:400;min-height:0}
+.ql-card:hover{background:#fff;border-left-color:var(--brand);box-shadow:var(--shadow-sm)}
+.ql-card>span{display:block}
+.ql-card-top{display:flex!important;justify-content:space-between;align-items:flex-start;gap:10px}
+.ql-id{font-family:Consolas,"Courier New",monospace;font-size:21px;font-weight:800;letter-spacing:.04em}
+.ql-bay{text-align:right;font-family:var(--tk-head,inherit);font-size:24px;font-weight:700;color:var(--brand);line-height:1}
+.ql-bay small,.ql-meta small,.ql-fields small,.ql-detail-head small,.ql-detail-bay small{display:block;font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ql-item{margin:6px 0;font-size:14px}
+.ql-meta{display:flex!important;flex-wrap:wrap;gap:4px 16px;font-size:14px;font-weight:600}
+.ql-meta .wide{flex-basis:100%}
+.ql-empty{background:#fff;border:1px dashed var(--line);padding:18px;color:var(--muted)}
+.ql-empty b{color:var(--ink)}
+button.ql-link{background:none;border:0;color:var(--brand);padding:0;min-height:0;text-decoration:underline;font-weight:700}
+.ql-note{font-size:13px;color:var(--muted);margin:6px 0}
+.ql-table-wrap{overflow:auto;border:1px solid var(--line);background:#fff}
+.ql-table{width:100%;border-collapse:collapse;font-size:13px}
+.ql-table th{background:var(--frame-black);color:#fff;text-align:left;padding:7px 9px;white-space:nowrap;position:sticky;top:0}
+.ql-table td{padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+.ql-table tbody tr:nth-child(even){background:#fafafa}
+.ql-table tfoot td{font-weight:800;border-top:2px solid var(--frame-black)}
+.ql-table .r,.qlp-table .r{text-align:right}
+.ql-type{display:inline-block;padding:1px 7px;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:#eee}
+.ql-type.in{background:#e3f2e3;color:#1a5e1a}
+.ql-type.out{background:var(--brand-tint);color:var(--brand-dark)}
+.ql-hist-kpis{margin-bottom:8px;font-size:14px;font-weight:600}
+.ql-detail{background:#fff;border:1px solid var(--line);border-top:4px solid var(--brand);padding:14px 16px}
+button.ql-back{border-radius:0;min-height:38px;margin-bottom:10px}
+.ql-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.ql-detail-id{font-family:Consolas,"Courier New",monospace;font-size:34px;font-weight:800;letter-spacing:.05em}
+.ql-detail-bc{display:block;max-width:100%;height:64px;margin-top:4px}
+.ql-detail-bay{text-align:right}
+.ql-detail-bay b{display:block;font-family:var(--tk-head,inherit);font-size:44px;color:var(--brand);line-height:1}
+.ql-detail-bay span{font-weight:700;color:var(--muted)}
+.ql-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px 16px;margin:14px 0;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ql-fields b{font-size:15px;word-break:break-word}
+.ql-h3{font-family:var(--tk-head,inherit);text-transform:uppercase;font-weight:600;margin:16px 0 8px}
+.ql-print-area{display:none}
+@media (max-width:700px){
+  .ql-search{padding:12px}
+  .ql-inputrow{grid-template-columns:1fr}
+  .ql-inputrow select{min-height:44px}
+  .ql-kpis{grid-template-columns:repeat(2,1fr)}
+  .ql-kpis b{font-size:23px}
+  .ql-tools,.ql-actions{width:100%}
+  .ql-tabs{width:100%}.ql-tabs button{flex:1}
+  .ql-actions button{flex:1 1 45%}
+  .ql-cards{grid-template-columns:1fr}
+  .ql-detail-bay{text-align:left}
+}
+/* Printed sheets */
+.qlp-sheet{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;width:100%}
+.qlp-head{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid #000;padding-bottom:6px;margin-bottom:8px}
+.qlp-co{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c8102e}
+.qlp-head h2{margin:2px 0;font-size:20px}
+.qlp-sub{font-size:11px}
+.qlp-when{font-size:10px;text-align:right;white-space:nowrap}
+.qlp-table{width:100%;border-collapse:collapse;font-size:10px}
+.qlp-table thead{display:table-header-group}
+.qlp-table th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid #000;padding:3px 4px}
+.qlp-table td{border-bottom:1px solid #bbb;padding:4px;vertical-align:middle}
+.qlp-table tr{break-inside:avoid;page-break-inside:avoid}
+.qlp-table tfoot td{font-weight:700;border-top:2px solid #000;border-bottom:0;font-size:11px}
+.qlp-bc{width:1.75in}
+.qlp-bc svg{display:block;height:.42in;width:1.65in}
+.qlp-bc div{font-family:Consolas,"Courier New",monospace;font-size:11px;font-weight:700;letter-spacing:.05em}
+.qlp-bay{font-size:15px;font-weight:800;white-space:nowrap}
+.qlp-bay div{font-size:8.5px;font-weight:400}
+.qlp-bay.sm{font-size:11px}
+.qlp-desc{font-size:9px;color:#333}
+.qlp-sheet.land .qlp-table{font-size:9px}
+.qlp-pallet{display:flex;justify-content:space-between;align-items:center;margin:10px 0 12px}
+.qlp-pallet svg{display:block;height:.9in;width:3.6in}
+.qlp-pid{font-family:Consolas,"Courier New",monospace;font-size:22px;font-weight:800;letter-spacing:.08em}
+.qlp-pbay{font-size:44px;font-weight:900;text-align:right}
+.qlp-pbay small{display:block;font-size:10px;letter-spacing:.12em}
+.qlp-kv{border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.qlp-kv th{text-align:left;padding:3px 14px 3px 0;color:#444;font-weight:700}
+.qlp-kv td{padding:3px 0;font-weight:700}
+.qlp-sheet h3{font-size:13px;margin:10px 0 4px}
+.qlp-sheet .ql-table-wrap{border:0;overflow:visible}
+.qlp-sheet .ql-type{background:none!important;color:#000!important;padding:0}
+@media print{
+  #quickLookup .ql-print-area{display:block!important}
+  #quickLookup .ql-print-area .label-page{display:block}
+}

@@ -8,37 +8,84 @@
   "background_color": "#ffffff",
   "theme_color": "#161616",
   "icons": [
-    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ],
   "shortcuts": [
+    {
+      "name": "Quick Lookup",
+      "short_name": "Quick Lookup",
+      "description": "Type, scan or speak to find a pallet, item, customer ID or bay",
+      "url": "./index.html?view=quickLookup",
+      "icons": [
+        {
+          "src": "./icons/shortcut-lookup.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
     {
       "name": "Master Lookup",
       "short_name": "Lookup",
       "description": "Search inventory by LWH ID, item, customer, or bay",
       "url": "./index.html?view=customerLookup",
-      "icons": [{ "src": "./icons/shortcut-lookup.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "./icons/shortcut-lookup.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Pick List",
       "short_name": "Pick List",
       "description": "Filter and print a pick list or item summary",
       "url": "./index.html?view=picklist",
-      "icons": [{ "src": "./icons/shortcut-picklist.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "./icons/shortcut-picklist.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Warehouse Tools",
       "short_name": "Tools",
       "description": "Calculators, QR/barcode generator, and more",
       "url": "./index.html?view=utilities",
-      "icons": [{ "src": "./icons/shortcut-tools.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "./icons/shortcut-tools.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Bill of Lading",
       "short_name": "BOL",
       "description": "Fill out and print a Bill of Lading",
       "url": "./index.html?view=bol",
-      "icons": [{ "src": "./icons/shortcut-bol.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "./icons/shortcut-bol.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "share_target": {

@@ -12,6 +12,8 @@
     { id: 'tools',  label: 'Scan & Utilities' }
   ];
   const TOOLS = [
+    { view: "quickLookup", cat: "inv", name: "Quick Lookup", desc: "One box: type, scan or speak an LWH ID, item, customer ID, bay or lot. See pallets, summary and history, print with barcodes, or send it to Excel.", kw: "quick lookup search scan speak voice find pallet item bay customer id lot history excel export print barcode",
+      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 6v12M7 6v12M10 6v8M13 6v8\"/><circle cx=\"16.5\" cy=\"15.5\" r=\"3.5\"/><path d=\"M19 18l2.5 2.5\"/></svg>" },
     { view: "customerLookup", cat: "inv", name: "Master Lookup", desc: "Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.", kw: "search find inventory lwh id invrec receipt item lot vendor bay customer",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"M20 20l-4.8-4.8\"/></svg>" },
     { view: "bayContents", cat: "inv", name: "Bay Contents", desc: "Same filters as Pick List \u2014 filter by bay, customer, item, lot, or warehouse. Plain data table with CSV export, or print a scannable barcode sheet of what's in a bay.", kw: "bay rack location what is in csv barcode sheet",

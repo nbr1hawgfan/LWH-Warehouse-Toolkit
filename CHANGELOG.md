@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.72.0
+- **New: Quick Lookup** — the slimmed-down Toolkit screen for managers and the floor. One big search box, nothing else in the way.
+  - **Type, scan or speak.** Scanner guns work straight into the box (Enter searches and highlights the box for the next scan). **Scan** uses the camera. **Speak** uses the browser's voice input; on phones where that isn't available, the keyboard's microphone works the same. Saying "bay X L F zero one nine" or "item 869731" picks the field for you and drops the spaces.
+  - **Search by:** Anything · LWH ID · Item # · Customer ID · Bay · Customer · Lot # · INV Receipt, plus a warehouse filter. "Anything" checks for an exact LWH ID / Customer ID / INV Receipt / Item / Bay / Lot match first, so a scanned tag goes straight to that pallet.
+  - **Results:** pallets, total qty, bays and items at the top; cards with the bay in big red letters. Tap a pallet for its detail page with an on-screen barcode and its transaction history.
+  - **Three views:** Pallets · Summary (item / lot / bay with pallet and qty totals — no pivot table needed) · History (inbound/outbound, last ~90 days). Searches that find nothing on hand jump to History automatically, so shipped pallets still turn up.
+  - **Print with Barcodes:** letter sheet with a Code 128 barcode for every LWH ID, bay, item, lot, qty and customer, with totals. Summary and History print as tables. Pallet detail prints a one-page pallet sheet. 4x6 pallet labels use the same labels as Master Lookup.
+  - **Excel:** a real .xlsx (no library) with four sheets — Pallets, Summary, History, Search Info. Bold header, frozen top row, filter arrows, quantities stored as numbers, long customer IDs kept as text. **CSV** downloads whichever view is showing.
+  - **Bookmark link:** `index.html?view=quickLookup` opens straight to Quick Lookup with the side menu tucked away (Home still opens the full Toolkit). "Copy bookmark link" on the screen, a Home tile, a menu entry, and a long-press app shortcut.
+  - Same data as Master Lookup and Transaction History — no new database tables, functions or edge functions.
+- Offline cache now also includes Bay Contents, Location Overview, Customer View and Ship Weights scripts (they were missing from the list).
+
 ## v1.71.0
 - **Hub styling carried through the whole app** so every screen matches the new Home: square corners, Oswald headings, black header rows on data tables (were pink), black top edge on panels and KPI cards, Hub-style section titles. "Warehouse at a Glance" and the inventory tables on Home now match the tools above them.
 - **Screen only** — printed labels, signs, BOLs, pick lists and badges are unchanged. No tool behavior changed.
