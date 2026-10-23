@@ -67,6 +67,7 @@
   <script defer src="./js/pasreader-core.js"></script>
   <script defer src="./js/pasreader.js"></script>
   <script defer src="./js/loadscan.js"></script>
+  <script defer src="./js/bayscan.js"></script>
   <script defer src="./js/outbound.js"></script>
   <script defer src="./js/paperforms.js"></script>
   <script defer src="./js/osinbound.js"></script>
@@ -79,7 +80,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.72.1</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.73.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -112,6 +113,7 @@
       <button class="nav-btn" data-view="receiving"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>Receiving Print</button>
       <button class="nav-btn" data-view="pasReader"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M4 13h16"/><path d="M9 17h2M13 17h2M9 9h3"/></svg>PAS Sheet Reader</button>
       <button class="nav-btn" data-view="loadScan"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5v10M7 5v10M10 5v10M13 5v10M16 5v10"/><path d="M19 5v4"/><path d="M4 19h8"/><path d="M17 15l2 2 3-4"/></svg>Load Tag Scan</button>
+      <button class="nav-btn" data-view="bayScan"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/><path d="M15.5 15.5l1.5 1.5 3-3.5"/></svg>Bay Scan</button>
       <button class="nav-btn" data-view="outbound"><svg class="icon" viewBox="0 0 24 24"><path d="M2 16V7h11v9"/><path d="M13 10h4l4 3.5V16h-2"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/><path d="M5 10.5h5M8 8l2 2.5L8 13"/></svg>Outbound Loads / BOL</button>
       <button class="nav-btn" data-view="paperForms"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 12h7M9 15.5h7M9 19h4"/><path d="M3 6v15a1 1 0 0 0 1 1h1"/></svg>Paper Forms</button>
       <button class="nav-btn" data-view="osInbound"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16V7H11v9"/><path d="M11 10H7l-4 3.5V16h2"/><circle cx="17" cy="18" r="1.6"/><circle cx="6.5" cy="18" r="1.6"/><path d="M19 10.5h-5M16 8l-2 2.5 2 2.5"/></svg>One Source Inbound</button>
@@ -585,6 +587,104 @@
         </div>
       </div>
       <div id="lsPrintArea" class="print-area"></div>
+    </section>
+
+    <section id="bayScan" class="view">
+      <div class="no-print">
+        <div class="card mh-entry bs-top">
+          <div class="mh-entry-head">
+            <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/><path d="M15.5 15.5l1.5 1.5 3-3.5"/></svg></div>
+            <div><h2>Bay Scan</h2><div class="mh-entry-sub">Scan customer pallet tags into the customer's bay. Bays are added here; when the customer gives a space a new bay name, rename it and the history stays.</div></div>
+          </div>
+          <div class="bs-top-row">
+            <label class="ps-field bs-wh"><span>Warehouse</span><select id="bsWh"></select></label>
+            <div class="ql-tabs bs-tabs" role="tablist">
+              <button type="button" data-bs-tabbtn="scan" class="on">Scan</button>
+              <button type="button" data-bs-tabbtn="bays">Bays</button>
+              <button type="button" data-bs-tabbtn="find">Find tag</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCAN -->
+        <div id="bsTab_scan" class="ls-layout bs-layout">
+          <div class="ls-left">
+            <div class="card bs-cur-card"><div id="bsCurrent"></div>
+              <div id="bsPicker" class="bs-picker" hidden>
+                <div class="ls-input-row"><input id="bsBayFilter" placeholder="Find or add a bay (e.g. VB220)" autocomplete="off" autocapitalize="characters" spellcheck="false" /><button type="button" id="bsQuickAdd" class="ghost" hidden></button></div>
+                <div id="bsBayChips" class="bs-chips"></div>
+              </div>
+            </div>
+            <div class="card ls-scan-card">
+              <button type="button" id="bsReady" class="ls-ready">Tap here to scan</button>
+              <div class="ls-input-row">
+                <input id="bsInput" class="ls-input" placeholder="Scan tag or bay label" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" />
+                <button type="button" id="bsAdd">Add</button>
+              </div>
+              <div id="bsFlash" class="ls-flash" role="status" aria-live="polite"></div>
+              <div class="ls-scan-tools">
+                <button type="button" id="bsCamBtn" class="ghost"><svg class="icon" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Use camera</button>
+                <button type="button" id="bsUndo" class="ghost">Undo last</button>
+              </div>
+              <label class="mh-remember" style="margin:10px 0 0"><input type="checkbox" id="bsHideKb" /> Scanner attached to this phone — hide the on-screen keyboard</label>
+              <div id="bsCamWrap" class="ls-cam" hidden><div id="bsLast" class="ls-last" hidden aria-live="polite"></div><div id="bsCam"></div></div>
+              <div id="bsNameNote" class="bs-name" hidden>
+                <div class="hint">Add your name so the records show who put each pallet in the bay.</div>
+                <div class="ls-input-row"><input id="bsName" placeholder="Your name" autocomplete="name" /><button type="button" id="bsSaveName" class="ghost">Save</button></div>
+              </div>
+            </div>
+          </div>
+          <div class="ls-right">
+            <div class="card ls-list-card">
+              <div class="ls-list-head"><b>Scans on this device</b><span class="hint">newest first</span></div>
+              <div id="bsSync" class="ls-sync" role="status" style="margin:10px 16px 0"></div>
+              <div id="bsRecent" class="ls-list bs-recent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAYS -->
+        <div id="bsTab_bays" hidden>
+          <div class="card">
+            <h3 class="bs-h3">Add bays — <span id="bsWhName">—</span></h3>
+            <div class="bs-add">
+              <label class="ps-field"><span>Bay name(s) — one per line for several</span><textarea id="bsAddName" rows="1" autocapitalize="characters" spellcheck="false" placeholder="VB220"></textarea></label>
+              <label class="ps-field"><span>Capacity (pallets)</span><input id="bsAddCap" inputmode="numeric" placeholder="240" /></label>
+              <label class="ps-field"><span>Physical spot (optional)</span><input id="bsAddSpot" placeholder="Our name for the space" /></label>
+              <button type="button" id="bsAddGo">Add bay</button>
+            </div>
+            <div class="hint" id="bsAddStatus" style="margin-top:6px"></div>
+            <div class="hint" style="margin-top:4px">Capacity is 240 pallets unless you change it. Physical spot is optional — our own name for the space, which carries over when the customer renames the bay.</div>
+          </div>
+          <div class="card">
+            <div class="bs-bays-bar">
+              <input id="bsBaysQ" placeholder="Filter bays" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <label class="mh-remember" style="margin:0"><input type="checkbox" id="bsShowRetired" /> Show retired names</label>
+              <button type="button" class="ghost" id="bsBaysCsv">CSV</button>
+              <button type="button" class="ghost" id="bsBaysRefresh">Refresh</button>
+            </div>
+            <div class="hint" id="bsBaysSum" style="margin:6px 0"></div>
+            <div id="bsBayList" class="ql-table-wrap bs-baylist"></div>
+          </div>
+          <div class="card bs-detail" id="bsBayDetail" hidden></div>
+        </div>
+
+        <!-- FIND -->
+        <div id="bsTab_find" hidden>
+          <div class="card">
+            <h3 class="bs-h3">Find a tag</h3>
+            <div class="ls-input-row">
+              <input id="bsFindQ" class="ls-input" placeholder="Scan or type a tag" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" />
+              <button type="button" id="bsFindGo">Find</button>
+            </div>
+            <div class="ls-scan-tools" style="grid-template-columns:1fr"><button type="button" id="bsFindCamBtn" class="ghost"><svg class="icon" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Scan with camera</button></div>
+            <div id="bsFindCamWrap" class="ls-cam" hidden><div id="bsFindCam"></div></div>
+            <div class="hint" style="margin-top:6px">Searches every warehouse. Shows the current bay, when it was put there and by whom, and every move.</div>
+          </div>
+          <div id="bsFindResults"></div>
+        </div>
+      </div>
+      <div id="bsPrintArea" class="print-area"></div>
     </section>
 
     <section id="outbound" class="view">
@@ -1681,7 +1781,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>Appearance</h2><label class="mh-remember" style="font-size:15px;color:var(--ink);font-weight:600;margin:6px 0 8px"><input id="setGlass" type="checkbox" /> Rounded look (soft panels, rounded corners)</label><p class="hint">Same company colors and white background either way. Turn off for the classic squared-off look — handy on older computers. This only changes your own device.</p></div><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><p class="hint">Colors are the company theme — red, maroon and black on white — the same on every device.</p><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div id="ttsVoiceRow" style="margin-top:8px"><label>Read-aloud voice<select id="setTtsVoice"><option value="">Loading voices…</option></select></label><div class="actions" style="margin-top:6px"><button type="button" id="testTtsVoice" class="ghost">Test Voice</button></div><p class="hint" style="margin-top:6px">Voices come from your own device/browser, so the options (and how natural they sound) vary computer to computer. Chrome and Edge usually offer the most natural-sounding choices — try a few and pick whichever sounds best.</p></div><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one source now. Default is live inventory, refreshed from birdsEye every ~15 minutes. Auto-loads fresh every time the app opens.</p><label>CSV export URL (Supabase, Google Sheet, or any plain CSV)<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default (Live Inventory)</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.72.1</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Quick Lookup, Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Outbound Loads / BOL, Paper Forms, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Doc Scanner, Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.73.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Quick Lookup, Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Bay Scan, Outbound Loads / BOL, Paper Forms, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Doc Scanner, Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

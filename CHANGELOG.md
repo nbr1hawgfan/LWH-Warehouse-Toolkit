@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.73.0
+- **New: Bay Scan** — scan customer pallet tags into the customer's bay (Menu → Bay Scan, or the Home tile).
+  - **Pick the warehouse** (Whse10 – Whse85), **pick the bay** (or just scan the bay's label — it switches automatically), then scan tags with a scanner gun or the camera. Big bay name and a pallets / capacity bar stay on screen; it warns when the bay is full and when a tag moves from another bay.
+  - **Bays are added right in the Toolkit** — one at a time, several at once (one per line), or straight from the scan screen by typing a name that doesn't exist yet. **Capacity defaults to 240 pallets**; change it per bay any time. Optional **physical spot** = our own name for the space.
+  - **New bay name:** when the customer gives the same space a new name (VB220 → VB2102), open the bay → *New bay name*. The old name is retired with its history, the new one keeps the capacity and spot, and any pallets still there are either cleared (consumed / sent back) or moved to the new name — your choice.
+  - **Clear bay** (type the bay name to confirm) when everything from the PO is gone. **Retire** a name you won't use again (restorable). ✕ on a tag takes just that pallet out.
+  - **Find tag:** scan or type any tag — current bay, warehouse, **when it was put there** and by whom, plus every move. Matches live inventory, so item / lot / qty / LWH ID show when the tag is in the WMS.
+  - **Bay contents:** list of what's in a bay now, CSV, and a print sheet with a barcode for the bay and every tag. Warehouse bay list exports to CSV.
+  - **Works through dead spots:** scans save on the phone first and go up to Supabase in the background — retried automatically, never doubled. A late-syncing phone can't drag a pallet back to an old bay.
+  - Records live in Supabase (`bay_scan_bays`, `bay_scan_moves`, `bay_scan_current`) through `toolkit_bay_*` functions only — see `sql/bay_scan.sql`. Already applied to LWH Companion.
+
 ## v1.72.1
 - **Quick Lookup: every column in the exports.**
   - **Pallets** (Excel and CSV) now include **Unique3, Unique5, Unique6 and Unique7** alongside Unique2 and Unique8.

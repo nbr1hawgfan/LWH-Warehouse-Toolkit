@@ -1,4 +1,4 @@
-# LWH Warehouse Toolkit v1.72.1
+# LWH Warehouse Toolkit v1.73.0
 
 Internal Logistics Warehouse PWA for lookup, labels, receiving print, signs, contact QR cards, and visitor badges.
 
