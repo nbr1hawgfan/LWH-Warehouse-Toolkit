@@ -82,7 +82,7 @@
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z\"/><path d=\"M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3\"/><path d=\"M3 13h18\"/></svg>" },
     { view: "scancode", cat: "tools", name: "Scan Code", desc: "Quick camera scan of any barcode or QR \u2014 copy, add to notes, email, or open a link straight from the result.", kw: "scan barcode qr camera",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3\"/><path d=\"M4 12h16\"/></svg>" },
-    { view: "docscan", cat: "tools", name: "Doc Scanner", desc: "Auto-detects and straightens paperwork as you scan, extract text, and share or download as a PDF \u2014 multi-page.", kw: "document scanner pdf paperwork camera ocr",
+    { view: "docscan", cat: "tools", name: "Doc Scanner", desc: "Scan or upload paperwork and PDFs, clean up pages, pull BOL / PO / PRO numbers and text, and save one PDF \u2014 searchable if you like.", kw: "document scanner pdf paperwork camera ocr upload merge searchable text extract bol po pro",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><path d=\"M8 8h8M8 12h8M8 16h5\"/></svg>" },
     { view: "radar", cat: "tools", name: "Weather Radar", desc: "Animated precipitation radar for the yard and surrounding area.", kw: "weather radar rain storm",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 12 12 4\"/><path d=\"M12 12 17 15\"/></svg>" },

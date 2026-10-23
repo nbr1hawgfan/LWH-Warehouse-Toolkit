@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.74.0
+- **Doc Scanner rebuilt** (now its own file, `js/docscan.js`).
+  - **Faster Toolkit for everyone:** the 9 MB edge-finder (OpenCV) no longer downloads every time the app opens — only when Doc Scanner is opened, and it's kept on the device after the first time (it used to be re-downloaded on every visit).
+  - **Upload many at once:** photos **and PDFs** together, drag-and-drop onto the screen, or paste a screenshot with Ctrl+V. PDF pages come in as pages you can reorder, mix with photos and re-save as one PDF (merge / split / reorder).
+  - **Real clean-up looks:** Document (removes shadows and uneven light, paper goes white), B&W, Grayscale, Color boost, Original. Live "Result" preview while you drag corners. Last look used is remembered.
+  - **Fix any page later:** tap a page to re-crop / rotate / change look. Rotate, reorder (arrows, or drag on a computer), remove, tick pages to save/share/print just some.
+  - **Camera:** flashlight button (phones that support it), Auto capture on/off, **Quick batch** (pages added without stopping — no repeat captures of the same sheet), page counter, Done.
+  - **Text:** Read Text for all (or selected) pages at once, English / Spanish / both, Copy, Download .txt, Add to Notepad. Warns when a page read poorly.
+  - **Key Fields:** pulls BOL #, PO #, PRO #, Seal #, Trailer #, Load/Order #, Reference #, UPS tracking, dates, weights, pallet/piece counts, phones and emails, with the page number — Copy one, Copy all (pastes into Excel), or CSV.
+  - **Save & Share:** Searchable PDF option (Ctrl+F / copy works in Adobe), page size (Letter, Legal, A4, same shape as scan — landscape pages turn automatically), file size (Small for email / Standard / High) with the final size shown, **Share PDF** to the phone's share sheet, Print, Download/Share images.
+  - **Nothing lost on refresh:** pages are saved on the device until Start Over. Pages are held as compressed images instead of live canvases, so long stacks don't crash iPhones.
+- Doc Scanner scripts are now in the offline cache (`doc-auto-detect.js` was missing).
+- Pinned outside libraries (OpenCV, pdf.js, jsPDF, html2canvas, Leaflet) are cached by the service worker in a separate cache that survives updates.
+
 ## v1.73.1
 - **Bay Scan print sheet is now two columns** — about 32 tags a page instead of ~13 (a 120-pallet bay prints on 4 pages). The bay's own barcode stays at the top; each tag keeps its Code 128 barcode (stretched to fill the column so it scans easily), the tag number, and item / lot / qty / date on one line underneath.
 

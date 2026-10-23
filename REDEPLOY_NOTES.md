@@ -1,27 +1,28 @@
-# Bay Scan print sheet — v1.73.1
-Already pushed to main. Files changed: `js/bayscan.js`, `css/app.css`, `index.html` (version), `service-worker.js` (cache v1-73-1), docs. No SQL.
-
-# Bay Scan — v1.73.0
+# Doc Scanner rebuild — v1.74.0
 
 ## 1. SQL
-Nothing to run — `sql/bay_scan.sql` is already applied to LWH Companion
-(tables `bay_scan_bays`, `bay_scan_moves`, `bay_scan_current`, functions `toolkit_bay_*`).
-It's safe to re-run in the SQL Editor if it's ever needed again.
+Nothing. No Supabase changes.
 
 ## 2. Upload these files (everything else is unchanged)
-- `index.html` — replace (menu item, Bay Scan screen, version 1.73.0)
-- `css/app.css` — replace (Bay Scan styles appended at the end)
-- `js/hometiles.js` — replace (Bay Scan tile, next to Load Tag Scan)
-- `service-worker.js` — replace (cache bumped to v1-73-0 so phones pick up the update)
-- `js/bayscan.js` — **new file**
-- `sql/bay_scan.sql` — **new file** (record)
-- `CHANGELOG.md`, `README.md`, `REDEPLOY_NOTES.md` — docs
+- `index.html` — replace (new Doc Scanner screen, OpenCV no longer loaded at startup, version 1.74.0)
+- `js/docscan.js` — **new file** (the whole Doc Scanner)
+- `js/utilities.js` — replace (old scanner code removed)
+- `js/ui.js` — replace (starts/stops the scanner camera when you change screens)
+- `js/hometiles.js` — replace (tile description)
+- `css/app.css` — replace (old scanner styles removed, new ones at the end)
+- `service-worker.js` — replace (cache v1-74-0, scanner files cached, library cache)
+- `CHANGELOG.md`, `REDEPLOY_NOTES.md` — docs
 
-Hard refresh after upload. On phones, close and reopen the app once while it has signal.
+`js/doc-auto-detect.js` is unchanged. Hard refresh after upload; on phones close and reopen the app once with signal.
 
-## 3. First use
-- Settings → make sure each person's name is set (it's stamped on every scan). Bay Scan asks for it too if it's missing.
-- Bay Scan → pick the warehouse → **Bays** tab → add the customer's bay names (paste several, one per line). Capacity is 240 unless you type another number.
+## 3. Check after deploy
+- Upload a phone photo of a BOL → corners found → Add Page.
+- Upload a PDF → its pages appear.
+- Read Text → Key Fields shows the BOL / PO numbers.
+- Tick Searchable PDF → Download PDF → open it and Ctrl+F a number.
 
-## NOT touched
-Load Tag Scan and every other module are unchanged.
+## Notes / risks
+- First use of the edge finder, the PDF reader and the text reader each needs signal (then cached). Straightening and the looks work without the edge finder — corners can always be dragged by hand.
+- Key Fields is pattern matching on read text — it shows what *looks like* a BOL/PO/etc. Check before keying it into the WMS.
+- Handwriting still won't read well (same text engine as before).
+- Pages saved in an old session from v1.73 aren't carried over (they were never saved before).
