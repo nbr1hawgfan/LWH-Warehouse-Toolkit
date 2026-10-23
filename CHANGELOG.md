@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.73.1
+- **Bay Scan print sheet is now two columns** — about 32 tags a page instead of ~13 (a 120-pallet bay prints on 4 pages). The bay's own barcode stays at the top; each tag keeps its Code 128 barcode (stretched to fill the column so it scans easily), the tag number, and item / lot / qty / date on one line underneath.
+
 ## v1.73.0
 - **New: Bay Scan** — scan customer pallet tags into the customer's bay (Menu → Bay Scan, or the Home tile).
   - **Pick the warehouse** (Whse10 – Whse85), **pick the bay** (or just scan the bay's label — it switches automatically), then scan tags with a scanner gun or the camera. Big bay name and a pallets / capacity bar stay on screen; it warns when the bay is full and when a tag moves from another bay.

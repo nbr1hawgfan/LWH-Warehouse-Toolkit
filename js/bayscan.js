@@ -464,12 +464,19 @@
     const rows=T.map(t=>[b.warehouse,b.bay,b.spot||'',t.tag,t.assigned_at?new Date(t.assigned_at).toLocaleString('en-US'):'',t.assigned_by||'',t.item||'',t.description||'',t.lot||'',t.qty??'',t.lwh_id??''].map(csvEsc).join(','));
     download(new Blob([[head.join(','),...rows].join('\r\n')],{type:'text/csv;charset=utf-8;'}),fileName(b,'.csv'));
   }
+  // Letter sheet: bay barcode at the top, then tags two-across (about 32 a page)
   function contentsPrint(b,T){
     const out=el('bsPrintArea');
-    out.innerHTML=`<div class="ls-p-page"><div class="ls-p-head"><div><b>Bay ${safe(b.bay)}</b> — ${safe(whLabel(b.warehouse))}${b.spot?' · '+safe(b.spot):''}</div><div>${T.length} of ${b.capacity} pallets · ${fmtWhen(new Date().toISOString())}</div></div>
+    const info=t=>[t.item?'Item '+safe(t.item):'',t.lot?'Lot '+safe(t.lot):'',t.qty!=null?'Qty '+Number(t.qty).toLocaleString():'',fmtDate(t.assigned_at)].filter(Boolean).join(' · ');
+    out.innerHTML=`<div class="ls-p-page bs-p-page"><div class="ls-p-head"><div><b>Bay ${safe(b.bay)}</b> — ${safe(whLabel(b.warehouse))}${b.spot?' · '+safe(b.spot):''}</div><div>${T.length} of ${b.capacity} pallets · ${fmtWhen(new Date().toISOString())}</div></div>
       <div class="bs-p-baybc"><svg id="bsPBay"></svg></div>
-      ${T.map((t,i)=>`<div class="bs-p-row"><div class="ls-p-n">${i+1}</div><div class="ls-p-bc"><svg id="bsPBc${i}"></svg><div class="ls-p-txt">${safe(t.tag)}</div></div><div class="bs-p-info">${t.item?'Item '+safe(t.item):''}${t.lot?'<br>Lot '+safe(t.lot):''}${t.qty!=null?'<br>Qty '+Number(t.qty).toLocaleString():''}<br><span>${fmtDate(t.assigned_at)}</span></div></div>`).join('')}</div>`;
-    try{ if(window.JsBarcode){ JsBarcode('#bsPBay',b.bay,{format:'CODE128',height:40,width:2,margin:0,displayValue:true,fontSize:14}); T.forEach((t,i)=>{ try{ JsBarcode('#bsPBc'+i,t.tag,{format:'CODE128',height:46,width:1.5,margin:0,marginLeft:16,marginRight:16,displayValue:false}); }catch(e){} }); } }catch(e){}
+      <div class="bs-p-grid">${T.map((t,i)=>`<div class="bs-p-cell"><div class="bs-p-n">${i+1}</div><div class="bs-p-bc"><svg id="bsPBc${i}"></svg><div class="bs-p-txt">${safe(t.tag)}</div><div class="bs-p-info">${info(t)}</div></div></div>`).join('')}</div></div>`;
+    // give each barcode a viewBox so it shrinks to fit its column instead of being cut off
+    const fit=id=>{ const s=document.getElementById(id); if(!s) return; const w=parseFloat(s.getAttribute('width')),h=parseFloat(s.getAttribute('height')); if(w&&h){ s.setAttribute('viewBox',`0 0 ${w} ${h}`); s.setAttribute('preserveAspectRatio','none'); s.removeAttribute('width'); s.removeAttribute('height'); s.style.aspectRatio=`${w} / ${h}`; } };
+    try{ if(window.JsBarcode){
+      JsBarcode('#bsPBay',b.bay,{format:'CODE128',height:60,width:2,margin:0,marginLeft:20,marginRight:20,displayValue:true,fontSize:18}); fit('bsPBay');
+      T.forEach((t,i)=>{ try{ JsBarcode('#bsPBc'+i,t.tag,{format:'CODE128',height:40,width:1.4,margin:0,marginLeft:12,marginRight:12,displayValue:false}); fit('bsPBc'+i); }catch(e){} });
+    } }catch(e){}
     if(window.LWHLabels&&LWHLabels.setPrintPageSize) LWHLabels.setPrintPageSize(8.5,11);
     setTimeout(()=>print(),200);
   }

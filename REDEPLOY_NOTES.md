@@ -1,3 +1,6 @@
+# Bay Scan print sheet — v1.73.1
+Already pushed to main. Files changed: `js/bayscan.js`, `css/app.css`, `index.html` (version), `service-worker.js` (cache v1-73-1), docs. No SQL.
+
 # Bay Scan — v1.73.0
 
 ## 1. SQL
