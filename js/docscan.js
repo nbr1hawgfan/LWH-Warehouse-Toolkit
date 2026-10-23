@@ -1,4 +1,4 @@
-// LWH Warehouse Toolkit — Doc Scanner (v1.74.0)
+// LWH Warehouse Toolkit / Driver Toolkit — Doc Scanner (shared file)
 //
 // Its own module now (was inside utilities.js). Scan with the camera, or bring
 // in photos and PDFs (several at once, drag-and-drop, or paste). Each page can
@@ -29,6 +29,12 @@
     set:(k,v)=>{ if(window.LWHStorage) LWHStorage.set(k,v); }
   };
 
+  // One file serves both Toolkits. Both apps live on the same web address, so
+  // each keeps its own saved pages/settings: <section id="docscan"
+  // data-db="…" data-prefix="…" data-mode="driver"> overrides the defaults.
+  const SEC=document.getElementById('docscan')||{dataset:{}};
+  const CFG={db:SEC.dataset.db||'lwh-docscan',prefix:SEC.dataset.prefix||'docscan',driver:SEC.dataset.mode==='driver'};
+  const K=name=>CFG.prefix+name;
   const OPENCV_URL='https://docs.opencv.org/4.8.0/opencv.js';
   const PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
   const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -368,7 +374,7 @@
   }
 
   // ---------------------------------------------------------- persistence
-  const DB_NAME='lwh-docscan', DB_STORE='pages', ORDER_KEY='docscanOrder';
+  const DB_NAME=CFG.db, DB_STORE='pages', ORDER_KEY=K('Order');
   let dbp=null;
   function db(){
     if(!dbp) dbp=new Promise((resolve,reject)=>{
@@ -423,7 +429,7 @@
   const nextFrame=()=>new Promise(r=>setTimeout(r,16));
 
   // ------------------------------------------------------------ page ops
-  function defaultFilter(){ const f=store.get('docscanFilter','document'); return FILTER_NAME[f]?f:'document'; }
+  function defaultFilter(){ const f=store.get(K('Filter'),'document'); return FILTER_NAME[f]?f:'document'; }
   async function finishPage(page,outCanvas){
     page.outBlob=await canvasToBlob(outCanvas,0.9);
     page.outW=outCanvas.width; page.outH=outCanvas.height;
@@ -766,7 +772,7 @@
     try{
       const corners=isFullFrame(ed.corners)?null:ed.corners.map(p=>({...p}));
       const out=renderOutput(ed.oriented,corners,ed.filter,SRC_MAX);
-      if(ed.origin!=='pdf') store.set('docscanFilter',ed.filter);
+      if(ed.origin!=='pdf') store.set(K('Filter'),ed.filter);
       if(ed.page){
         const p=ed.page;
         const changed=p.rotation!==ed.rotation||JSON.stringify(p.corners)!==JSON.stringify(corners)||p.filter!==ed.filter;
@@ -796,7 +802,7 @@
 
   // ---------------------------------------------------------------- camera
   const cam={stream:null,track:null,timer:null,busy:false,history:[],armed:false,last:null,cooldownUntil:0,lockQuad:null,torch:false,
-    auto:store.get('docscanAuto',true)!==false, batch:store.get('docscanBatch',false)===true};
+    auto:store.get(K('Auto'),true)!==false, batch:store.get(K('Batch'),false)===true};
   async function openCamera(){
     if(guardBusy()) return;
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ alert('This browser cannot open the camera. Use Upload instead.'); return; }
@@ -1224,8 +1230,8 @@
     $('dsCamDone').onclick=()=>{ stopCamera(); renderPages(); scrollToPages(); };
     $('dsSnapBtn').onclick=()=>capture(false);
     $('dsTorchBtn').onclick=toggleTorch;
-    $('dsAutoBtn').onclick=()=>{ cam.auto=!cam.auto; store.set('docscanAuto',cam.auto); updateCamButtons(); disarm(); };
-    $('dsBatchBtn').onclick=()=>{ cam.batch=!cam.batch; store.set('docscanBatch',cam.batch); updateCamButtons(); toast(cam.batch?'Quick batch on — pages are added without stopping to adjust (fix any later)':'Quick batch off — each page opens for a quick check'); };
+    $('dsAutoBtn').onclick=()=>{ cam.auto=!cam.auto; store.set(K('Auto'),cam.auto); updateCamButtons(); disarm(); };
+    $('dsBatchBtn').onclick=()=>{ cam.batch=!cam.batch; store.set(K('Batch'),cam.batch); updateCamButtons(); toast(cam.batch?'Quick batch on — pages are added without stopping to adjust (fix any later)':'Quick batch off — each page opens for a quick check'); };
     $('dsLastThumb').onclick=()=>{ stopCamera(); renderPages(); scrollToPages(); };
 
     // editor
@@ -1262,14 +1268,15 @@
     const canShareFiles=(()=>{ try{ return !!(navigator.canShare&&navigator.canShare({files:[new File([new Blob(['x'])],'t.pdf',{type:'application/pdf'})]})); }catch(e){ return false; } })();
     $('dsPdfShare').hidden=!canShareFiles; $('dsImgShare').hidden=!canShareFiles;
     $('dsPdfShare').onclick=sharePdf; $('dsImgShare').onclick=shareImages;
-    $('dsSearchable').checked=store.get('docscanSearchable',false)===true;
-    $('dsSearchable').onchange=e=>store.set('docscanSearchable',e.target.checked);
-    $('dsSize').value=store.get('docscanSize','letter'); $('dsSize').onchange=e=>store.set('docscanSize',e.target.value);
-    $('dsQuality').value=store.get('docscanQuality','standard'); $('dsQuality').onchange=e=>store.set('docscanQuality',e.target.value);
+    if(CFG.driver&&canShareFiles){ $('dsPdfShare').classList.remove('ghost'); $('dsPdfDownload').classList.add('ghost'); $('dsPdfShare').parentNode.prepend($('dsPdfShare')); }
+    $('dsSearchable').checked=store.get(K('Searchable'),false)===true;
+    $('dsSearchable').onchange=e=>store.set(K('Searchable'),e.target.checked);
+    $('dsSize').value=store.get(K('Size'),'letter'); $('dsSize').onchange=e=>store.set(K('Size'),e.target.value);
+    $('dsQuality').value=store.get(K('Quality'),'standard'); $('dsQuality').onchange=e=>store.set(K('Quality'),e.target.value);
     ['dsSize','dsQuality','dsSearchable','dsName'].forEach(id=>$(id).addEventListener('input',()=>{ $('dsPdfShare').textContent='Share PDF'; $('dsExportNote').textContent=''; }));
 
     // text
-    $('dsLang').value=store.get('docscanLang','eng'); $('dsLang').onchange=e=>store.set('docscanLang',e.target.value);
+    $('dsLang').value=store.get(K('Lang'),'eng'); $('dsLang').onchange=e=>store.set(K('Lang'),e.target.value);
     $('dsOcrBtn').onclick=async()=>{ if(!pages.length||guardBusy()) return; textDirty=false; await readText(workingSet()); const t=$('dsTextOut'); if(t&&!t.hidden) t.scrollIntoView({behavior:'smooth',block:'start'}); };
     $('dsText').addEventListener('input',()=>{ textDirty=true; });
     document.querySelectorAll('[data-dstab]').forEach(b=>b.onclick=()=>{

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.74.1
+- Doc Scanner file is now shared with the Driver Toolkit (v1.36.0); each app keeps its own saved pages.
+- **Fixed:** a Warehouse Toolkit update cleared the Driver Toolkit's offline files on phones that have both (same website). Each app now only clears its own.
+- Outside libraries cached once for both apps (`lwh-shared-libs-v1`).
+
 ## v1.74.0
 - **Doc Scanner rebuilt** (now its own file, `js/docscan.js`).
   - **Faster Toolkit for everyone:** the 9 MB edge-finder (OpenCV) no longer downloads every time the app opens — only when Doc Scanner is opened, and it's kept on the device after the first time (it used to be re-downloaded on every visit).
