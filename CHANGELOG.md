@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.75.0
+- **New: Formula Builder** (Menu → Formula Builder, or the Home tile under Scan & Utilities). For anyone who lives in Excel but gets stuck writing formulas.
+  - **Answer plain-English questions, get the formula.** "What are you looking for?", "Which column do you search in?", "Which column has the answer?" — type column letters (B), ranges (B2:B500), cells (A2), text, numbers or dates.
+  - **Five tabs:** Look Up (XLOOKUP) · VLOOKUP · IF / IFS · Add Up / Count (SUMIFS, COUNTIFS, AVERAGEIFS) · Fix an Error.
+  - **Live preview + plain-English readout** so you can check it means what you meant before copying. Blanks still to fill show highlighted; Copy turns on when it's complete.
+  - **Catches the usual mistakes:** VLOOKUP forced to exact match, column letter → column number worked out for you (and warns when it's left of / outside the table), `$` locks so the formula survives being dragged down, text quoted correctly (`"<>"`, `">="&H1`, `"*"&A2&"*"`), dates turned into `DATE()`, sheet names with spaces quoted, warns when ranges cover different rows (#VALUE!) or a lookup will #SPILL!.
+  - **IF / IFS:** up to 8 checks — first-true-wins (IFS, or nested IF for older Excel), ALL (AND) or ANY (OR). Equals, not, more/less than, between, contains, starts/ends with, blank / not blank.
+  - **SUMIFS / COUNTIFS:** "is between" builds a date range in one step.
+  - **VLOOKUP tab also shows the same lookup as XLOOKUP** for Excel 365 users.
+  - **Fix an Error:** #N/A, #NAME?, #VALUE!, #REF!, #SPILL!, #DIV/0!, formula showing as text, SUMIFS giving 0, breaks when dragged down, answer not updating.
+  - **Examples** on every tab using a sample Inventory sheet (LWH ID, Item #, Customer, Qty, Bay, Received) — one tap fills them in.
+  - Recently copied formulas kept on the device. Bookmark link: `index.html?view=formulas`.
+  - Runs entirely in the browser — nothing typed is sent anywhere. Formulas work the same in Google Sheets.
+
 ## v1.74.1
 - Doc Scanner file is now shared with the Driver Toolkit (v1.36.0); each app keeps its own saved pages.
 - **Fixed:** a Warehouse Toolkit update cleared the Driver Toolkit's offline files on phones that have both (same website). Each app now only clears its own.

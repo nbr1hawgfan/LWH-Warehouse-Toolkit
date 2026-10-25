@@ -1740,3 +1740,85 @@ button.ql-back{border-radius:0;min-height:38px;margin-bottom:10px}
 .ds-shutter.armed{background:#22a447;animation:ds-pulse .5s ease-in-out infinite}
 @keyframes ds-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 .ds-cam-done{justify-self:end;background:var(--brand);min-height:46px;padding:8px 18px;font-size:16px}
+
+/* ===== Formula Builder (v1.75.0) ===== */
+#formulas .fb-head h2{margin:0 0 4px;font-family:var(--tk-head);text-transform:uppercase;letter-spacing:.02em}
+#formulas .fb-head .hint{margin:0 0 14px;max-width:760px}
+.fb-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:16px}
+button.fb-tab{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;background:#fff;color:var(--ink);border:1.5px solid var(--line);border-top:4px solid var(--frame-black);border-radius:0;padding:10px 12px;min-height:66px}
+button.fb-tab:hover{background:var(--brand-tint)}
+button.fb-tab.active{border-color:var(--brand);border-top-color:var(--brand);background:var(--brand-tint)}
+.fb-tab-name{font-family:var(--tk-head);font-size:17px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+button.fb-tab.active .fb-tab-name{color:var(--brand)}
+.fb-tab-sub{font-size:12px;font-weight:500;color:var(--muted);line-height:1.3}
+.fb-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,440px);gap:18px;align-items:start}
+#formulas.fb-fixmode .fb-grid{grid-template-columns:minmax(0,1fr)}
+#formulas.fb-fixmode .fb-result{display:none}
+.fb-pane h3{margin:0 0 6px;font-family:var(--tk-head);text-transform:uppercase}
+.fb-pane .hint{margin:4px 0 0}
+.fb-opt{font-weight:500;font-size:12px;color:var(--muted);text-transform:lowercase}
+label.fb-check{display:flex;gap:10px;align-items:flex-start;font-weight:600;font-size:14px;margin:12px 0 0;cursor:pointer}
+label.fb-check input{width:20px;height:20px;flex:0 0 auto;margin:1px 0 0;accent-color:var(--brand)}
+.fb-sub{font-weight:700;font-size:14px;margin:14px 0 6px}
+.fb-row{border:1px solid var(--line);border-left:4px solid var(--frame-black);padding:10px;margin:10px 0 0;background:#fff}
+.fb-row-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px}
+.fb-row-vals{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px;align-items:center}
+.fb-row-vals.between{grid-template-columns:1fr auto 1fr}
+.fb-row-vals [hidden]{display:none}
+.fb-and{font-size:13px;font-weight:700;color:var(--muted)}
+.fb-row input,.fb-row select{margin:0}
+button.fb-del{min-height:44px;min-width:44px;padding:0;border-radius:0}
+label.fb-res-wrap{margin:8px 0 0;font-size:13px}
+label.fb-res-wrap input{margin-top:4px}
+button.fb-mini{min-height:36px;padding:6px 12px;font-size:13px;border-radius:0}
+button.fb-add{margin-top:10px}
+.fb-example{margin:0 0 6px;border:1px dashed var(--line);padding:6px 10px;background:#fafafa}
+.fb-example summary{cursor:pointer;font-weight:700;color:var(--brand);font-size:14px}
+.fb-example p{font-size:13.5px;margin:8px 0}
+.fb-sample-wrap{overflow-x:auto;margin-bottom:8px}
+.fb-sample{border-collapse:collapse;font-size:12.5px;min-width:440px;background:#fff}
+.fb-sample caption{text-align:left;font-size:12.5px;padding:0 0 4px}
+.fb-sample th,.fb-sample td{border:1px solid #cfd2d6;padding:3px 7px;white-space:nowrap}
+.fb-sample thead th,.fb-sample tbody th{background:#eef0f2;color:#555;font-weight:600;text-align:center}
+.fb-result{position:sticky;top:16px;border-top:4px solid var(--brand)}
+.fb-result-label{font-family:var(--tk-head);text-transform:uppercase;font-size:13px;letter-spacing:.05em;color:var(--muted);margin:2px 0 6px}
+.fb-formula{font-family:Consolas,'Courier New',monospace;font-size:16px;line-height:1.5;background:#f6f6f7;border:1.5px solid var(--line);padding:12px;word-break:break-word;min-height:52px}
+.fb-formula.ready{border-color:var(--frame-black);background:#fff}
+.fb-formula .fb-fn{color:var(--brand)}
+.fb-ph{background:#fff3c4;color:#6b5200;padding:0 3px;font-style:italic;font-family:inherit}
+.fb-result .actions{margin:10px 0 16px}
+.fb-result #fbCopy{flex:1 1 auto}
+.fb-result #fbCopy:disabled{background:#9a9aa3;cursor:not-allowed}
+.fb-english{font-size:14.5px;line-height:1.5;margin:0 0 10px}
+.fb-english code{font-size:13px}
+.fb-issue{border-left:4px solid #d08a00;background:#fff8e6;padding:8px 10px;font-size:13.5px;margin:0 0 8px}
+.fb-issue.bad{border-left-color:var(--brand);background:var(--brand-tint)}
+.fb-alt{border:1px solid var(--line);padding:8px 10px;margin:0 0 10px;display:grid;gap:6px}
+.fb-alt code,.fb-recent code{font-size:13px;word-break:break-all}
+.fb-alt .fb-mini{justify-self:start}
+#fbNote{margin:0 0 10px}
+.fb-howto,.fb-recentbox{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.fb-howto summary,.fb-recentbox summary{cursor:pointer;font-weight:700;font-size:14px}
+.fb-howto ol{padding-left:20px;font-size:13.5px;margin:8px 0}
+.fb-recent{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)}
+.fb-recentbox > .fb-mini{margin-top:8px}
+.fb-err{border:1px solid var(--line);border-left:4px solid var(--brand);margin:8px 0;background:#fff}
+.fb-err summary{cursor:pointer;padding:10px 12px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.fb-err-code{font-family:var(--tk-head);font-weight:600;font-size:17px;color:var(--brand);min-width:120px}
+.fb-err-what{font-size:13.5px;color:var(--muted)}
+.fb-err ul{margin:0;padding:0 14px 12px 34px;font-size:14px;line-height:1.5}
+.fb-err li{margin:4px 0}
+@media(max-width:1100px){.fb-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){
+  .fb-grid{grid-template-columns:minmax(0,1fr)}
+  .fb-result{position:static}
+  .fb-grid{display:flex;flex-direction:column}
+  .fb-inputs,.fb-result{width:100%}
+}
+@media(max-width:640px){
+  .fb-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fb-tab-sub{display:none}
+  button.fb-tab{min-height:48px}
+  .fb-row-top{grid-template-columns:minmax(0,1fr) auto;}
+  .fb-row-top .fb-op{grid-column:1 / -1;grid-row:2}
+}
