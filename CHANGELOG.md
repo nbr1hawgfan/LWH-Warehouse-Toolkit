@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.78.1
+- **Forklift Certs → Employees: hide people who don't need to be on the list** (office / shop staff, people no longer here).
+  - Tick the boxes (or the header box for everyone shown) → **Hide from list**.
+  - **Show hidden** brings them back into view to **Unhide**. Records who hid them.
+  - Display only — hidden people keep any certs, and can still take training and the test.
+
 ## v1.78.0
 - **Forklift Certs → Employees** (new tab): everyone in the timeclock with their employee ID, forklift cert status (Certified / Expiring / Expired / Not certified), cert # and expiration, and their next step (in training, ready for test, needs driving evaluation, last test not passed).
   - Search by name, ID, location or cert #; filter chips; show inactive; Export to Excel.

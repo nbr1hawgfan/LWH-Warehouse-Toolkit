@@ -74,6 +74,7 @@ Toolkit → **Forklift Certs** → passcode → **Settings**:
 Forklift Certs → **Employees** lists everyone in the timeclock with their ID and forklift status. Employees are not added in this app:
 they come from the timeclock sync. Add a new hire to the timeclock as usual; after the next sync they can take
 training and the test with their employee ID.
+Office / shop staff or people no longer here can be ticked and **hidden** from the list (display only).
 
 ## Reprints
 

@@ -931,7 +931,9 @@
       if(!r.ok){ body.innerHTML='<div class="card">'+safe(errText(r.error))+'</div>'; return; }
       M.emps=r;
     }
-    const all=(r.employees||[]).filter(e=>M.empInactive||e.active);
+    const all=(r.employees||[]).filter(e=>M.empInactive||(e.active&&!e.hidden));
+    const hiddenCount=(r.employees||[]).filter(e=>e.hidden||!e.active).length;
+    M.empSel=M.empSel||new Set();
     const q=(M.empQuery||'').toLowerCase(), f=M.empFilter||'all';
     const cnt={all:all.length}; ['certified','expiring','expired','none'].forEach(k=>cnt[k]=all.filter(e=>empStatus(e).k===k).length);
     cnt.eval=all.filter(e=>e.pending_eval).length;
@@ -942,17 +944,22 @@
     const chips=[['all','All'],['certified','Certified'],['expiring','Expiring ≤60d'],['expired','Expired'],['none','Not certified'],['eval','Needs driving eval']];
     body.innerHTML=`
       <div id="fcEmpWaive" hidden></div>
-      <div class="hint" style="margin-bottom:8px">Everyone in the timeclock — synced automatically${r.synced_at?' (last sync '+fmtStamp(r.synced_at)+')':''}. New hires show up here after they're added to the timeclock and the next sync runs.</div>
+      <div class="hint" style="margin-bottom:8px">Everyone in the timeclock — synced automatically${r.synced_at?' (last sync '+fmtStamp(r.synced_at)+')':''}. New hires show up here after they're added to the timeclock and the next sync runs. Tick office / shop staff or people no longer here and <b>Hide from list</b> — display only, nothing else changes.</div>
       <div class="fc-toolbar">
         <input id="fceSearch" placeholder="Search name, employee ID, location, cert #…" value="${safe(M.empQuery||'')}" />
         <button type="button" id="fceExport" class="ghost">Export to Excel</button>
       </div>
       <div class="fc-chips">${chips.map(([k,l])=>`<button type="button" class="fc-chip${f===k?' active':''}" data-ef="${k}">${l} <b>${cnt[k]}</b></button>`).join('')}
-        <label class="fc-inline fc-chip-opt"><input type="checkbox" id="fceInactive" ${M.empInactive?'checked':''} /> Show inactive</label></div>
+        <label class="fc-inline fc-chip-opt"><input type="checkbox" id="fceInactive" ${M.empInactive?'checked':''} /> Show hidden (${hiddenCount})</label></div>
+      <div class="fc-selbar"${M.empSel.size?'':' hidden'}><b>${M.empSel.size} selected</b>
+        ${(r.employees||[]).some(e=>M.empSel.has(e.emp_id)&&!e.hidden)?'<button type="button" id="fceHide" class="fc-sm">Hide from list</button>':''}
+        ${(r.employees||[]).some(e=>M.empSel.has(e.emp_id)&&e.hidden)?'<button type="button" id="fceUnhide" class="fc-sm">Unhide</button>':''}
+        <button type="button" id="fceClearSel" class="mh-link">Clear</button></div>
       ${list.length?`<div class="fc-table-wrap"><table class="fc-table">
-        <thead><tr><th>Name</th><th>Employee ID</th><th>Forklift cert</th><th>Expires</th><th>Status / next step</th><th></th></tr></thead>
-        <tbody>${list.map(e=>{ const s=empStatus(e); return `<tr${e.active?'':' class="fc-row-off"'}>
-          <td><b>${safe(e.name)}</b>${e.location&&e.location!=='Not Assigned'?`<div class="hint">${safe(e.location)}</div>`:''}${e.active?'':'<div class="hint">Inactive</div>'}</td>
+        <thead><tr><th class="fc-cb"><input type="checkbox" id="fceAll" aria-label="Select all shown" ${list.length&&list.every(e=>M.empSel.has(e.emp_id))?'checked':''} /></th><th>Name</th><th>Employee ID</th><th>Forklift cert</th><th>Expires</th><th>Status / next step</th><th></th></tr></thead>
+        <tbody>${list.map(e=>{ const s=empStatus(e); return `<tr${e.active&&!e.hidden?'':' class="fc-row-off"'}>
+          <td class="fc-cb"><input type="checkbox" data-esel="${e.emp_id}" ${M.empSel.has(e.emp_id)?'checked':''} aria-label="Select ${safe(e.name)}" /></td>
+          <td><b>${safe(e.name)}</b>${e.location&&e.location!=='Not Assigned'?`<div class="hint">${safe(e.location)}</div>`:''}${e.active?'':'<div class="hint">Inactive</div>'}${e.hidden?`<div class="hint">Hidden${e.hidden_by?' by '+safe(e.hidden_by):''}</div>`:''}</td>
           <td class="fc-mono">${safe(e.emp_id)}</td>
           <td><span class="fc-state fc-state-${s.cls}">${s.label}</span>${e.cert?`<div class="hint fc-mono">${safe(e.cert.cert_no)}</div>`:''}</td>
           <td>${e.cert?fmtNum(e.cert.expires_on):''}</td>
@@ -964,6 +971,20 @@
     s.oninput=()=>{ M.empQuery=s.value; const pos=s.selectionStart; renderEmployees(true).then(()=>{ const n=el('fceSearch'); if(n){ n.focus(); n.setSelectionRange(pos,pos); } }); };
     document.querySelectorAll('[data-ef]').forEach(b=>b.onclick=()=>{ M.empFilter=b.dataset.ef; renderEmployees(true); });
     el('fceInactive').onchange=()=>{ M.empInactive=el('fceInactive').checked; renderEmployees(true); };
+    document.querySelectorAll('[data-esel]').forEach(cb=>cb.onchange=()=>{ const id=Number(cb.dataset.esel); cb.checked?M.empSel.add(id):M.empSel.delete(id); renderEmployees(true); });
+    const allCb=el('fceAll'); if(allCb) allCb.onchange=()=>{ list.forEach(e=>allCb.checked?M.empSel.add(e.emp_id):M.empSel.delete(e.emp_id)); renderEmployees(true); };
+    const doHide=async(hide)=>{
+      const ids=[...M.empSel]; if(!ids.length) return;
+      if(hide && !confirm(`Hide ${ids.length} employee${ids.length>1?'s':''} from this list? They keep any certs and can still take the test. Unhide any time with "Show hidden".`)) return;
+      try{
+        const res=await rpc('fc_mgr_hide_employees',{p_passcode:M.pass,p_emp_ids:ids,p_hide:hide,p_by:LWHStorage.get('fcEvaluator','')});
+        if(!res.ok){ alert(errText(res.error)); return; }
+        M.empSel.clear(); toast(hide?`Hidden: ${ids.length}`:`Unhidden: ${ids.length}`); renderEmployees();
+      }catch(e){ alert('Save failed — '+e.message); }
+    };
+    if(el('fceHide')) el('fceHide').onclick=()=>doHide(true);
+    if(el('fceUnhide')) el('fceUnhide').onclick=()=>doHide(false);
+    if(el('fceClearSel')) el('fceClearSel').onclick=()=>{ M.empSel.clear(); renderEmployees(true); };
     document.querySelectorAll('[data-ecert]').forEach(b=>b.onclick=()=>{ const c=(M.data.certs||[]).find(x=>String(x.id)===b.dataset.ecert); if(c){ M.certFilter='all'; M.certQuery=''; openDetail(c); } });
     document.querySelectorAll('[data-ewaive]').forEach(b=>b.onclick=()=>{ waiveBox(el('fcEmpWaive'),Number(b.dataset.ewaive),b.dataset.ename); window.scrollTo(0,0); });
     el('fceExport').onclick=()=>{
