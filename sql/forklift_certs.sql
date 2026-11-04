@@ -1317,3 +1317,70 @@ end;
 $$;
 revoke all on function public.fc_mgr_employees(text) from public;
 grant execute on function public.fc_mgr_employees(text) to anon, authenticated;
+
+
+-- ============================================================
+-- v1.78.1 — Hide employees from the Forklift Certs Employees list
+-- (office/shop staff, people no longer here). Display only: hidden
+-- people keep their certs and can still take training and the test.
+-- ============================================================
+create table if not exists public.fc_hidden_employees (
+  emp_id     integer primary key,
+  hidden_by  text,
+  hidden_at  timestamptz not null default now()
+);
+alter table public.fc_hidden_employees enable row level security;
+revoke all on public.fc_hidden_employees from anon, authenticated;
+
+create or replace function public.fc_mgr_hide_employees(p_passcode text, p_emp_ids integer[], p_hide boolean, p_by text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_err text; v_n integer;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  if p_hide then
+    insert into fc_hidden_employees (emp_id, hidden_by)
+    select distinct unnest(p_emp_ids), nullif(trim(coalesce(p_by, '')), '')
+    on conflict (emp_id) do nothing;
+  else
+    delete from fc_hidden_employees where emp_id = any(p_emp_ids);
+  end if;
+  get diagnostics v_n = row_count;
+  return json_build_object('ok', true, 'changed', v_n);
+end;
+$$;
+revoke all on function public.fc_mgr_hide_employees(text, integer[], boolean, text) from public;
+grant execute on function public.fc_mgr_hide_employees(text, integer[], boolean, text) to anon, authenticated;
+
+create or replace function public.fc_mgr_employees(p_passcode text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_err text;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  return json_build_object('ok', true,
+    'synced_at', (select max(last_synced_at) from emp_sync_meta),
+    'employees', (select coalesce(json_agg(json_build_object(
+        'emp_id', e.emp_id, 'name', coalesce(e.full_name, e.first_name), 'location', e.location, 'team', e.team,
+        'active', coalesce(e.is_active, true),
+        'hidden', h.emp_id is not null, 'hidden_by', h.hidden_by,
+        'cert', case when c.id is null then null else json_build_object(
+                  'id', c.id, 'cert_no', c.cert_no, 'issued_on', c.issued_on, 'expires_on', c.expires_on,
+                  'state', fc_cert_state(c.status, c.expires_on), 'days_left', c.expires_on - fc_today(),
+                  'truck_types', c.truck_types) end,
+        'training', case when t.id is null then null else json_build_object(
+                  'completed_at', t.completed_at, 'waived_by', t.waived_by) end,
+        'in_training', exists (select 1 from fc_training x where x.emp_id = e.emp_id and x.completed_at is null
+                                and x.started_at > now() - interval '24 hours'),
+        'pending_eval', exists (select 1 from fc_attempts a where a.emp_id = e.emp_id and a.status = 'awaiting_practical'),
+        'last_test', (select json_build_object('at', a.submitted_at, 'score_pct', a.score_pct, 'status', a.status)
+                        from fc_attempts a where a.emp_id = e.emp_id and a.submitted_at is not null
+                        order by a.submitted_at desc limit 1))
+      order by coalesce(e.full_name, e.first_name)), '[]'::json)
+      from (select distinct on (emp_id) * from emp_employees order by emp_id, updated_at desc nulls last) e
+      left join fc_hidden_employees h on h.emp_id = e.emp_id
+      left join lateral (select * from fc_certs c where c.emp_id = e.emp_id and c.status = 'active'
+                         order by issued_on desc, id desc limit 1) c on true
+      left join lateral (select * from fc_training_current(e.emp_id) t where t.id is not null) t on true));
+end;
+$$;

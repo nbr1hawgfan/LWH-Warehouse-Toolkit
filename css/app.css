@@ -2077,3 +2077,8 @@ button.fc-danger{color:var(--bad);border-color:var(--bad)}
 .fc-act button+button{margin-left:6px}
 #fcEmpWaive .fc-edit{margin:0 0 12px}
 @media(max-width:760px){ .fc-tabs{grid-template-columns:1fr 1fr 1fr} }
+.fc-cb{width:34px;text-align:center}
+.fc-cb input{width:18px;height:18px;accent-color:var(--brand)}
+.fc-selbar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--ink);color:#fff;border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:10px}
+.fc-selbar .ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+.fc-selbar .mh-link{color:#fff;margin-left:auto}
