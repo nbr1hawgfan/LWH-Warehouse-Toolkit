@@ -51,6 +51,7 @@
   <script defer src="./js/spottertimesheets.js"></script>
   <script defer src="./js/myhours.js"></script>
   <script defer src="./js/missedpunches.js"></script>
+  <script defer src="./js/forkliftcert.js"></script>
   <script defer src="./js/fifo.js"></script>
   <script defer src="./js/dockboard.js"></script>
   <script defer src="./js/pasreader-core.js"></script>
@@ -70,7 +71,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.75.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.76.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -96,6 +97,8 @@
       <button class="nav-btn" data-view="spotterTimesheets"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 3v3M16 3v3"/><path d="M7 13h3M12 13h3M7 17h3"/></svg>Spotter Timesheets</button>
       <button class="nav-btn" data-view="myHours"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>My Hours</button>
       <button class="nav-btn" data-view="missedPunches"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M19 5l1.5-1.5"/></svg>Missed Punches</button>
+      <button class="nav-btn" data-view="forkliftTest"><svg class="icon" viewBox="0 0 24 24"><path d="M4 18V8h6l3 5v5"/><path d="M13 13h3"/><path d="M17 4v14"/><path d="M17 18h4"/><circle cx="7" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>Forklift Test</button>
+      <button class="nav-btn" data-view="forkliftCerts"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="M13 17l2 2 4-4"/></svg>Forklift Certs</button>
       <button class="nav-btn" data-view="docscan"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Doc Scanner</button>
       <button class="nav-btn" data-view="radar"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12 12 4"/><path d="M12 12 17 15"/></svg>Weather Radar</button>
       <button class="nav-btn" data-view="rack"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>4x6 Rack Labels</button>
@@ -1021,6 +1024,113 @@
       <div id="mpPrintArea" class="print-area"></div>
     </section>
 
+    <!-- ===================== FORKLIFT CERTIFICATION (v1.76.0) ===================== -->
+    <section id="forkliftTest" class="view">
+      <div class="fc-wrap no-print">
+        <div class="panel fc-card" id="fcTestCard">
+          <div class="mh-entry-head">
+            <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M4 18V8h6l3 5v5"/><path d="M13 13h3"/><path d="M17 4v14"/><path d="M17 18h4"/><circle cx="7" cy="19" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></div>
+            <div><h2>Forklift Test</h2><div class="mh-entry-sub">Written knowledge test for forklift operators. After you pass, your manager or trainer does your driving evaluation.</div></div>
+          </div>
+
+          <!-- Step 1: who are you -->
+          <div id="fcStepId">
+            <label for="fcEmpId" class="mh-field-label">Employee ID</label>
+            <input id="fcEmpId" class="mh-id-input" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="00000" autocomplete="off" />
+            <button type="button" id="fcIdBtn" class="mh-show-btn" style="margin-top:14px">Continue</button>
+            <div id="fcIdStatus" class="mh-status" role="status"></div>
+          </div>
+
+          <!-- Step 2: details + start -->
+          <div id="fcStepInfo" hidden>
+            <div id="fcEmpBox" class="fc-emp"></div>
+            <div id="fcCertBox"></div>
+            <div id="fcStartForm">
+              <label for="fcManager">Your manager <span class="fc-req">*</span></label>
+              <select id="fcManager"></select>
+              <label for="fcEmail">Your email <span class="hint">(optional — to get a copy of your results)</span></label>
+              <input id="fcEmail" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" />
+              <div class="mh-field-label" style="margin-top:14px">Equipment you are certifying on <span class="fc-req">*</span></div>
+              <div id="fcTrucks" class="fc-checks"></div>
+              <label for="fcTrainDate">Classroom training date</label>
+              <input id="fcTrainDate" type="date" />
+              <label class="fc-confirm"><input id="fcTrained" type="checkbox" /> I completed forklift classroom training and I'm ready to take the test.</label>
+              <button type="button" id="fcStartBtn" class="mh-show-btn" style="margin-top:10px">Start Test</button>
+              <div id="fcStartStatus" class="mh-status" role="status"></div>
+            </div>
+            <div class="mh-entry-foot"><button type="button" id="fcNotMe" class="mh-link">Not me / start over</button></div>
+          </div>
+
+          <!-- Step 3: the test -->
+          <div id="fcStepTest" hidden>
+            <div class="fc-progress"><div id="fcProgBar"></div></div>
+            <div class="fc-qhead"><span id="fcQNum"></span><span id="fcQAnswered" class="hint"></span></div>
+            <div id="fcQText" class="fc-qtext"></div>
+            <div id="fcQOpts" class="fc-opts" role="radiogroup"></div>
+            <div class="fc-qnav">
+              <button type="button" id="fcPrev" class="ghost">Back</button>
+              <button type="button" id="fcNext">Next</button>
+            </div>
+            <div id="fcDots" class="fc-dots" aria-label="Jump to question"></div>
+            <div id="fcSubmitStatus" class="mh-status" role="status"></div>
+          </div>
+
+          <!-- Step 4: result -->
+          <div id="fcStepResult" hidden></div>
+        </div>
+      </div>
+      <div id="fcTestPrintArea" class="fc-print-area"></div>
+    </section>
+
+    <section id="forkliftCerts" class="view">
+      <div class="fc-wide no-print">
+        <div class="panel fc-mgr-lock" id="fcmLocked">
+          <div class="mh-entry-head">
+            <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="M13 17l2 2 4-4"/></svg></div>
+            <div><h2>Forklift Certs</h2><div class="mh-entry-sub">Managers — driving evaluations, certificates, wallet cards, test history. Same passcode as Missed Punches.</div></div>
+          </div>
+          <label for="fcmPass" class="mh-field-label">Manager passcode</label>
+          <input id="fcmPass" type="password" class="mp-pass" autocomplete="current-password" placeholder="Passcode" />
+          <button type="button" id="fcmUnlock" class="mh-show-btn mp-unlock" style="margin-top:12px"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Unlock</button>
+          <div id="fcmLockStatus" class="mh-status" role="status"></div>
+        </div>
+
+        <div id="fcmUnlocked" hidden>
+          <div class="fc-mgr-top">
+            <div><h2 style="margin:0">Forklift Certs</h2><div id="fcmSub" class="hint"></div></div>
+            <div class="fc-mgr-top-act">
+              <button type="button" id="fcmRefresh" class="ghost">Refresh</button>
+              <button type="button" id="fcmLock" class="ghost">Lock</button>
+            </div>
+          </div>
+          <div class="fc-tabs" role="tablist">
+            <button type="button" data-fctab="pending" class="active" role="tab">Driving Evaluations <b id="fcmPendCount"></b></button>
+            <button type="button" data-fctab="certs" role="tab">Certificates</button>
+            <button type="button" data-fctab="history" role="tab">Test History</button>
+            <button type="button" data-fctab="settings" role="tab">Settings</button>
+          </div>
+          <div id="fcmStatus" class="mh-status" role="status"></div>
+          <div id="fcmBody"></div>
+        </div>
+      </div>
+      <div id="fcMgrPrintArea" class="fc-print-area"></div>
+    </section>
+
+    <section id="fcVerify" class="view">
+      <div class="fc-wrap no-print">
+        <div class="panel fc-card">
+          <div class="mh-entry-head">
+            <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <div><h2>Verify Forklift Cert</h2><div class="mh-entry-sub">Scan the QR on a certificate or wallet card, or type the cert number.</div></div>
+          </div>
+          <label for="fcvNo" class="mh-field-label">Cert number</label>
+          <input id="fcvNo" placeholder="LWH-FL-2026-0001" autocomplete="off" style="text-transform:uppercase" />
+          <button type="button" id="fcvBtn" class="mh-show-btn" style="margin-top:12px">Check</button>
+          <div id="fcvOut" style="margin-top:16px"></div>
+        </div>
+      </div>
+    </section>
+
 
     <section id="rack" class="view">
       <div class="tool-layout">
@@ -1825,7 +1935,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>Appearance</h2><label class="mh-remember" style="font-size:15px;color:var(--ink);font-weight:600;margin:6px 0 8px"><input id="setGlass" type="checkbox" /> Rounded look (soft panels, rounded corners)</label><p class="hint">Same company colors and white background either way. Turn off for the classic squared-off look — handy on older computers. This only changes your own device.</p></div><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><p class="hint">Colors are the company theme — red, maroon and black on white — the same on every device.</p><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div id="ttsVoiceRow" style="margin-top:8px"><label>Read-aloud voice<select id="setTtsVoice"><option value="">Loading voices…</option></select></label><div class="actions" style="margin-top:6px"><button type="button" id="testTtsVoice" class="ghost">Test Voice</button></div><p class="hint" style="margin-top:6px">Voices come from your own device/browser, so the options (and how natural they sound) vary computer to computer. Chrome and Edge usually offer the most natural-sounding choices — try a few and pick whichever sounds best.</p></div><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one source now. Default is live inventory, refreshed from birdsEye every ~15 minutes. Auto-loads fresh every time the app opens.</p><label>CSV export URL (Supabase, Google Sheet, or any plain CSV)<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default (Live Inventory)</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.75.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Quick Lookup, Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Bay Scan, Outbound Loads / BOL, Paper Forms, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Generate Code, Scan Code, Doc Scanner, Formula Builder (XLOOKUP, VLOOKUP, IF / IFS, SUMIFS / COUNTIFS), Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.76.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Quick Lookup, Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Bay Scan, Outbound Loads / BOL, Paper Forms, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Forklift Test &amp; Certs, Generate Code, Scan Code, Doc Scanner, Formula Builder (XLOOKUP, VLOOKUP, IF / IFS, SUMIFS / COUNTIFS), Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">
