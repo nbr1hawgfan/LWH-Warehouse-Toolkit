@@ -69,6 +69,12 @@ Toolkit → **Forklift Certs** → passcode → **Settings**:
    employee, manager and HR. Print the certificate (11×8.5 landscape) and the **wallet card**
    (CR80, front + back) from the same screen. Any older cert for that person is marked "Replaced".
 
+## Employees
+
+Forklift Certs → **Employees** lists everyone in the timeclock with their ID and forklift status. Employees are not added in this app:
+they come from the timeclock sync. Add a new hire to the timeclock as usual; after the next sync they can take
+training and the test with their employee ID.
+
 ## Reprints
 
 Forklift Certs → **Certificates** → search → **Open** → Print Certificate / Print Wallet Card /

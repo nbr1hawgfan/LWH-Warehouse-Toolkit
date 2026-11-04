@@ -578,6 +578,7 @@
     else if(M.tab==='certs') renderCerts();
     else if(M.tab==='history') renderHistory();
     else if(M.tab==='training') renderTraining();
+    else if(M.tab==='employees') renderEmployees();
     else renderSettings();
   }
 
@@ -803,6 +804,7 @@
         msg.style.color='var(--good)'; msg.textContent=`Done — ${r.name} can go straight to the written test (current cert ${r.cert_no}, expires ${fmtNum(r.expires_on)}).`;
         el('fcwGo').disabled=true;
         if(M.tab==='training') setTimeout(()=>renderTraining(),1200);
+        if(M.tab==='employees') setTimeout(()=>renderEmployees(),1500);
       }catch(e){ msg.style.color=''; msg.textContent='Save failed — '+e.message; }
     };
   }
@@ -901,6 +903,74 @@
         columns:[{label:'Submitted',width:20},{label:'Name',width:24},{label:'Employee ID',type:'n',width:12},{label:'Location',width:14},{label:'Equipment',width:36},{label:'Score %',type:'n',width:10},{label:'Correct',type:'n',width:9},{label:'Questions',type:'n',width:10},{label:'Result',width:34},{label:'Manager',width:18},{label:'Evaluator',width:18},{label:'Driving Eval',width:20},{label:'Notes',width:40}],
         rows:filteredHistory().map(a=>[fmtStamp(a.submitted_at||a.started_at),a.name,a.emp_id,a.location||'',(a.truck_types||[]).join(', '),a.score_pct==null?'':+a.score_pct,a.correct==null?'':a.correct,a.total==null?'':a.total,ATT_LABEL[a.status]||a.status,a.manager||'',a.evaluator||'',fmtStamp(a.practical_at),a.notes||''])
       }]);
+    };
+  }
+
+  // ---------- Employees (from the timeclock) ----------
+  function empStatus(e){
+    const c=e.cert;
+    if(c && c.state==='active') return {k:'certified',label:'Certified',cls:'active'};
+    if(c && c.state==='expiring') return {k:'expiring',label:`Expiring — ${c.days_left} days`,cls:'expiring'};
+    if(c && c.state==='expired') return {k:'expired',label:'Expired',cls:'expired'};
+    return {k:'none',label:'Not certified',cls:'superseded'};
+  }
+  function empNext(e){
+    if(e.pending_eval) return '<span class="fc-warn-txt">Passed test — needs driving evaluation</span>';
+    if(e.training) return e.training.waived_by?`Training waived by ${safe(e.training.waived_by)} — ready for test`:`Training done ${fmtNum(String(e.training.completed_at).slice(0,10))} — ready for test`;
+    if(e.in_training) return 'In classroom training';
+    if(e.last_test && e.last_test.status==='failed') return `Last test ${pct(e.last_test.score_pct)} — not passed`;
+    return '';
+  }
+  async function renderEmployees(cached){
+    const body=el('fcmBody');
+    let r=cached===true?M.emps:null;
+    if(!r){
+      body.innerHTML='<div class="card">Loading employees…</div>';
+      try{ r=await rpc('fc_mgr_employees',{p_passcode:M.pass}); }catch(e){ body.innerHTML='<div class="card">Couldn\'t load — '+safe(e.message)+'</div>'; return; }
+      if(M.tab!=='employees') return;
+      if(!r.ok){ body.innerHTML='<div class="card">'+safe(errText(r.error))+'</div>'; return; }
+      M.emps=r;
+    }
+    const all=(r.employees||[]).filter(e=>M.empInactive||e.active);
+    const q=(M.empQuery||'').toLowerCase(), f=M.empFilter||'all';
+    const cnt={all:all.length}; ['certified','expiring','expired','none'].forEach(k=>cnt[k]=all.filter(e=>empStatus(e).k===k).length);
+    cnt.eval=all.filter(e=>e.pending_eval).length;
+    const list=all.filter(e=>{
+      if(f==='eval'?!e.pending_eval:(f!=='all' && empStatus(e).k!==f)) return false;
+      return !q||[e.name,e.emp_id,e.location,e.team,e.cert&&e.cert.cert_no].join(' ').toLowerCase().includes(q);
+    });
+    const chips=[['all','All'],['certified','Certified'],['expiring','Expiring ≤60d'],['expired','Expired'],['none','Not certified'],['eval','Needs driving eval']];
+    body.innerHTML=`
+      <div id="fcEmpWaive" hidden></div>
+      <div class="hint" style="margin-bottom:8px">Everyone in the timeclock — synced automatically${r.synced_at?' (last sync '+fmtStamp(r.synced_at)+')':''}. New hires show up here after they're added to the timeclock and the next sync runs.</div>
+      <div class="fc-toolbar">
+        <input id="fceSearch" placeholder="Search name, employee ID, location, cert #…" value="${safe(M.empQuery||'')}" />
+        <button type="button" id="fceExport" class="ghost">Export to Excel</button>
+      </div>
+      <div class="fc-chips">${chips.map(([k,l])=>`<button type="button" class="fc-chip${f===k?' active':''}" data-ef="${k}">${l} <b>${cnt[k]}</b></button>`).join('')}
+        <label class="fc-inline fc-chip-opt"><input type="checkbox" id="fceInactive" ${M.empInactive?'checked':''} /> Show inactive</label></div>
+      ${list.length?`<div class="fc-table-wrap"><table class="fc-table">
+        <thead><tr><th>Name</th><th>Employee ID</th><th>Forklift cert</th><th>Expires</th><th>Status / next step</th><th></th></tr></thead>
+        <tbody>${list.map(e=>{ const s=empStatus(e); return `<tr${e.active?'':' class="fc-row-off"'}>
+          <td><b>${safe(e.name)}</b>${e.location&&e.location!=='Not Assigned'?`<div class="hint">${safe(e.location)}</div>`:''}${e.active?'':'<div class="hint">Inactive</div>'}</td>
+          <td class="fc-mono">${safe(e.emp_id)}</td>
+          <td><span class="fc-state fc-state-${s.cls}">${s.label}</span>${e.cert?`<div class="hint fc-mono">${safe(e.cert.cert_no)}</div>`:''}</td>
+          <td>${e.cert?fmtNum(e.cert.expires_on):''}</td>
+          <td class="fc-next">${empNext(e)}</td>
+          <td class="fc-act">${e.cert?`<button type="button" class="ghost fc-sm" data-ecert="${e.cert.id}">Open cert</button>`:''}${e.cert&&!e.training&&!e.pending_eval?`<button type="button" class="ghost fc-sm" data-ewaive="${e.emp_id}" data-ename="${safe(e.name)}">Recertify</button>`:''}</td>
+        </tr>`; }).join('')}</tbody></table></div>`
+      :'<div class="card fc-empty">No employees match.</div>'}`;
+    const s=el('fceSearch');
+    s.oninput=()=>{ M.empQuery=s.value; const pos=s.selectionStart; renderEmployees(true).then(()=>{ const n=el('fceSearch'); if(n){ n.focus(); n.setSelectionRange(pos,pos); } }); };
+    document.querySelectorAll('[data-ef]').forEach(b=>b.onclick=()=>{ M.empFilter=b.dataset.ef; renderEmployees(true); });
+    el('fceInactive').onchange=()=>{ M.empInactive=el('fceInactive').checked; renderEmployees(true); };
+    document.querySelectorAll('[data-ecert]').forEach(b=>b.onclick=()=>{ const c=(M.data.certs||[]).find(x=>String(x.id)===b.dataset.ecert); if(c){ M.certFilter='all'; M.certQuery=''; openDetail(c); } });
+    document.querySelectorAll('[data-ewaive]').forEach(b=>b.onclick=()=>{ waiveBox(el('fcEmpWaive'),Number(b.dataset.ewaive),b.dataset.ename); window.scrollTo(0,0); });
+    el('fceExport').onclick=()=>{
+      if(!window.LWHXlsx){ toast('Excel export not available'); return; }
+      LWHXlsx.download(`Forklift_Employees_${todayIso()}.xlsx`,[{name:'Employees',
+        columns:[{label:'Name',width:24},{label:'Employee ID',type:'n',width:12},{label:'Location',width:14},{label:'Team',width:14},{label:'Forklift Cert',width:20},{label:'Cert #',width:18},{label:'Issued',width:12},{label:'Expires',width:12},{label:'Days Left',type:'n',width:10},{label:'Equipment',width:28},{label:'Next Step',width:40},{label:'Active',width:8}],
+        rows:list.map(e=>{ const s=empStatus(e); return [e.name,e.emp_id,e.location||'',e.team||'',s.label,e.cert?e.cert.cert_no:'',e.cert?fmtNum(e.cert.issued_on):'',e.cert?fmtNum(e.cert.expires_on):'',e.cert?e.cert.days_left:'',e.cert?(e.cert.truck_types||[]).join(', '):'',empNext(e).replace(/<[^>]+>/g,''),e.active?'Yes':'No']; })}]);
     };
   }
 
