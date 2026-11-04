@@ -91,6 +91,7 @@
     need_name:'Enter a name.',
     emp_not_found:'That employee ID isn\'t in the timeclock.',
     need_training:'Finish classroom training first.',
+    no_cert:'They don\'t have a current or expired certification to renew — they need the full classroom training.',
     modules_left:'A training module isn\'t finished yet.',
     bad_question:'Each question needs text, at least 2 answer choices, and the correct answer must match one of them exactly.'
   };
@@ -175,7 +176,7 @@
   function certCols(c){
     return c.source==='import'
       ? [['Certified',fmtNum(c.issued_on)],['Expires',fmtNum(c.expires_on)]]
-      : [['Classroom training',fmtNum(c.training_date)],['Written test',fmtNum(c.written_date)],['Driving evaluation',fmtNum(c.practical_date)],['Expires',fmtNum(c.expires_on)]];
+      : [['Classroom training',c.training_waived?'Recert':fmtNum(c.training_date)],['Written test',fmtNum(c.written_date)],['Driving evaluation',fmtNum(c.practical_date)],['Expires',fmtNum(c.expires_on)]];
   }
   function certBody(c){
     return c.written_score!=null
@@ -359,7 +360,9 @@
     const needTrain=r.require_training!==false && !r.training;
     const mods=trainingModules(), mins=Math.round(mods.reduce((s,m)=>s+m.minSec,0)/60);
     el('fcTrainBox').innerHTML=r.pending?'':(r.training
-      ? `<div class="fc-note fc-note-ok"><b>Classroom training done</b> ${fmtStamp(r.training.completed_at)} — good until ${fmtDate(String(r.training.good_until).slice(0,10))}. <button type="button" class="mh-link" id="fcTrReview">Review it again</button></div>`
+      ? (r.training.waived_by
+        ? `<div class="fc-note fc-note-ok"><b>Recertification</b> — classroom training waived by ${safe(r.training.waived_by)} on ${fmtStamp(r.training.completed_at)}. Go straight to the test. <button type="button" class="mh-link" id="fcTrReview">Review the training anyway</button></div>`
+        : `<div class="fc-note fc-note-ok"><b>Classroom training done</b> ${fmtStamp(r.training.completed_at)} — good until ${fmtDate(String(r.training.good_until).slice(0,10))}. <button type="button" class="mh-link" id="fcTrReview">Review it again</button></div>`)
       : (r.require_training!==false
         ? `<div class="fc-train-cta"><div class="mh-field-label">Step 1 of 3</div><b>Classroom training</b><div class="hint">${mods.length} short modules with videos, about ${mins} minutes. Use headphones if you're on the floor. You can stop and pick up where you left off.</div><button type="button" id="fcTrStart" class="mh-show-btn" style="margin-top:10px">Start Classroom Training</button></div>`
         : ''));
@@ -752,6 +755,7 @@
         <button type="button" id="fcdPdf" class="ghost">Download PDF</button>
         <button type="button" id="fcdEmail" class="ghost">Email Again</button>
         <button type="button" id="fcdEdit" class="ghost">Edit</button>
+        ${c.status==='active'&&c.emp_id?'<button type="button" id="fcdRecert" class="ghost">Recertify — Skip Training</button>':''}
         ${c.status==='active'?'<button type="button" id="fcdRevoke" class="ghost fc-danger">Revoke</button>':''}
       </div>
       ${needsInfo(c)?`<div class="fc-note fc-note-warn" style="margin-top:12px">${!c.emp_id?'No employee ID linked — link one so they can see their cert in Forklift Test and so it matches the timeclock. ':''}${!(c.truck_types||[]).length?'Equipment isn\'t recorded — the certificate and card will say "Powered industrial trucks". ':''}Tap <b>Edit</b>.</div>`:''}
@@ -767,10 +771,42 @@
     el('fcdPdf').onclick=()=>downloadPdf(c);
     el('fcdEmail').onclick=()=>emailAgain(c);
     el('fcdEdit').onclick=()=>editCert(c);
+    const rc=el('fcdRecert'); if(rc) rc.onclick=()=>waiveBox(el('fcdEditBox'),c.emp_id,c.name);
     const rv=el('fcdRevoke'); if(rv) rv.onclick=()=>revoke(c);
     el('fcdPhoto').onchange=()=>LWHUI.readFile(el('fcdPhoto'),p=>{ M.photo=p||null; preview(c); });
     preview(c);
   }
+  // Manager waiver: skip classroom training for a recertification.
+  function waiveBox(box,empId,name){
+    box.hidden=false;
+    box.innerHTML=`<div class="fc-edit">
+      <b>Recertify${name?' '+safe(name):''} — skip classroom training</b>
+      <div class="hint">They go straight to the written test, then the driving evaluation. Good for 90 days. Their new certificate shows "Recert" for classroom training.</div>
+      <div class="grid-2">
+        ${empId?'':'<label>Employee ID<input id="fcwId" inputmode="numeric" maxlength="5" placeholder="00000" /></label>'}
+        <label>Approved by (manager)<input id="fcwBy" value="${safe(LWHStorage.get('fcEvaluator',''))}" /></label>
+        <label>Reason<input id="fcwWhy" value="Recertification — cert expiring" /></label>
+      </div>
+      <div class="actions"><button type="button" id="fcwGo">Skip Training</button><button type="button" id="fcwCancel" class="ghost">Cancel</button></div>
+      <div id="fcwMsg" class="mh-status"></div>
+    </div>`;
+    el('fcwCancel').onclick=()=>{ box.hidden=true; box.innerHTML=''; };
+    el('fcwGo').onclick=async()=>{
+      const id=empId||String(el('fcwId').value||'').replace(/\D/g,''), msg=el('fcwMsg'), by=el('fcwBy').value.trim();
+      if(!/^\d{5}$/.test(String(id))){ msg.textContent='Enter the 5-digit employee ID.'; return; }
+      if(!by){ msg.textContent='Enter your name.'; return; }
+      msg.style.color='var(--muted)'; msg.textContent='Saving…';
+      try{
+        const r=await rpc('fc_mgr_waive_training',{p_passcode:M.pass,p_emp_id:Number(id),p_manager:by,p_reason:el('fcwWhy').value});
+        if(!r.ok){ msg.style.color=''; msg.textContent=errText(r.error); return; }
+        LWHStorage.set('fcEvaluator',by);
+        msg.style.color='var(--good)'; msg.textContent=`Done — ${r.name} can go straight to the written test (current cert ${r.cert_no}, expires ${fmtNum(r.expires_on)}).`;
+        el('fcwGo').disabled=true;
+        if(M.tab==='training') setTimeout(()=>renderTraining(),1200);
+      }catch(e){ msg.style.color=''; msg.textContent='Save failed — '+e.message; }
+    };
+  }
+
   function editCert(c){
     const box=el('fcdEditBox'); box.hidden=false;
     box.innerHTML=`<div class="fc-edit">
@@ -891,6 +927,8 @@
         </div>
         <div class="hint">Training is good for 90 days — after that they retake it before testing. ${mods.length} modules, about ${Math.round(mods.reduce((s,m)=>s+m.minSec,0)/60)} minutes of module timers. Content and videos are in <code>js/forkliftcert-training.js</code>.</div>
         <div id="fctMsg" class="mh-status"></div>
+        <div class="actions" style="margin-top:6px"><button type="button" id="fctWaive" class="ghost fc-sm">Recertify — Skip Training for Someone</button></div>
+        <div id="fctWaiveBox" hidden></div>
       </div>
       <div class="fc-toolbar">
         <input id="fctSearch" placeholder="Search name or ID…" value="${safe(M.trQuery||'')}" />
@@ -901,10 +939,11 @@
         <tbody>${list.map(x=>`<tr>
           <td><b>${safe(x.name)}</b><div class="hint">ID ${safe(x.emp_id)}</div></td>
           <td>${fmtStamp(x.started_at)}</td>
-          <td>${x.completed_at?fmtStamp(x.completed_at):'<span class="fc-warn-txt">Not finished</span>'}</td>
-          <td>${x.modules_done} / ${x.module_count}</td>
-          <td>${x.minutes}</td></tr>`).join('')}</tbody></table></div>`
+          <td>${x.completed_at?fmtStamp(x.completed_at):'<span class="fc-warn-txt">Not finished</span>'}${x.waived_by?`<div class="hint">Waived by ${safe(x.waived_by)} — ${safe(x.waive_reason||'')}</div>`:''}</td>
+          <td>${x.waived_by?'Waived':x.modules_done+' / '+x.module_count}</td>
+          <td>${x.waived_by?'—':x.minutes}</td></tr>`).join('')}</tbody></table></div>`
       :'<div class="card fc-empty">No classroom training yet.</div>'}`;
+    el('fctWaive').onclick=()=>waiveBox(el('fctWaiveBox'),null,'');
     el('fctSave').onclick=async()=>{
       const msg=el('fctMsg'); msg.style.color='var(--muted)'; msg.textContent='Saving…';
       try{
@@ -919,7 +958,7 @@
       if(!window.LWHXlsx){ toast('Excel export not available'); return; }
       LWHXlsx.download(`Forklift_Classroom_Training_${todayIso()}.xlsx`,[{name:'Classroom Training',
         columns:[{label:'Name',width:24},{label:'Employee ID',type:'n',width:12},{label:'Started',width:20},{label:'Finished',width:20},{label:'Modules Done',type:'n',width:12},{label:'Modules',type:'n',width:10},{label:'Minutes',type:'n',width:10}],
-        rows:list.map(x=>[x.name,x.emp_id,fmtStamp(x.started_at),x.completed_at?fmtStamp(x.completed_at):'Not finished',x.modules_done,x.module_count,x.minutes])}]);
+        rows:list.map(x=>[x.name,x.emp_id,fmtStamp(x.started_at),x.waived_by?('Waived by '+x.waived_by+' — '+(x.waive_reason||'')+' '+fmtStamp(x.completed_at)):(x.completed_at?fmtStamp(x.completed_at):'Not finished'),x.modules_done,x.module_count,x.minutes])}]);
     };
   }
 

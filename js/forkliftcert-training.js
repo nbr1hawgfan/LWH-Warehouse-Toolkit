@@ -8,13 +8,13 @@
    question in the written test (see "test").
 */
 window.LWH_FORKLIFT_TRAINING = {
-  VERSION: '2026-11',
+  VERSION: '2026-11b',
   modules: [
     {
       id: 'basics',
       title: 'Forklift Basics & the Rules',
       test: ['Seatbelt', 'Getting on and off', 'Riders', 'Lifting people'],
-      minSec: 540,
+      minSec: 210,
       videos: [
         { id: '_tuz1HGTSYE', title: 'Forklift Safety Training — OSHA Requirements, Hazards, and Safe Operation', channel: 'Frontline Data Solutions', length: '10:53' }
       ],
@@ -31,7 +31,7 @@ window.LWH_FORKLIFT_TRAINING = {
       id: 'inspect',
       title: 'Pre-Shift Inspection',
       test: ['How often to inspect'],
-      minSec: 240,
+      minSec: 150,
       videos: [
         { id: 'ABheJMT41Ps', title: 'CLARK Forklift Safety Pre-Shift Inspection Instructional Video', channel: 'CLARK Material Handling Company', length: '' }
       ],
@@ -47,7 +47,7 @@ window.LWH_FORKLIFT_TRAINING = {
       id: 'loads',
       title: 'Loads, Capacity & Stability',
       test: ['Load capacity', 'How high to carry a load', 'Traveling with a raised load'],
-      minSec: 420,
+      minSec: 210,
       videos: [
         { id: 'xTZGliMfoRk', title: 'Forklift Stability Triangle Explained — Tip Over Prevention', channel: 'Lift Parts Warehouse', length: '7:39' },
         { id: 'YBLlLgTh24E', title: 'How to Read a Forklift Data Plate & Determine Capacity', channel: 'W.D. Matthews Machinery Co.', length: '', optional: true }
@@ -65,7 +65,7 @@ window.LWH_FORKLIFT_TRAINING = {
       id: 'driving',
       title: 'Driving & Pedestrians',
       test: ['Where to look', 'Intersections', 'Right of way', 'Using the horn', 'Following distance'],
-      minSec: 150,
+      minSec: 120,
       videos: [
         { id: 'kdMOm3R3hRU', title: 'Forklift Safety Training (full course)', channel: 'National Safety Compliance', length: '26:02', optional: true }
       ],
@@ -82,7 +82,7 @@ window.LWH_FORKLIFT_TRAINING = {
       id: 'docks',
       title: 'Ramps, Docks & Trailers',
       test: ['Driving down a ramp', 'Before entering a trailer'],
-      minSec: 360,
+      minSec: 210,
       videos: [
         { id: 'p3C0DzFxqlw', title: 'How to Safely Operate a Forklift on a Ramp or Sloped Surface', channel: 'Alexander Equipment Rental', length: '3:02' },
         { id: 'R_yjJ8fFhbQ', title: 'Trailer Loading and Unloading with a Forklift', channel: 'ProTread', length: '3:19' }
@@ -99,7 +99,7 @@ window.LWH_FORKLIFT_TRAINING = {
       id: 'fuel',
       title: 'Fueling, Charging & Parking',
       test: ['Refueling / charging', 'Parking and leaving the forklift'],
-      minSec: 180,
+      minSec: 120,
       videos: [
         { id: 'eAruWqd9UCo', title: 'How to Safely Change a Propane Tank on a Forklift', channel: 'Conger Industries', length: '2:50' }
       ],

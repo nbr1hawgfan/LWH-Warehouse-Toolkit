@@ -54,9 +54,11 @@ Toolkit → **Forklift Certs** → passcode → **Settings**:
 
 ## How a certification happens
 
-1. **Classroom training** — in the app (Forklift Test → Start Classroom Training): 6 video modules, about 32 minutes,
+1. **Classroom training** — in the app (Forklift Test → Start Classroom Training): 6 video modules, about 17 minutes,
    recorded in Supabase and good for 90 days. Content and videos: `js/forkliftcert-training.js`.
    Turn the requirement off or change the minimum minutes in Forklift Certs → **Training**.
+   **Recertification:** a manager can skip classroom training for someone who already holds a cert
+   (open their certificate → **Recertify — Skip Training**). Their new certificate shows "Recert".
 2. **Written test** — employee takes it in Forklift Test. 12 random questions from the bank,
    answer order shuffled, "None of the above" always last. Scored in the database, so the
    answers can't be seen on the phone. Result emailed to employee (if they gave an email), manager, HR.
