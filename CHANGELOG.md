@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.78.0
+- **Forklift Certs → Employees** (new tab): everyone in the timeclock with their employee ID, forklift cert status (Certified / Expiring / Expired / Not certified), cert # and expiration, and their next step (in training, ready for test, needs driving evaluation, last test not passed).
+  - Search by name, ID, location or cert #; filter chips; show inactive; Export to Excel.
+  - **Open cert** and **Recertify** (skip classroom training) right from the row.
+  - Employees come from the timeclock sync — new hires appear after they're added to the timeclock and the next sync runs.
+
 ## v1.77.1
 - **Forklift classroom training shortened to about 17 minutes** (module timers trimmed; database minimum now 15 minutes). Videos and content unchanged.
 - **Manager override for recertification:** Forklift Certs → open a certificate → **Recertify — Skip Training**, or Training tab → **Recertify — Skip Training for Someone** (by employee ID).

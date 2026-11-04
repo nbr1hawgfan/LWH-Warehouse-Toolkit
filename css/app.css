@@ -2067,3 +2067,13 @@ button.fc-danger{color:var(--bad);border-color:var(--bad)}
 .fc-tr-set-row{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:6px}
 .fc-tr-set-row input[type=number]{padding:6px 8px}
 @media(max-width:760px){ .fc-tabs{grid-template-columns:1fr 1fr 1fr} .fc-video-cap a{margin-left:0} }
+/* v1.78.0 — Employees tab */
+.fc-tabs{grid-template-columns:repeat(6,1fr)}
+.fc-tabs button{font-size:13.5px}
+.fc-chip-opt{margin-left:auto;font-size:13px;font-weight:600}
+.fc-row-off td{color:var(--muted)}
+.fc-next{font-size:13.5px}
+.fc-act{white-space:nowrap}
+.fc-act button+button{margin-left:6px}
+#fcEmpWaive .fc-edit{margin:0 0 12px}
+@media(max-width:760px){ .fc-tabs{grid-template-columns:1fr 1fr 1fr} }
