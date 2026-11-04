@@ -2044,3 +2044,5 @@ button.fc-danger{color:var(--bad);border-color:var(--bad)}
 .fcw-back-r .qrbox canvas,.fcw-back-r .qrbox img{width:100%!important;height:100%!important}
 .fcw-no{font-size:.075in;font-weight:800;margin-top:.03in;white-space:nowrap}
 .fcw-scan{font-size:.07in;color:#555}
+.fc-warn-txt{color:#b45309;font-weight:700}
+.fc-edit{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg)}

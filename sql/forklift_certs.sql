@@ -21,6 +21,7 @@
 --      app hands the script a one-time token; the script asks this database
 --      who to send to — the app can never pick the recipients itself.
 --
+-- v1.76.1 adds imported certs + fc_mgr_update_cert (bottom of file).
 -- Safe to re-run. Question seed only adds missing questions (edits made in
 -- the app are kept).
 -- ============================================================
@@ -719,3 +720,100 @@ to anon, authenticated;
 --   update public.fc_settings set mailer_key_hash =
 --     encode(sha256(convert_to('YOUR-LONG-RANDOM-KEY', 'UTF8')), 'hex') where id = 1;
 -- ============================================================
+
+
+-- ============================================================
+-- v1.76.1 — Imported (pre-app) certifications + editing a cert
+--   * Certs made before this app have no written test record, may not
+--     have an employee ID yet, and may not list equipment. Those columns
+--     are now optional and the row is marked source = 'import'.
+--   * fc_mgr_update_cert(): managers set equipment / link an employee ID.
+-- ============================================================
+alter table public.fc_certs alter column attempt_id    drop not null;
+alter table public.fc_certs alter column emp_id        drop not null;
+alter table public.fc_certs alter column written_score drop not null;
+alter table public.fc_certs alter column written_date  drop not null;
+alter table public.fc_certs add column if not exists source    text not null default 'app';
+alter table public.fc_certs add column if not exists import_note text;
+do $$ begin
+  alter table public.fc_certs add constraint fc_certs_source_chk check (source in ('app','import'));
+exception when duplicate_object then null; end $$;
+
+create or replace function public.fc_cert_json(c public.fc_certs)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'id', c.id, 'cert_no', c.cert_no, 'attempt_id', c.attempt_id,
+    'emp_id', c.emp_id, 'name', c.emp_name, 'location', c.location, 'team', c.team,
+    'emp_email', c.emp_email, 'manager_id', c.manager_id,
+    'manager', (select m.name from fc_managers m where m.id = c.manager_id),
+    'truck_types', c.truck_types, 'training_date', c.training_date,
+    'written_score', c.written_score, 'written_date', c.written_date,
+    'practical_date', c.practical_date, 'evaluator', c.evaluator_name,
+    'issued_on', c.issued_on, 'expires_on', c.expires_on,
+    'status', c.status, 'state', fc_cert_state(c.status, c.expires_on),
+    'days_left', c.expires_on - fc_today(),
+    'source', c.source, 'import_note', c.import_note,
+    'revoked_reason', c.revoked_reason, 'emailed_at', c.emailed_at);
+$$;
+revoke all on function public.fc_cert_json(public.fc_certs) from public, anon, authenticated;
+
+-- Set equipment, link / change the employee ID (pulls name, location and
+-- team from the timeclock), or set the employee's email on a cert.
+-- p_changes: {"truck_types": [...], "emp_id": 12345 | null, "emp_email": "..."}
+create or replace function public.fc_mgr_update_cert(p_passcode text, p_cert_id bigint, p_changes jsonb)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_err text;
+  v_c   fc_certs%rowtype;
+  v_emp emp_employees%rowtype;
+  v_new integer;
+  v_trucks text[];
+  v_email text;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  select * into v_c from fc_certs where id = p_cert_id for update;
+  if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
+
+  if p_changes ? 'truck_types' then
+    select coalesce(array_agg(trim(t)), '{}') into v_trucks
+      from jsonb_array_elements_text(p_changes -> 'truck_types') t where trim(t) <> '';
+    update fc_certs set truck_types = v_trucks where id = v_c.id;
+  end if;
+
+  if p_changes ? 'emp_email' then
+    v_email := lower(trim(coalesce(p_changes ->> 'emp_email', '')));
+    if v_email <> '' and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+      return json_build_object('ok', false, 'error', 'bad_email');
+    end if;
+    update fc_certs set emp_email = v_email where id = v_c.id;
+  end if;
+
+  if p_changes ? 'emp_id' then
+    v_new := nullif(p_changes ->> 'emp_id', '')::integer;
+    if v_new is not null and v_new is distinct from v_c.emp_id then
+      select * into v_emp from emp_employees where emp_id = v_new order by updated_at desc nulls last limit 1;
+      if not found then return json_build_object('ok', false, 'error', 'emp_not_found'); end if;
+      -- Linking an ID: this becomes that employee's current cert only if it's
+      -- the newest one; otherwise it's kept as history.
+      if v_c.status = 'active' and exists (select 1 from fc_certs where emp_id = v_new and status = 'active'
+                                             and id <> v_c.id and issued_on > v_c.issued_on) then
+        update fc_certs set status = 'superseded' where id = v_c.id;
+      elsif v_c.status = 'active' then
+        update fc_certs set status = 'superseded' where emp_id = v_new and status = 'active' and id <> v_c.id;
+      end if;
+      update fc_certs set emp_id = v_new, emp_name = coalesce(v_emp.full_name, v_emp.first_name),
+        location = v_emp.location, team = v_emp.team where id = v_c.id;
+    elsif v_new is null and coalesce(p_changes ->> 'emp_id', '') = '' and v_c.source = 'import' then
+      update fc_certs set emp_id = null where id = v_c.id;
+    end if;
+  end if;
+
+  select * into v_c from fc_certs where id = p_cert_id;
+  return json_build_object('ok', true, 'cert', fc_cert_json(v_c));
+exception when invalid_text_representation then
+  return json_build_object('ok', false, 'error', 'bad_value');
+end;
+$$;
+revoke all on function public.fc_mgr_update_cert(text, bigint, jsonb) from public;
+grant execute on function public.fc_mgr_update_cert(text, bigint, jsonb) to anon, authenticated;
