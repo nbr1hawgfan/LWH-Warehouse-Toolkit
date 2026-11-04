@@ -1074,3 +1074,208 @@ grant execute on function
   public.fc_training_finish(uuid),
   public.fc_mgr_training(text)
 to anon, authenticated;
+
+
+-- ============================================================
+-- v1.77.1 — Shorter training (15 min minimum) + manager waiver for
+-- recertification. A waiver counts as current classroom training for
+-- 90 days, only for someone who already holds (or held) a cert.
+-- ============================================================
+update public.fc_settings set training_min_minutes = 15 where id = 1 and training_min_minutes = 20;
+alter table public.fc_settings alter column training_min_minutes set default 15;
+alter table public.fc_training add column if not exists waived_by    text;
+alter table public.fc_training add column if not exists waive_reason text;
+alter table public.fc_attempts add column if not exists training_waived boolean not null default false;
+alter table public.fc_certs    add column if not exists training_waived boolean not null default false;
+
+create or replace function public.fc_mgr_waive_training(p_passcode text, p_emp_id integer, p_manager text, p_reason text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_err text; v_emp emp_employees%rowtype; v_cert fc_certs%rowtype; v_id uuid;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  if coalesce(trim(p_manager), '') = '' then return json_build_object('ok', false, 'error', 'need_evaluator'); end if;
+  select * into v_emp from emp_employees where emp_id = p_emp_id order by updated_at desc nulls last limit 1;
+  if not found then return json_build_object('ok', false, 'error', 'emp_not_found'); end if;
+  select * into v_cert from fc_certs where emp_id = p_emp_id and status = 'active' order by issued_on desc limit 1;
+  if not found then return json_build_object('ok', false, 'error', 'no_cert'); end if;
+  insert into fc_training (emp_id, emp_name, completed_at, module_count, version, waived_by, waive_reason)
+  values (p_emp_id, coalesce(v_emp.full_name, v_emp.first_name), now(), 0, 'waived', trim(p_manager),
+          coalesce(nullif(trim(p_reason), ''), 'Recertification'))
+  returning id into v_id;
+  return json_build_object('ok', true, 'name', coalesce(v_emp.full_name, v_emp.first_name),
+                           'cert_no', v_cert.cert_no, 'expires_on', v_cert.expires_on);
+end;
+$$;
+revoke all on function public.fc_mgr_waive_training(text, integer, text, text) from public;
+grant execute on function public.fc_mgr_waive_training(text, integer, text, text) to anon, authenticated;
+
+-- Lookup: say when training was waived.
+create or replace function public.fc_lookup_employee(p_emp_id integer)
+returns json language plpgsql stable security definer set search_path = public as $$
+declare
+  v_emp  emp_employees%rowtype;
+  v_cert fc_certs%rowtype;
+  v_pend fc_attempts%rowtype;
+  v_set  fc_settings%rowtype;
+  v_tr   fc_training%rowtype;
+begin
+  select * into v_set from fc_settings where id = 1;
+  select * into v_emp from emp_employees where emp_id = p_emp_id order by updated_at desc nulls last limit 1;
+  if not found then return json_build_object('found', false); end if;
+
+  select * into v_cert from fc_certs where emp_id = p_emp_id and status = 'active'
+    order by issued_on desc, id desc limit 1;
+  select * into v_pend from fc_attempts where emp_id = p_emp_id and status = 'awaiting_practical'
+    order by submitted_at desc limit 1;
+  v_tr := fc_training_current(p_emp_id);
+
+  return json_build_object(
+    'found', true,
+    'emp', json_build_object('id', v_emp.emp_id, 'name', coalesce(v_emp.full_name, v_emp.first_name),
+                             'location', v_emp.location, 'team', v_emp.team,
+                             'active', coalesce(v_emp.is_active, true)),
+    'cert', case when v_cert.id is null then null
+                  else (fc_cert_json(v_cert)::jsonb - 'emp_email' - 'manager_id' - 'attempt_id' - 'emailed_at') end,
+    'pending', case when v_pend.id is null then null else json_build_object(
+                 'attempt_id', v_pend.id, 'score_pct', v_pend.score_pct, 'submitted_at', v_pend.submitted_at) end,
+    'training', case when v_tr.id is null then null else json_build_object(
+                 'completed_at', v_tr.completed_at, 'waived_by', v_tr.waived_by,
+                 'good_until', (v_tr.completed_at + interval '90 days')) end,
+    'require_training', v_set.require_training,
+    'managers', (select coalesce(json_agg(json_build_object('id', id, 'name', name, 'location', location)
+                   order by name), '[]'::json) from fc_managers where is_active),
+    'questions_per_test', v_set.questions_per_test,
+    'pass_pct', v_set.pass_pct);
+end;
+$$;
+
+-- Start test: a waiver leaves the training date empty and flags the attempt.
+create or replace function public.fc_start_test(
+  p_emp_id        integer,
+  p_email         text,
+  p_manager_id    bigint,
+  p_truck_types   text[],
+  p_training_date date
+)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_emp   emp_employees%rowtype;
+  v_set   fc_settings%rowtype;
+  v_tr    fc_training%rowtype;
+  v_fails integer;
+  v_first timestamptz;
+  v_served jsonb;
+  v_qs    json;
+  v_id    uuid;
+  v_email text := lower(trim(coalesce(p_email, '')));
+  v_tdate date;
+  v_waived boolean;
+begin
+  select * into v_set from fc_settings where id = 1;
+  select * into v_emp from emp_employees where emp_id = p_emp_id order by updated_at desc nulls last limit 1;
+  if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
+  if v_emp.is_active = false then return json_build_object('ok', false, 'error', 'inactive'); end if;
+  if p_manager_id is null or not exists (select 1 from fc_managers where id = p_manager_id and is_active) then
+    return json_build_object('ok', false, 'error', 'need_manager');
+  end if;
+  if coalesce(cardinality(p_truck_types), 0) = 0 then
+    return json_build_object('ok', false, 'error', 'need_truck');
+  end if;
+  if v_email <> '' and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+    return json_build_object('ok', false, 'error', 'bad_email');
+  end if;
+
+  v_tr := fc_training_current(p_emp_id);
+  if v_set.require_training and v_tr.id is null then
+    return json_build_object('ok', false, 'error', 'need_training');
+  end if;
+  v_waived := v_tr.waived_by is not null;
+  v_tdate := case when v_waived then null
+                  else coalesce((v_tr.completed_at at time zone 'America/Chicago')::date, p_training_date, fc_today()) end;
+
+  select count(*), min(submitted_at) into v_fails, v_first
+    from fc_attempts where emp_id = p_emp_id and status = 'failed' and submitted_at > now() - interval '24 hours';
+  if v_fails >= v_set.max_fails_per_day then
+    return json_build_object('ok', false, 'error', 'too_many_attempts',
+                             'retry_at', v_first + interval '24 hours');
+  end if;
+
+  if (select count(*) from fc_questions where is_active) < v_set.questions_per_test then
+    return json_build_object('ok', false, 'error', 'not_enough_questions');
+  end if;
+
+  update fc_attempts set status = 'abandoned' where emp_id = p_emp_id and status = 'in_progress';
+
+  with picked as (
+    select q.id, q.question, row_number() over () as n,
+           (select array_agg(o order by (o ~* '^(none|all) of the above'), random()) from unnest(q.options) o) as opts
+    from (select * from fc_questions where is_active order by random() limit v_set.questions_per_test) q
+  )
+  select jsonb_agg(jsonb_build_object('id', id, 'options', to_jsonb(opts)) order by n),
+         json_agg(json_build_object('id', id, 'question', question, 'options', opts) order by n)
+    into v_served, v_qs from picked;
+
+  insert into fc_attempts (emp_id, emp_name, location, team, emp_email, manager_id, truck_types,
+                           training_date, training_waived, served, pass_pct)
+  values (p_emp_id, coalesce(v_emp.full_name, v_emp.first_name), v_emp.location, v_emp.team, v_email,
+          p_manager_id, p_truck_types, v_tdate, v_waived, v_served, v_set.pass_pct)
+  returning id into v_id;
+
+  return json_build_object('ok', true, 'attempt_id', v_id, 'questions', v_qs,
+                           'total', jsonb_array_length(v_served), 'pass_pct', v_set.pass_pct);
+end;
+$$;
+
+-- Carry the waiver flag onto the certificate.
+create or replace function public.fc_certs_copy_waived()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.attempt_id is not null then
+    select coalesce(a.training_waived, false) into new.training_waived from fc_attempts a where a.id = new.attempt_id;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.fc_certs_copy_waived() from public, anon, authenticated;
+drop trigger if exists fc_certs_copy_waived on public.fc_certs;
+create trigger fc_certs_copy_waived before insert on public.fc_certs
+  for each row execute function public.fc_certs_copy_waived();
+
+create or replace function public.fc_cert_json(c public.fc_certs)
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'id', c.id, 'cert_no', c.cert_no, 'attempt_id', c.attempt_id,
+    'emp_id', c.emp_id, 'name', c.emp_name, 'location', c.location, 'team', c.team,
+    'emp_email', c.emp_email, 'manager_id', c.manager_id,
+    'manager', (select m.name from fc_managers m where m.id = c.manager_id),
+    'truck_types', c.truck_types, 'training_date', c.training_date, 'training_waived', c.training_waived,
+    'written_score', c.written_score, 'written_date', c.written_date,
+    'practical_date', c.practical_date, 'evaluator', c.evaluator_name,
+    'issued_on', c.issued_on, 'expires_on', c.expires_on,
+    'status', c.status, 'state', fc_cert_state(c.status, c.expires_on),
+    'days_left', c.expires_on - fc_today(),
+    'source', c.source, 'import_note', c.import_note,
+    'revoked_reason', c.revoked_reason, 'emailed_at', c.emailed_at);
+$$;
+revoke all on function public.fc_cert_json(public.fc_certs) from public, anon, authenticated;
+
+-- Managers' training list: include waivers.
+create or replace function public.fc_mgr_training(p_passcode text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_err text;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  return json_build_object('ok', true,
+    'require_training', (select require_training from fc_settings where id = 1),
+    'training_min_minutes', (select training_min_minutes from fc_settings where id = 1),
+    'records', (select coalesce(json_agg(json_build_object('emp_id', t.emp_id, 'name', t.emp_name,
+                  'started_at', t.started_at, 'completed_at', t.completed_at,
+                  'waived_by', t.waived_by, 'waive_reason', t.waive_reason,
+                  'modules_done', (select count(*) from jsonb_object_keys(t.modules)), 'module_count', t.module_count,
+                  'minutes', round(extract(epoch from coalesce(t.completed_at, now()) - t.started_at) / 60))
+                  order by coalesce(t.completed_at, t.started_at) desc), '[]'::json)
+                from (select * from fc_training order by started_at desc limit 500) t));
+end;
+$$;

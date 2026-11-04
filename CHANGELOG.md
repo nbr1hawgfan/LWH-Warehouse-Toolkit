@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.77.1
+- **Forklift classroom training shortened to about 17 minutes** (module timers trimmed; database minimum now 15 minutes). Videos and content unchanged.
+- **Manager override for recertification:** Forklift Certs → open a certificate → **Recertify — Skip Training**, or Training tab → **Recertify — Skip Training for Someone** (by employee ID).
+  - Only for someone who holds a certification (current, expiring or expired). Records who approved it and why.
+  - The employee goes straight to the written test, then the driving evaluation. Good for 90 days.
+  - Their new certificate shows **"Recert"** for classroom training. The Training tab lists waivers.
+
 ## v1.77.0
 - **Forklift classroom training is now in the app** (Forklift Test → Start Classroom Training), built like the Safety Training app.
   - 6 short modules, one per group of test questions: Basics & the Rules · Pre-Shift Inspection · Loads, Capacity & Stability · Driving & Pedestrians · Ramps, Docks & Trailers · Fueling, Charging & Parking.

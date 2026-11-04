@@ -1,4 +1,4 @@
-const CACHE_NAME='lwh-toolkit-v1-77-0';
+const CACHE_NAME='lwh-toolkit-v1-77-1';
 // Pinned-version outside libraries (OpenCV edge finder, pdf.js, jsPDF, Tesseract…)
 // are kept in their own cache that survives app updates, so the big ones download
 // once instead of on every visit. Only exact-version URLs listed here are cached.
