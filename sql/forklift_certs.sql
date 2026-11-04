@@ -817,3 +817,260 @@ end;
 $$;
 revoke all on function public.fc_mgr_update_cert(text, bigint, jsonb) from public;
 grant execute on function public.fc_mgr_update_cert(text, bigint, jsonb) to anon, authenticated;
+
+
+-- ============================================================
+-- v1.77.0 — Classroom training in the app
+--   * fc_training: one row per training session (start → finish).
+--   * The written test needs classroom training finished within the last
+--     90 days (setting: require_training). The training date on the
+--     attempt / certificate comes from this record.
+--   * Finishing is checked here: at least training_min_minutes must pass
+--     between start and finish, and every module must be marked done.
+-- ============================================================
+alter table public.fc_settings add column if not exists require_training     boolean not null default true;
+alter table public.fc_settings add column if not exists training_min_minutes integer not null default 20;
+do $$ begin
+  alter table public.fc_settings add constraint fc_settings_trainmin_chk check (training_min_minutes between 0 and 120);
+exception when duplicate_object then null; end $$;
+
+create table if not exists public.fc_training (
+  id            uuid primary key default gen_random_uuid(),
+  emp_id        integer not null,
+  emp_name      text not null,
+  started_at    timestamptz not null default now(),
+  completed_at  timestamptz,
+  modules       jsonb not null default '{}'::jsonb,   -- {"module_id": "timestamp done"}
+  module_count  integer not null default 0,           -- how many modules the app had
+  version       text
+);
+create index if not exists fc_training_emp_idx on public.fc_training (emp_id, completed_at desc);
+alter table public.fc_training enable row level security;
+revoke all on public.fc_training from anon, authenticated;
+
+-- Latest finished training within 90 days (null if none).
+create or replace function public.fc_training_current(p_emp_id integer)
+returns public.fc_training language sql stable security definer set search_path = public as $$
+  select * from fc_training where emp_id = p_emp_id and completed_at is not null
+     and completed_at > now() - interval '90 days' order by completed_at desc limit 1;
+$$;
+revoke all on function public.fc_training_current(integer) from public, anon, authenticated;
+
+-- Start (or resume, within 24 hours) a training session.
+create or replace function public.fc_training_start(p_emp_id integer, p_module_count integer, p_version text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_emp emp_employees%rowtype; v_t fc_training%rowtype;
+begin
+  select * into v_emp from emp_employees where emp_id = p_emp_id order by updated_at desc nulls last limit 1;
+  if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
+  if v_emp.is_active = false then return json_build_object('ok', false, 'error', 'inactive'); end if;
+  select * into v_t from fc_training where emp_id = p_emp_id and completed_at is null
+     and started_at > now() - interval '24 hours' order by started_at desc limit 1;
+  if not found then
+    insert into fc_training (emp_id, emp_name, module_count, version)
+    values (p_emp_id, coalesce(v_emp.full_name, v_emp.first_name), greatest(coalesce(p_module_count, 0), 1), p_version)
+    returning * into v_t;
+  end if;
+  return json_build_object('ok', true, 'training_id', v_t.id, 'modules', v_t.modules,
+    'min_minutes', (select training_min_minutes from fc_settings where id = 1),
+    'elapsed_sec', extract(epoch from now() - v_t.started_at)::int);
+end;
+$$;
+
+create or replace function public.fc_training_module(p_training_id uuid, p_module text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+begin
+  update fc_training set modules = modules || jsonb_build_object(left(p_module, 40), now())
+   where id = p_training_id and completed_at is null;
+  if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
+  return json_build_object('ok', true);
+end;
+$$;
+
+create or replace function public.fc_training_finish(p_training_id uuid)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_t fc_training%rowtype; v_min integer; v_left integer;
+begin
+  select * into v_t from fc_training where id = p_training_id for update;
+  if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
+  if v_t.completed_at is not null then return json_build_object('ok', true, 'completed_at', v_t.completed_at); end if;
+  if (select count(*) from jsonb_object_keys(v_t.modules)) < v_t.module_count then
+    return json_build_object('ok', false, 'error', 'modules_left');
+  end if;
+  select training_min_minutes into v_min from fc_settings where id = 1;
+  v_left := ceil(v_min * 60 - extract(epoch from now() - v_t.started_at))::int;
+  if v_left > 0 then return json_build_object('ok', false, 'error', 'too_fast', 'seconds_left', v_left); end if;
+  update fc_training set completed_at = now() where id = v_t.id returning * into v_t;
+  return json_build_object('ok', true, 'completed_at', v_t.completed_at);
+end;
+$$;
+
+-- Employee lookup now also says whether classroom training is current.
+create or replace function public.fc_lookup_employee(p_emp_id integer)
+returns json language plpgsql stable security definer set search_path = public as $$
+declare
+  v_emp  emp_employees%rowtype;
+  v_cert fc_certs%rowtype;
+  v_pend fc_attempts%rowtype;
+  v_set  fc_settings%rowtype;
+  v_tr   fc_training%rowtype;
+begin
+  select * into v_set from fc_settings where id = 1;
+  select * into v_emp from emp_employees where emp_id = p_emp_id order by updated_at desc nulls last limit 1;
+  if not found then return json_build_object('found', false); end if;
+
+  select * into v_cert from fc_certs where emp_id = p_emp_id and status = 'active'
+    order by issued_on desc, id desc limit 1;
+  select * into v_pend from fc_attempts where emp_id = p_emp_id and status = 'awaiting_practical'
+    order by submitted_at desc limit 1;
+  v_tr := fc_training_current(p_emp_id);
+
+  return json_build_object(
+    'found', true,
+    'emp', json_build_object('id', v_emp.emp_id, 'name', coalesce(v_emp.full_name, v_emp.first_name),
+                             'location', v_emp.location, 'team', v_emp.team,
+                             'active', coalesce(v_emp.is_active, true)),
+    'cert', case when v_cert.id is null then null
+                  else (fc_cert_json(v_cert)::jsonb - 'emp_email' - 'manager_id' - 'attempt_id' - 'emailed_at') end,
+    'pending', case when v_pend.id is null then null else json_build_object(
+                 'attempt_id', v_pend.id, 'score_pct', v_pend.score_pct, 'submitted_at', v_pend.submitted_at) end,
+    'training', case when v_tr.id is null then null else json_build_object(
+                 'completed_at', v_tr.completed_at,
+                 'good_until', (v_tr.completed_at + interval '90 days')) end,
+    'require_training', v_set.require_training,
+    'managers', (select coalesce(json_agg(json_build_object('id', id, 'name', name, 'location', location)
+                   order by name), '[]'::json) from fc_managers where is_active),
+    'questions_per_test', v_set.questions_per_test,
+    'pass_pct', v_set.pass_pct);
+end;
+$$;
+
+-- Start test: same as before, plus the classroom training check.
+create or replace function public.fc_start_test(
+  p_emp_id        integer,
+  p_email         text,
+  p_manager_id    bigint,
+  p_truck_types   text[],
+  p_training_date date
+)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare
+  v_emp   emp_employees%rowtype;
+  v_set   fc_settings%rowtype;
+  v_tr    fc_training%rowtype;
+  v_fails integer;
+  v_first timestamptz;
+  v_served jsonb;
+  v_qs    json;
+  v_id    uuid;
+  v_email text := lower(trim(coalesce(p_email, '')));
+  v_tdate date;
+begin
+  select * into v_set from fc_settings where id = 1;
+  select * into v_emp from emp_employees where emp_id = p_emp_id order by updated_at desc nulls last limit 1;
+  if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
+  if v_emp.is_active = false then return json_build_object('ok', false, 'error', 'inactive'); end if;
+  if p_manager_id is null or not exists (select 1 from fc_managers where id = p_manager_id and is_active) then
+    return json_build_object('ok', false, 'error', 'need_manager');
+  end if;
+  if coalesce(cardinality(p_truck_types), 0) = 0 then
+    return json_build_object('ok', false, 'error', 'need_truck');
+  end if;
+  if v_email <> '' and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+    return json_build_object('ok', false, 'error', 'bad_email');
+  end if;
+
+  v_tr := fc_training_current(p_emp_id);
+  if v_set.require_training and v_tr.id is null then
+    return json_build_object('ok', false, 'error', 'need_training');
+  end if;
+  v_tdate := coalesce((v_tr.completed_at at time zone 'America/Chicago')::date, p_training_date, fc_today());
+
+  select count(*), min(submitted_at) into v_fails, v_first
+    from fc_attempts where emp_id = p_emp_id and status = 'failed' and submitted_at > now() - interval '24 hours';
+  if v_fails >= v_set.max_fails_per_day then
+    return json_build_object('ok', false, 'error', 'too_many_attempts',
+                             'retry_at', v_first + interval '24 hours');
+  end if;
+
+  if (select count(*) from fc_questions where is_active) < v_set.questions_per_test then
+    return json_build_object('ok', false, 'error', 'not_enough_questions');
+  end if;
+
+  update fc_attempts set status = 'abandoned' where emp_id = p_emp_id and status = 'in_progress';
+
+  with picked as (
+    select q.id, q.question, row_number() over () as n,
+           (select array_agg(o order by (o ~* '^(none|all) of the above'), random()) from unnest(q.options) o) as opts
+    from (select * from fc_questions where is_active order by random() limit v_set.questions_per_test) q
+  )
+  select jsonb_agg(jsonb_build_object('id', id, 'options', to_jsonb(opts)) order by n),
+         json_agg(json_build_object('id', id, 'question', question, 'options', opts) order by n)
+    into v_served, v_qs from picked;
+
+  insert into fc_attempts (emp_id, emp_name, location, team, emp_email, manager_id, truck_types,
+                           training_date, served, pass_pct)
+  values (p_emp_id, coalesce(v_emp.full_name, v_emp.first_name), v_emp.location, v_emp.team, v_email,
+          p_manager_id, p_truck_types, v_tdate, v_served, v_set.pass_pct)
+  returning id into v_id;
+
+  return json_build_object('ok', true, 'attempt_id', v_id, 'questions', v_qs,
+                           'total', jsonb_array_length(v_served), 'pass_pct', v_set.pass_pct);
+end;
+$$;
+
+-- Settings save: also the two training settings.
+create or replace function public.fc_mgr_save_settings(p_passcode text, p_settings jsonb)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_err text;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  update fc_settings set
+    questions_per_test   = coalesce((p_settings ->> 'questions_per_test')::int, questions_per_test),
+    pass_pct             = coalesce((p_settings ->> 'pass_pct')::numeric, pass_pct),
+    cert_years           = coalesce((p_settings ->> 'cert_years')::int, cert_years),
+    max_fails_per_day    = coalesce((p_settings ->> 'max_fails_per_day')::int, max_fails_per_day),
+    require_training     = coalesce((p_settings ->> 'require_training')::boolean, require_training),
+    training_min_minutes = coalesce((p_settings ->> 'training_min_minutes')::int, training_min_minutes),
+    hr_emails            = coalesce(p_settings ->> 'hr_emails', hr_emails),
+    mailer_url           = coalesce(trim(p_settings ->> 'mailer_url'), mailer_url),
+    updated_at           = now()
+  where id = 1;
+  return json_build_object('ok', true);
+exception when check_violation or invalid_text_representation then
+  return json_build_object('ok', false, 'error', 'bad_value');
+end;
+$$;
+
+-- Managers: training records (latest 500) + training settings.
+create or replace function public.fc_mgr_training(p_passcode text)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare v_err text;
+begin
+  v_err := toolkit_manager_check(p_passcode);
+  if v_err is not null then return json_build_object('ok', false, 'error', v_err); end if;
+  return json_build_object('ok', true,
+    'require_training', (select require_training from fc_settings where id = 1),
+    'training_min_minutes', (select training_min_minutes from fc_settings where id = 1),
+    'records', (select coalesce(json_agg(json_build_object('emp_id', t.emp_id, 'name', t.emp_name,
+                  'started_at', t.started_at, 'completed_at', t.completed_at,
+                  'modules_done', (select count(*) from jsonb_object_keys(t.modules)), 'module_count', t.module_count,
+                  'minutes', round(extract(epoch from coalesce(t.completed_at, now()) - t.started_at) / 60))
+                  order by coalesce(t.completed_at, t.started_at) desc), '[]'::json)
+                from (select * from fc_training order by started_at desc limit 500) t));
+end;
+$$;
+
+revoke all on function
+  public.fc_training_start(integer, integer, text),
+  public.fc_training_module(uuid, text),
+  public.fc_training_finish(uuid),
+  public.fc_mgr_training(text)
+from public;
+grant execute on function
+  public.fc_training_start(integer, integer, text),
+  public.fc_training_module(uuid, text),
+  public.fc_training_finish(uuid),
+  public.fc_mgr_training(text)
+to anon, authenticated;

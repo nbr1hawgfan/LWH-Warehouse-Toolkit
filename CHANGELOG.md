@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.77.0
+- **Forklift classroom training is now in the app** (Forklift Test → Start Classroom Training), built like the Safety Training app.
+  - 6 short modules, one per group of test questions: Basics & the Rules · Pre-Shift Inspection · Loads, Capacity & Stability · Driving & Pedestrians · Ramps, Docks & Trailers · Fueling, Charging & Parking.
+  - Each module: the test topics it covers, an embedded YouTube video (with an "Open on YouTube" link if it won't play), and the key points. **Next unlocks when the module timer runs out** (about 32 minutes total).
+  - Stop any time and pick up where you left off (within 24 hours).
+  - Finishing is recorded in Supabase. **The written test now needs classroom training finished in the last 90 days**, and the classroom training date on the test and certificate comes from that record (no more typing a date).
+  - Already trained? "Review it again" any time.
+  - **Forklift Certs → Training** (new tab): who started / finished and when, minutes spent, Export to Excel. Settings there: require training (on/off) and minimum minutes (default 20).
+  - Content and videos live in `js/forkliftcert-training.js` — swap a video by changing its YouTube ID.
+
 ## v1.76.1
 - **Forklift Certs: certifications from before the app are now in the system** (imported from the old list — no written test scores, marked "Imported").
   - Certificates, wallet cards and PDFs for imported records show the certification and expiration dates; if no equipment is recorded they say "Powered industrial trucks".

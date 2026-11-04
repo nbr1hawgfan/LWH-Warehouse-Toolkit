@@ -90,6 +90,8 @@
     bad_value:'One of the settings is out of range (at least 12 questions, pass mark 50–100, 1–3 years).',
     need_name:'Enter a name.',
     emp_not_found:'That employee ID isn\'t in the timeclock.',
+    need_training:'Finish classroom training first.',
+    modules_left:'A training module isn\'t finished yet.',
     bad_question:'Each question needs text, at least 2 answer choices, and the correct answer must match one of them exactly.'
   };
   function errText(code){ return ERRORS[code]||('Something went wrong ('+code+').'); }
@@ -292,9 +294,12 @@
   // EMPLOYEE — Forklift Test
   // =====================================================================
   const T={emp:null,info:null,attempt:null,questions:[],answers:{},idx:0,busy:false};
+  const TR={id:null,done:{},idx:0,left:0,timer:null,busy:false};
+  function trainingModules(){ return (window.LWH_FORKLIFT_TRAINING&&LWH_FORKLIFT_TRAINING.modules)||[]; }
 
   function showStep(name){
-    ['Id','Info','Test','Result'].forEach(s=>{ el('fcStep'+s).hidden=(s!==name); });
+    ['Id','Info','Train','Test','Result'].forEach(s=>{ el('fcStep'+s).hidden=(s!==name); });
+    if(name!=='Train') stopTrainTimer();
     window.scrollTo(0,0);
   }
   function resetTest(){
@@ -351,7 +356,17 @@
     el('fcTrucks').innerHTML=TRUCK_TYPES.map((t,i)=>`<label class="fc-check"><input type="checkbox" value="${safe(t.id)}" ${prev.includes(t.id)?'checked':''} id="fcTr${i}" /><span><b>${safe(t.id)}</b><small>${safe(t.hint)}</small></span></label>`).join('');
     el('fcTrainDate').value=todayIso(); el('fcTrainDate').max=todayIso();
     el('fcStartBtn').textContent=`Start Test — ${r.questions_per_test} questions, ${pct(r.pass_pct)} to pass`;
-    el('fcStartForm').hidden=!!r.pending;
+    const needTrain=r.require_training!==false && !r.training;
+    const mods=trainingModules(), mins=Math.round(mods.reduce((s,m)=>s+m.minSec,0)/60);
+    el('fcTrainBox').innerHTML=r.pending?'':(r.training
+      ? `<div class="fc-note fc-note-ok"><b>Classroom training done</b> ${fmtStamp(r.training.completed_at)} — good until ${fmtDate(String(r.training.good_until).slice(0,10))}. <button type="button" class="mh-link" id="fcTrReview">Review it again</button></div>`
+      : (r.require_training!==false
+        ? `<div class="fc-train-cta"><div class="mh-field-label">Step 1 of 3</div><b>Classroom training</b><div class="hint">${mods.length} short modules with videos, about ${mins} minutes. Use headphones if you're on the floor. You can stop and pick up where you left off.</div><button type="button" id="fcTrStart" class="mh-show-btn" style="margin-top:10px">Start Classroom Training</button></div>`
+        : ''));
+    const ts=el('fcTrStart'); if(ts) ts.onclick=startTraining;
+    const rv=el('fcTrReview'); if(rv) rv.onclick=()=>startTraining(true);
+    el('fcSelfTrain').hidden=r.require_training!==false;
+    el('fcStartForm').hidden=!!r.pending || needTrain;
   }
 
   async function startTest(){
@@ -361,12 +376,13 @@
     const trucks=[...el('fcTrucks').querySelectorAll('input:checked')].map(i=>i.value);
     if(!mgr){ st.textContent=errText('need_manager'); el('fcManager').focus(); return; }
     if(!trucks.length){ st.textContent=errText('need_truck'); return; }
-    if(!el('fcTrained').checked){ st.textContent='Check the box to confirm you completed classroom training.'; return; }
+    if(!el('fcSelfTrain').hidden && !el('fcTrained').checked){ st.textContent='Check the box to confirm you completed classroom training.'; return; }
     T.busy=true; st.style.color='var(--muted)'; st.textContent='Getting your test…';
     try{
       const r=await rpc('fc_start_test',{p_emp_id:Number(T.emp.id),p_email:el('fcEmail').value.trim(),p_manager_id:Number(mgr),p_truck_types:trucks,p_training_date:el('fcTrainDate').value||null});
       st.style.color='';
       if(!r.ok){
+        if(r.error==='need_training'){ st.textContent='Finish classroom training first.'; return; }
         st.textContent=r.error==='too_many_attempts'
           ? `You've reached the limit of tries for today. You can try again after ${fmtStamp(r.retry_at)}. Talk to your trainer about the topics you missed.`
           : errText(r.error);
@@ -377,6 +393,80 @@
       showStep('Test'); renderQuestion();
     }catch(e){ st.style.color=''; st.textContent='Couldn\'t start the test — check your connection. ('+e.message+')'; }
     finally{ T.busy=false; }
+  }
+
+  // ---------- Classroom training ----------
+  async function startTraining(review){
+    const mods=trainingModules(); if(!mods.length){ alert('Training content didn\'t load — refresh the page.'); return; }
+    if(review===true){ TR.id=null; TR.done={}; TR.review=true; TR.idx=0; showStep('Train'); renderModule(); return; }
+    TR.review=false;
+    const st=el('fcStartStatus'); st.style.color='var(--muted)'; st.textContent='Opening training…';
+    try{
+      const r=await rpc('fc_training_start',{p_emp_id:Number(T.emp.id),p_module_count:mods.length,p_version:LWH_FORKLIFT_TRAINING.VERSION});
+      st.style.color=''; st.textContent='';
+      if(!r.ok){ st.textContent=errText(r.error); return; }
+      TR.id=r.training_id; TR.done=r.modules||{};
+      TR.idx=Math.max(0,mods.findIndex(m=>!TR.done[m.id])); if(TR.idx<0) TR.idx=mods.length-1;
+      showStep('Train'); renderModule();
+    }catch(e){ st.style.color=''; st.textContent='Couldn\'t open training — check your connection. ('+e.message+')'; }
+  }
+  function stopTrainTimer(){ clearInterval(TR.timer); TR.timer=null; }
+  function renderModule(){
+    stopTrainTimer();
+    const mods=trainingModules(), m=mods[TR.idx], n=mods.length;
+    const doneCount=mods.filter(x=>TR.done[x.id]).length;
+    el('fcTrNum').textContent=`Module ${TR.idx+1} of ${n}`;
+    el('fcTrBar').style.width=(doneCount/n*100)+'%';
+    el('fcTrTitle').textContent=m.title;
+    el('fcTrTest').innerHTML='<span class="hint">On the test:</span> '+m.test.map(t=>`<span class="fc-tag">${safe(t)}</span>`).join('');
+    el('fcTrVideos').innerHTML=m.videos.map(v=>`
+      <div class="fc-video${v.optional?' fc-video-opt':''}">
+        ${v.optional?`<div class="mh-field-label">${m.videos.length>1?'More (optional)':'Watch more (optional)'}</div>`:''}
+        ${v.optional?'':`<div class="fc-video-frame"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.id)}?rel=0&modestbranding=1&playsinline=1" title="${safe(v.title)}" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`}
+        <div class="fc-video-cap"><b>${safe(v.title)}</b><span>${safe(v.channel)}${v.length?' · '+safe(v.length):''}</span>
+          <a href="https://www.youtube.com/watch?v=${encodeURIComponent(v.id)}" target="_blank" rel="noopener">${v.optional?'Watch on YouTube':'Won\'t play? Open on YouTube'}</a></div>
+      </div>`).join('');
+    el('fcTrPoints').innerHTML=m.points.map(p=>`<li>${p}</li>`).join('');
+    el('fcTrPrev').disabled=TR.idx===0;
+    el('fcTrStatus').textContent='';
+    TR.left=(TR.done[m.id]||TR.review)?0:m.minSec;
+    paintTrain();
+    if(TR.left>0) TR.timer=setInterval(()=>{ TR.left--; paintTrain(); if(TR.left<=0) stopTrainTimer(); },1000);
+    window.scrollTo(0,0);
+  }
+  function paintTrain(){
+    const mods=trainingModules(), last=TR.idx===mods.length-1, s=Math.max(0,TR.left);
+    el('fcTrTime').textContent=s>0?`Next unlocks in ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`:'';
+    const b=el('fcTrNext'); b.disabled=s>0;
+    b.textContent=last?(TR.review?'Done Reviewing':'Finish Training'):'Next Module';
+    b.classList.toggle('fc-submit',last);
+  }
+  async function nextModule(){
+    if(TR.busy||TR.left>0) return;
+    const mods=trainingModules(), m=mods[TR.idx], last=TR.idx===mods.length-1, st=el('fcTrStatus');
+    if(TR.review){ if(last){ showStep('Info'); } else { TR.idx++; renderModule(); } return; }
+    TR.busy=true; st.style.color='var(--muted)'; st.textContent='Saving…';
+    try{
+      if(!TR.done[m.id]){
+        const r=await rpc('fc_training_module',{p_training_id:TR.id,p_module:m.id});
+        if(!r.ok){ st.style.color=''; st.textContent=errText(r.error); return; }
+        TR.done[m.id]=new Date().toISOString();
+      }
+      if(!last){ st.textContent=''; TR.idx++; renderModule(); return; }
+      const f=await rpc('fc_training_finish',{p_training_id:TR.id});
+      st.style.color='';
+      if(!f.ok){
+        if(f.error==='too_fast') st.textContent=`Almost — keep reviewing. You can finish in ${Math.ceil(f.seconds_left/60)} min.`;
+        else if(f.error==='modules_left'){ const i=mods.findIndex(x=>!TR.done[x.id]); st.textContent='A module isn\'t finished yet.'; if(i>=0){ TR.idx=i; renderModule(); } }
+        else st.textContent=errText(f.error);
+        return;
+      }
+      st.textContent='';
+      toast('Classroom training complete');
+      const r=await rpc('fc_lookup_employee',{p_emp_id:Number(T.emp.id)});
+      T.info=r; renderInfo(); showStep('Info');
+    }catch(e){ st.style.color=''; st.textContent='Couldn\'t save — check your connection and tap again. ('+e.message+')'; }
+    finally{ TR.busy=false; }
   }
 
   function renderQuestion(){
@@ -484,6 +574,7 @@
     if(M.tab==='pending') renderPending();
     else if(M.tab==='certs') renderCerts();
     else if(M.tab==='history') renderHistory();
+    else if(M.tab==='training') renderTraining();
     else renderSettings();
   }
 
@@ -777,6 +868,61 @@
     };
   }
 
+  // ---------- Training records ----------
+  async function renderTraining(cached){
+    const body=el('fcmBody');
+    let r=cached===true?M.training:null;
+    if(!r){
+      body.innerHTML='<div class="card">Loading…</div>';
+      try{ r=await rpc('fc_mgr_training',{p_passcode:M.pass}); }catch(e){ body.innerHTML='<div class="card">Couldn\'t load — '+safe(e.message)+'</div>'; return; }
+    }
+    if(M.tab!=='training') return;
+    if(!r.ok){ body.innerHTML='<div class="card">'+safe(errText(r.error))+'</div>'; return; }
+    M.training=r;
+    const mods=trainingModules(), recs=r.records||[];
+    const q=(M.trQuery||'').toLowerCase();
+    const list=recs.filter(x=>!q||[x.name,x.emp_id].join(' ').toLowerCase().includes(q));
+    body.innerHTML=`
+      <div class="card fc-tr-settings">
+        <div class="fc-tr-set-row">
+          <label class="fc-inline"><input type="checkbox" id="fctReq" ${r.require_training?'checked':''} /> Require classroom training before the written test</label>
+          <label class="fc-inline">Minimum minutes <input id="fctMin" type="number" min="0" max="120" value="${r.training_min_minutes}" style="width:80px" /></label>
+          <button type="button" id="fctSave" class="fc-sm">Save</button>
+        </div>
+        <div class="hint">Training is good for 90 days — after that they retake it before testing. ${mods.length} modules, about ${Math.round(mods.reduce((s,m)=>s+m.minSec,0)/60)} minutes of module timers. Content and videos are in <code>js/forkliftcert-training.js</code>.</div>
+        <div id="fctMsg" class="mh-status"></div>
+      </div>
+      <div class="fc-toolbar">
+        <input id="fctSearch" placeholder="Search name or ID…" value="${safe(M.trQuery||'')}" />
+        <button type="button" id="fctExport" class="ghost">Export to Excel</button>
+      </div>
+      ${list.length?`<div class="fc-table-wrap"><table class="fc-table">
+        <thead><tr><th>Name</th><th>Started</th><th>Finished</th><th>Modules</th><th>Minutes</th></tr></thead>
+        <tbody>${list.map(x=>`<tr>
+          <td><b>${safe(x.name)}</b><div class="hint">ID ${safe(x.emp_id)}</div></td>
+          <td>${fmtStamp(x.started_at)}</td>
+          <td>${x.completed_at?fmtStamp(x.completed_at):'<span class="fc-warn-txt">Not finished</span>'}</td>
+          <td>${x.modules_done} / ${x.module_count}</td>
+          <td>${x.minutes}</td></tr>`).join('')}</tbody></table></div>`
+      :'<div class="card fc-empty">No classroom training yet.</div>'}`;
+    el('fctSave').onclick=async()=>{
+      const msg=el('fctMsg'); msg.style.color='var(--muted)'; msg.textContent='Saving…';
+      try{
+        const s=await rpc('fc_mgr_save_settings',{p_passcode:M.pass,p_settings:{require_training:el('fctReq').checked,training_min_minutes:+el('fctMin').value}});
+        if(!s.ok){ msg.style.color=''; msg.textContent=errText(s.error); return; }
+        toast('Training settings saved'); msg.textContent='';
+      }catch(e){ msg.style.color=''; msg.textContent='Save failed — '+e.message; }
+    };
+    const s=el('fctSearch');
+    s.oninput=()=>{ M.trQuery=s.value; const pos=s.selectionStart; renderTraining(true).then(()=>{ const n=el('fctSearch'); if(n){ n.focus(); n.setSelectionRange(pos,pos); } }); };
+    el('fctExport').onclick=()=>{
+      if(!window.LWHXlsx){ toast('Excel export not available'); return; }
+      LWHXlsx.download(`Forklift_Classroom_Training_${todayIso()}.xlsx`,[{name:'Classroom Training',
+        columns:[{label:'Name',width:24},{label:'Employee ID',type:'n',width:12},{label:'Started',width:20},{label:'Finished',width:20},{label:'Modules Done',type:'n',width:12},{label:'Modules',type:'n',width:10},{label:'Minutes',type:'n',width:10}],
+        rows:list.map(x=>[x.name,x.emp_id,fmtStamp(x.started_at),x.completed_at?fmtStamp(x.completed_at):'Not finished',x.modules_done,x.module_count,x.minutes])}]);
+    };
+  }
+
   // ---------- Settings ----------
   function renderSettings(){
     const s=M.data.settings||{}, mgrs=M.data.managers||[], qs=M.data.questions||[];
@@ -926,6 +1072,9 @@
       renderQuestion();
       if(T.idx<T.questions.length-1) setTimeout(()=>{ T.idx++; renderQuestion(); },220);
     });
+    el('fcTrNext').onclick=nextModule;
+    el('fcTrPrev').onclick=()=>{ if(TR.idx>0){ TR.idx--; renderModule(); } };
+    el('fcTrExit').onclick=()=>{ stopTrainTimer(); showStep('Info'); };
     el('fcPrev').onclick=()=>{ if(T.idx>0){ T.idx--; renderQuestion(); } };
     el('fcNext').onclick=()=>{ if(T.idx<T.questions.length-1){ T.idx++; renderQuestion(); } else submitTest(); };
     el('fcDots').addEventListener('click',e=>{ const b=e.target.closest('[data-q]'); if(!b) return; T.idx=+b.dataset.q; renderQuestion(); });
