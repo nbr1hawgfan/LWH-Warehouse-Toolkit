@@ -9,6 +9,7 @@
     { id: 'ship',   label: 'Shipping & Receiving' },
     { id: 'labels', label: 'Labels & Badges' },
     { id: 'time',   label: 'Time & Hours' },
+    { id: 'safety', label: 'Safety & Training' },
     { id: 'tools',  label: 'Scan & Utilities' }
   ];
   const TOOLS = [
@@ -76,6 +77,12 @@
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>" },
     { view: "missedPunches", cat: "time", name: "Missed Punches", desc: "Managers: missing clock-ins/outs, shifts over 10 hours, usual workdays with no punches \u2014 plus everyone's weekly hours. Passcode required.", kw: "missed punches managers clock in out overtime",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"13\" r=\"8\"/><path d=\"M12 9v4l2 2\"/><path d=\"M9 2h6\"/><path d=\"M19 5l1.5-1.5\"/></svg>" },
+    { view: "forkliftTest", cat: "safety", name: "Forklift Test", desc: "Forklift operator written test \u2014 12 random questions, 90% to pass. Then your manager does your driving evaluation.", kw: "forklift test certification osha operator quiz exam lift truck",
+      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 18V8h6l3 5v5\"/><path d=\"M13 13h3\"/><path d=\"M17 4v14\"/><path d=\"M17 18h4\"/><circle cx=\"7\" cy=\"19\" r=\"1.6\"/><circle cx=\"12\" cy=\"19\" r=\"1.6\"/></svg>" },
+    { view: "forkliftCerts", cat: "safety", name: "Forklift Certs", desc: "Managers: driving evaluations, issue and reprint certificates and wallet cards, expirations, test history. Passcode required.", kw: "forklift certification certificate wallet card reprint evaluation practical hr managers expire",
+      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><path d=\"M8 8h8M8 12h5\"/><path d=\"M13 17l2 2 4-4\"/></svg>" },
+    { view: "fcVerify", cat: "safety", name: "Verify Forklift Cert", desc: "Check that an operator's forklift certification is current \u2014 scan the card's QR or type the cert number.", kw: "verify forklift cert check valid expired card",
+      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>" },
     { view: "spotterTimesheets", cat: "time", name: "Spotter Timesheets", desc: "Weekly hours synced from drivers' phones \u2014 search, print, or export.", kw: "spotter timesheets drivers hours",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"17\" rx=\"1.5\"/><path d=\"M3 9h18M8 3v3M16 3v3\"/><path d=\"M7 13h3M12 13h3M7 17h3\"/></svg>" },
     { view: "utilities", cat: "tools", name: "Warehouse Tools", desc: "Calculator, unit converter, pallet footprint, notepad, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.", kw: "calculator converter notepad message cube date loan cost per foot footprint distance",

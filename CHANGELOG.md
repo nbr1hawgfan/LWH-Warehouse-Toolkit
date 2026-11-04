@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.76.0
+- **New: Forklift Certification** — new **Safety & Training** section on Home.
+  - **Forklift Test** (employees): enter employee ID, pick your manager and the equipment you're certifying on, confirm classroom training, then take the written test. 12 random questions from the bank, answer choices shuffled ("None of the above" stays last), one question per screen with jump-to dots. **90% to pass.** Scored inside the database — correct answers never reach the phone. Missed topics are shown (not the answers). 3 failed tries per 24 hours.
+  - **Forklift Certs** (managers, same passcode as Missed Punches):
+    - **Driving Evaluations** — everyone who passed the written test. 11-item OSHA-style checklist (Pass / Needs work / N/A), equipment actually driven, evaluator, date, notes. Pass → certificate issued.
+    - **Certificates** — search, filter (Current / Expiring ≤60 days / Expired / Revoked / Replaced), **reprint certificate** (11×8.5 landscape), **print wallet card** (CR80 front + back, uses Print Calibration, optional photo), **download PDF**, **email again**, **revoke** with reason, **Export to Excel**.
+    - **Test History** — every written test and driving evaluation, Export to Excel.
+    - **Settings** — HR emails, mailer URL, questions per test, pass mark, years valid, retake limit, managers list, **question bank editor** (edit, add, turn off).
+  - **Verify Forklift Cert** — the QR on every certificate and wallet card opens this and shows VALID / EXPIRING / EXPIRED / REVOKED.
+  - **Emails** (Google Apps Script, `gas/ForkliftCertMailer.gs`): written-test result and certificate (PDF attached) to employee, manager and HR. Daily reminder at 60 and 30 days before a cert expires. The app can't choose recipients — the script trades a one-time token with the database.
+  - Certificates good for 3 years (OSHA 1910.178(l)(4)(iii)); a new cert marks the old one "Replaced".
+  - Setup: `docs/FORKLIFT_CERT_SETUP.md`, SQL: `sql/forklift_certs.sql`. Bookmark links: `index.html?view=forkliftTest`, `?view=forkliftCerts`.
+
 ## v1.75.0
 - **New: Formula Builder** (Menu → Formula Builder, or the Home tile under Scan & Utilities). For anyone who lives in Excel but gets stuck writing formulas.
   - **Answer plain-English questions, get the formula.** "What are you looking for?", "Which column do you search in?", "Which column has the answer?" — type column letters (B), ranges (B2:B500), cells (A2), text, numbers or dates.
