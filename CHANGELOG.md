@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.76.1
+- **Forklift Certs: certifications from before the app are now in the system** (imported from the old list — no written test scores, marked "Imported").
+  - Certificates, wallet cards and PDFs for imported records show the certification and expiration dates; if no equipment is recorded they say "Powered industrial trucks".
+  - New **Edit** button on any certificate: link an employee ID (pulls name, location and team from the timeclock), set equipment, set the employee's email.
+  - New **Needs info** filter: current certs missing an employee ID or equipment.
+  - Expiration reminders now cover the imported certs too.
+  - SQL: bottom of `sql/forklift_certs.sql` (already applied).
+
 ## v1.76.0
 - **New: Forklift Certification** — new **Safety & Training** section on Home.
   - **Forklift Test** (employees): enter employee ID, pick your manager and the equipment you're certifying on, confirm classroom training, then take the written test. 12 random questions from the bank, answer choices shuffled ("None of the above" stays last), one question per screen with jump-to dots. **90% to pass.** Scored inside the database — correct answers never reach the phone. Missed topics are shown (not the answers). 3 failed tries per 24 hours.

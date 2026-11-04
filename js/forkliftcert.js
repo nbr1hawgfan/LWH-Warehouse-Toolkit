@@ -54,6 +54,8 @@
   function fmtNum(s){ const d=parseDate(s); return d?`${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`:''; }
   function fmtStamp(s){ if(!s) return ''; const d=new Date(s); return isNaN(d)?'':d.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}); }
   function pct(n){ return (Math.round((+n||0)*10)/10).toString().replace(/\.0$/,'')+'%'; }
+  function trucksText(c,sep){ return (c.truck_types||[]).length?(c.truck_types||[]).join(sep||', '):'Equipment not recorded'; }
+  function needsInfo(c){ return ['active','expiring'].includes(c.state) && (!c.emp_id || !(c.truck_types||[]).length); }
   function verifyUrl(certNo){ return APP_URL+'?view=fcVerify&cert='+encodeURIComponent(certNo); }
   function getPass(){ try{ return sessionStorage.getItem(PASS_KEY)||''; }catch{ return ''; } }
   function setPass(v){ try{ if(v) sessionStorage.setItem(PASS_KEY,v); else sessionStorage.removeItem(PASS_KEY); }catch{} }
@@ -87,6 +89,7 @@
     need_reason:'Enter a reason.',
     bad_value:'One of the settings is out of range (at least 12 questions, pass mark 50–100, 1–3 years).',
     need_name:'Enter a name.',
+    emp_not_found:'That employee ID isn\'t in the timeclock.',
     bad_question:'Each question needs text, at least 2 answer choices, and the correct answer must match one of them exactly.'
   };
   function errText(code){ return ERRORS[code]||('Something went wrong ('+code+').'); }
@@ -138,18 +141,18 @@
     doc.text(String(c.name||''),W/2,y,{align:'center'});
     doc.setDrawColor(...INK); doc.setLineWidth(0.01); doc.line(W/2-3,y+0.12,W/2+3,y+0.12); y+=0.38;
     doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(...MUTED);
-    doc.text(['Employee ID '+c.emp_id, c.location].filter(Boolean).join('   ·   '),W/2,y,{align:'center'}); y+=0.42;
+    doc.text([c.emp_id?'Employee ID '+c.emp_id:'', c.location&&c.location!=='Not Assigned'?c.location:''].filter(Boolean).join('   ·   '),W/2,y,{align:'center'}); y+=0.42;
     doc.setTextColor(...INK); doc.setFontSize(12);
-    const body=`has completed formal instruction, passed the written knowledge test (${pct(c.written_score)}), and passed a practical driving evaluation in the workplace, as required by OSHA 29 CFR 1910.178(l), and is authorized to operate:`;
+    const body=certBody(c);
     const lines=doc.splitTextToSize(body,7.6); doc.text(lines,W/2,y,{align:'center'}); y+=lines.length*0.2+0.12;
     doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...RED);
-    doc.text((c.truck_types||[]).join('   ·   '),W/2,y,{align:'center'}); y+=0.5;
+    doc.text((c.truck_types||[]).length?c.truck_types.join('   ·   '):'Powered industrial trucks (forklifts)',W/2,y,{align:'center'}); y+=0.5;
     // detail row
-    const cols=[['Classroom training',fmtNum(c.training_date)],['Written test',fmtNum(c.written_date)],['Driving evaluation',fmtNum(c.practical_date)],['Expires',fmtNum(c.expires_on)]];
+    const cols=certCols(c);
     const cw=1.85, x0=W/2-cw*cols.length/2;
     cols.forEach((col,i)=>{ const cx=x0+cw*i+cw/2;
       doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...MUTED); doc.text(col[0].toUpperCase(),cx,y,{align:'center'});
-      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...(i===3?RED:INK)); doc.text(col[1]||'—',cx,y+0.24,{align:'center'}); });
+      doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...(i===cols.length-1?RED:INK)); doc.text(col[1]||'—',cx,y+0.24,{align:'center'}); });
     // signatures + QR
     const sy=H-1.05;
     doc.setDrawColor(...INK); doc.setLineWidth(0.01);
@@ -167,6 +170,16 @@
     doc.setProperties({title:'Forklift Certificate — '+c.name,subject:c.cert_no,author:'Logistics Warehouse'});
     return doc;
   }
+  function certCols(c){
+    return c.source==='import'
+      ? [['Certified',fmtNum(c.issued_on)],['Expires',fmtNum(c.expires_on)]]
+      : [['Classroom training',fmtNum(c.training_date)],['Written test',fmtNum(c.written_date)],['Driving evaluation',fmtNum(c.practical_date)],['Expires',fmtNum(c.expires_on)]];
+  }
+  function certBody(c){
+    return c.written_score!=null
+      ? `has completed formal instruction, passed the written knowledge test (${pct(c.written_score)}), and passed a practical driving evaluation in the workplace, as required by OSHA 29 CFR 1910.178(l), and is authorized to operate:`
+      : 'has completed formal instruction, a written knowledge test, and a practical driving evaluation in the workplace, as required by OSHA 29 CFR 1910.178(l), and is authorized to operate:';
+  }
   function pdfName(c){ return `Forklift_Certificate_${String(c.name||'').replace(/[^A-Za-z0-9]+/g,'_')}_${c.cert_no}.pdf`; }
   async function downloadPdf(c){
     try{ const doc=await certPdf(c); doc.save(pdfName(c)); }
@@ -183,15 +196,10 @@
         <div class="fcp-sub">Powered Industrial Truck (Forklift) Operator</div>
         <div class="fcp-certifies">This certifies that</div>
         <div class="fcp-name">${safe(c.name)}</div>
-        <div class="fcp-meta">Employee ID ${safe(c.emp_id)}${c.location?' &nbsp;·&nbsp; '+safe(c.location):''}</div>
-        <div class="fcp-body">has completed formal instruction, passed the written knowledge test (${pct(c.written_score)}), and passed a practical driving evaluation in the workplace, as required by OSHA 29 CFR 1910.178(l), and is authorized to operate:</div>
-        <div class="fcp-trucks">${(c.truck_types||[]).map(safe).join(' &nbsp;·&nbsp; ')}</div>
-        <div class="fcp-cols">
-          <div><span>Classroom training</span><b>${fmtNum(c.training_date)||'—'}</b></div>
-          <div><span>Written test</span><b>${fmtNum(c.written_date)}</b></div>
-          <div><span>Driving evaluation</span><b>${fmtNum(c.practical_date)}</b></div>
-          <div><span>Expires</span><b class="fcp-red">${fmtNum(c.expires_on)}</b></div>
-        </div>
+        <div class="fcp-meta">${[c.emp_id?'Employee ID '+safe(c.emp_id):'', c.location&&c.location!=='Not Assigned'?safe(c.location):''].filter(Boolean).join(' &nbsp;·&nbsp; ')||'&nbsp;'}</div>
+        <div class="fcp-body">${safe(certBody(c))}</div>
+        <div class="fcp-trucks">${(c.truck_types||[]).length?c.truck_types.map(safe).join(' &nbsp;·&nbsp; '):'Powered industrial trucks (forklifts)'}</div>
+        <div class="fcp-cols">${certCols(c).map((col,i,a)=>`<div><span>${col[0]}</span><b${i===a.length-1?' class="fcp-red"':''}>${col[1]||'—'}</b></div>`).join('')}</div>
         <div class="fcp-foot">
           <div class="fcp-sig"><b>${safe(c.evaluator)}</b><div class="fcp-line"></div><span>Evaluator / Trainer</span></div>
           <div class="fcp-sig"><b>&nbsp;</b><div class="fcp-line"></div><span>Manager</span></div>
@@ -210,7 +218,7 @@
         ${photo?`<img class="fcw-photo" src="${photo}" alt="" />`:''}
         <div class="fcw-who">
           <div class="fcw-name">${safe(c.name)}</div>
-          <div class="fcw-id">ID ${safe(c.emp_id)}${c.location?' · '+safe(c.location):''}</div>
+          <div class="fcw-id">${[c.emp_id?'ID '+safe(c.emp_id):'', c.location&&c.location!=='Not Assigned'?safe(c.location):''].filter(Boolean).join(' · ')}</div>
           <div class="fcw-exp"><span>EXPIRES</span> ${fmtNum(c.expires_on)}</div>
         </div>
       </div>
@@ -220,7 +228,7 @@
     return `<div class="fcw-card fcw-back">
       <div class="fcw-back-l">
         <div class="fcw-h">AUTHORIZED EQUIPMENT</div>
-        <ul class="fcw-list">${(c.truck_types||[]).map(t=>`<li>${safe(t)}</li>`).join('')}</ul>
+        <ul class="fcw-list">${(c.truck_types||[]).length?c.truck_types.map(t=>`<li>${safe(t)}</li>`).join(''):'<li>Powered industrial trucks</li>'}</ul>
         <table class="fcw-tbl">
           <tr><td>Issued</td><td>${fmtNum(c.issued_on)}</td></tr>
           <tr><td>Expires</td><td>${fmtNum(c.expires_on)}</td></tr>
@@ -320,7 +328,7 @@
     if(r.cert){
       const c=r.cert;
       box+=`<div class="fc-note fc-note-${c.state==='active'?'ok':c.state==='expiring'?'warn':'bad'}">
-        <b>${c.state==='expired'?'Your certification expired':'You are certified'}</b> — ${safe((c.truck_types||[]).join(', '))}.<br>
+        <b>${c.state==='expired'?'Your certification expired':'You are certified'}</b>${(c.truck_types||[]).length?' — '+safe(c.truck_types.join(', ')):''}.<br>
         Cert ${safe(c.cert_no)} · ${c.state==='expired'?'expired':'expires'} ${fmtDate(c.expires_on)}${c.state==='expiring'?` (${c.days_left} days)`:''}.
         <div class="fc-note-act"><button type="button" class="ghost" id="fcMyPdf">Download my certificate</button></div>
         ${c.state==='active'?'<div class="hint" style="margin-top:6px">You only need to retest when it\'s close to expiring, after an incident, or if your manager asks.</div>':''}
@@ -580,7 +588,8 @@
     const q=M.certQuery.trim().toLowerCase();
     return (M.data.certs||[]).filter(c=>{
       if(M.certFilter==='active' && !['active','expiring'].includes(c.state)) return false;
-      if(M.certFilter!=='all' && M.certFilter!=='active' && c.state!==M.certFilter) return false;
+      if(M.certFilter==='needs' && !needsInfo(c)) return false;
+      if(!['all','active','needs'].includes(M.certFilter) && c.state!==M.certFilter) return false;
       return certMatches(c,q);
     });
   }
@@ -588,7 +597,8 @@
     const certs=M.data.certs||[];
     const cnt={all:certs.length,active:certs.filter(c=>['active','expiring'].includes(c.state)).length};
     ['expiring','expired','revoked','superseded'].forEach(s=>cnt[s]=certs.filter(c=>c.state===s).length);
-    const chips=[['active','Current'],['expiring','Expiring ≤60d'],['expired','Expired'],['revoked','Revoked'],['superseded','Replaced'],['all','All']];
+    cnt.needs=certs.filter(needsInfo).length;
+    const chips=[['active','Current'],['expiring','Expiring ≤60d'],['needs','Needs info'],['expired','Expired'],['revoked','Revoked'],['superseded','Replaced'],['all','All']].filter(([k])=>k!=='needs'||cnt.needs);
     const list=filteredCerts();
     el('fcmBody').innerHTML=`
       <div id="fcDetail"></div>
@@ -600,9 +610,9 @@
       ${list.length?`<div class="fc-table-wrap"><table class="fc-table">
         <thead><tr><th>Name</th><th>Cert #</th><th>Equipment</th><th>Issued</th><th>Expires</th><th>Status</th><th></th></tr></thead>
         <tbody>${list.map(c=>`<tr>
-          <td><b>${safe(c.name)}</b><div class="hint">ID ${safe(c.emp_id)}${c.location?' · '+safe(c.location):''}</div></td>
+          <td><b>${safe(c.name)}</b><div class="hint">${c.emp_id?'ID '+safe(c.emp_id):'<span class="fc-warn-txt">No employee ID</span>'}${c.location&&c.location!=='Not Assigned'?' · '+safe(c.location):''}${c.source==='import'?' · Imported':''}</div></td>
           <td class="fc-mono">${safe(c.cert_no)}</td>
-          <td>${safe((c.truck_types||[]).join(', '))}</td>
+          <td>${(c.truck_types||[]).length?safe(c.truck_types.join(', ')):'<span class="fc-warn-txt">Not recorded</span>'}</td>
           <td>${fmtNum(c.issued_on)}</td>
           <td>${fmtNum(c.expires_on)}${c.state==='expiring'?`<div class="hint">${c.days_left} days</div>`:''}</td>
           <td><span class="fc-state fc-state-${c.state}">${STATE_LABEL[c.state]||c.state}</span></td>
@@ -631,15 +641,15 @@
         <div>
           ${flash?`<div class="fc-flash">${safe(flash)}</div>`:''}
           <h3 style="margin:0">${safe(c.name)} <span class="fc-state fc-state-${c.state}">${STATE_LABEL[c.state]||c.state}</span></h3>
-          <div class="hint">ID ${safe(c.emp_id)}${c.location?' · '+safe(c.location):''}${c.manager?' · Manager: '+safe(c.manager):''}</div>
+          <div class="hint">${c.emp_id?'ID '+safe(c.emp_id):'No employee ID linked'}${c.location&&c.location!=='Not Assigned'?' · '+safe(c.location):''}${c.manager?' · Manager: '+safe(c.manager):''}${c.source==='import'?' · Imported from the old certification list':''}</div>
         </div>
         <button type="button" class="mh-link" id="fcdClose">Close</button>
       </div>
       <div class="fc-detail-grid">
         <div><span>Cert #</span><b class="fc-mono">${safe(c.cert_no)}</b></div>
-        <div><span>Equipment</span><b>${safe((c.truck_types||[]).join(', '))}</b></div>
-        <div><span>Written test</span><b>${pct(c.written_score)} · ${fmtNum(c.written_date)}</b></div>
-        <div><span>Driving evaluation</span><b>${fmtNum(c.practical_date)} · ${safe(c.evaluator)}</b></div>
+        <div><span>Equipment</span><b>${safe(trucksText(c))}</b></div>
+        ${c.written_score!=null?`<div><span>Written test</span><b>${pct(c.written_score)} · ${fmtNum(c.written_date)}</b></div>`:''}
+        <div><span>${c.source==='import'?'Instructor':'Driving evaluation'}</span><b>${c.source==='import'?'':fmtNum(c.practical_date)+' · '}${safe(c.evaluator)}</b></div>
         <div><span>Issued</span><b>${fmtNum(c.issued_on)}</b></div>
         <div><span>Expires</span><b>${fmtNum(c.expires_on)}</b></div>
         ${c.emp_email?`<div><span>Employee email</span><b>${safe(c.emp_email)}</b></div>`:''}
@@ -650,8 +660,11 @@
         <button type="button" id="fcdWallet">Print Wallet Card</button>
         <button type="button" id="fcdPdf" class="ghost">Download PDF</button>
         <button type="button" id="fcdEmail" class="ghost">Email Again</button>
+        <button type="button" id="fcdEdit" class="ghost">Edit</button>
         ${c.status==='active'?'<button type="button" id="fcdRevoke" class="ghost fc-danger">Revoke</button>':''}
       </div>
+      ${needsInfo(c)?`<div class="fc-note fc-note-warn" style="margin-top:12px">${!c.emp_id?'No employee ID linked — link one so they can see their cert in Forklift Test and so it matches the timeclock. ':''}${!(c.truck_types||[]).length?'Equipment isn\'t recorded — the certificate and card will say "Powered industrial trucks". ':''}Tap <b>Edit</b>.</div>`:''}
+      <div id="fcdEditBox" hidden></div>
       <label class="fc-photo">Wallet card photo (optional, not saved)<input id="fcdPhoto" type="file" accept="image/*" /></label>
       <div class="fc-wallet-prev" id="fcdPreview"></div>
       <div id="fcdMail" class="hint">${c.emailed_at?'Last emailed '+fmtStamp(c.emailed_at):''}</div>
@@ -662,9 +675,37 @@
     el('fcdWallet').onclick=()=>printWallet(c,'fcMgrPrintArea',M.photo);
     el('fcdPdf').onclick=()=>downloadPdf(c);
     el('fcdEmail').onclick=()=>emailAgain(c);
+    el('fcdEdit').onclick=()=>editCert(c);
     const rv=el('fcdRevoke'); if(rv) rv.onclick=()=>revoke(c);
     el('fcdPhoto').onchange=()=>LWHUI.readFile(el('fcdPhoto'),p=>{ M.photo=p||null; preview(c); });
     preview(c);
+  }
+  function editCert(c){
+    const box=el('fcdEditBox'); box.hidden=false;
+    box.innerHTML=`<div class="fc-edit">
+      <div class="grid-2">
+        <label>Employee ID (5 digits, from the timeclock)<input id="fceId" inputmode="numeric" maxlength="5" value="${safe(c.emp_id||'')}" placeholder="00000" /></label>
+        <label>Employee email (optional)<input id="fceMail" type="email" value="${safe(c.emp_email||'')}" /></label>
+      </div>
+      <div class="mh-field-label" style="margin-top:10px">Equipment</div>
+      <div class="fc-checks fc-checks-inline">${TRUCK_TYPES.map(t=>`<label class="fc-check"><input type="checkbox" value="${safe(t.id)}" ${(c.truck_types||[]).includes(t.id)?'checked':''} /><span><b>${safe(t.id)}</b></span></label>`).join('')}</div>
+      <div class="hint">Linking an ID uses the name, location and team from the timeclock.</div>
+      <div class="actions"><button type="button" id="fceSave">Save</button><button type="button" id="fceCancel" class="ghost">Cancel</button></div>
+      <div id="fceMsg" class="mh-status"></div>
+    </div>`;
+    el('fceCancel').onclick=()=>{ box.hidden=true; box.innerHTML=''; };
+    el('fceSave').onclick=async()=>{
+      const id=el('fceId').value.replace(/\D/g,''), msg=el('fceMsg');
+      if(id && !/^\d{5}$/.test(id)){ msg.textContent='Employee ID is 5 digits.'; return; }
+      const changes={truck_types:[...box.querySelectorAll('.fc-check input:checked')].map(i=>i.value),emp_email:el('fceMail').value.trim()};
+      if(id || c.source==='import') changes.emp_id=id;
+      msg.style.color='var(--muted)'; msg.textContent='Saving…';
+      try{
+        const r=await rpc('fc_mgr_update_cert',{p_passcode:M.pass,p_cert_id:c.id,p_changes:changes});
+        if(!r.ok){ msg.style.color=''; msg.textContent=errText(r.error); return; }
+        toast('Certificate updated'); M.detail=r.cert; await refresh(true); openDetail(r.cert,'Saved.');
+      }catch(e){ msg.style.color=''; msg.textContent='Save failed — '+e.message; }
+    };
   }
   function preview(c){
     const p=el('fcdPreview'); if(!p) return;
@@ -694,8 +735,8 @@
     if(!window.LWHXlsx){ toast('Excel export not available'); return; }
     const list=filteredCerts();
     LWHXlsx.download(`Forklift_Certifications_${todayIso()}.xlsx`,[{name:'Certifications',
-      columns:[{label:'Name',width:24},{label:'Employee ID',type:'n',width:12},{label:'Location',width:14},{label:'Manager',width:18},{label:'Cert #',width:18},{label:'Equipment',width:40},{label:'Written Score %',type:'n',width:14},{label:'Classroom Training',width:14},{label:'Written Test',width:12},{label:'Driving Eval',width:12},{label:'Evaluator',width:18},{label:'Issued',width:12},{label:'Expires',width:12},{label:'Days Left',type:'n',width:10},{label:'Status',width:14},{label:'Revoked Reason',width:30}],
-      rows:list.map(c=>[c.name,c.emp_id,c.location||'',c.manager||'',c.cert_no,(c.truck_types||[]).join(', '),+c.written_score,fmtNum(c.training_date),fmtNum(c.written_date),fmtNum(c.practical_date),c.evaluator||'',fmtNum(c.issued_on),fmtNum(c.expires_on),c.days_left,STATE_LABEL[c.state]||c.state,c.revoked_reason||''])
+      columns:[{label:'Name',width:24},{label:'Employee ID',type:'n',width:12},{label:'Location',width:14},{label:'Manager',width:18},{label:'Cert #',width:18},{label:'Equipment',width:40},{label:'Written Score %',type:'n',width:14},{label:'Classroom Training',width:14},{label:'Written Test',width:12},{label:'Driving Eval',width:12},{label:'Evaluator',width:18},{label:'Issued',width:12},{label:'Expires',width:12},{label:'Days Left',type:'n',width:10},{label:'Status',width:14},{label:'Source',width:10},{label:'Revoked Reason',width:30}],
+      rows:list.map(c=>[c.name,c.emp_id,c.location||'',c.manager||'',c.cert_no,(c.truck_types||[]).join(', '),c.written_score==null?'':+c.written_score,fmtNum(c.training_date),fmtNum(c.written_date),fmtNum(c.practical_date),c.evaluator||'',fmtNum(c.issued_on),fmtNum(c.expires_on),c.days_left,STATE_LABEL[c.state]||c.state,c.source==='import'?'Imported':'App',c.revoked_reason||''])
     }]);
   }
 
