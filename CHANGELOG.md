@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.79.0
+- **Messages** (new — top of Home, and in the menu). Employees sign in once with their employee ID + a 6-digit PIN (setup code from a manager the first time). Same PIN system as the other company apps that use employee sign-in.
+  - Messages from managers: notices, **must acknowledge** (Got It), and **quick replies** (one tap). Read Aloud, optional auto read-aloud and chime.
+  - Managers can attach a **PDF or photo**; it's saved on the device as soon as it arrives, so it opens full screen with no signal.
+  - **Message a Manager:** tap a topic (Need help, Can't find item, Equipment problem, Safety concern, Running late, Call me), add text and/or a photo. Shows "Seen by…" and "Handled by…".
+  - "Keep me signed in on this device" — uncheck on a shared computer.
+- **Warehouse Message Center** (`/messages/`, linked inside Messages for managers): Employee Inbox, Send (everyone, by clock-in location, or picked people), read receipts with reminders / recall / Excel export, and Employee Sign-in (setup codes, PIN resets).
+  - Who can send = the warehouse manager list (12 managers from Manager_List.xlsx), stored in Supabase `msg_wh_managers`.
+  - Backend: `sql/warehouse_messages.sql` (already applied). Shares the message tables and file service with the Driver Toolkit; the driver and warehouse sides can't see each other's messages or files.
+
 ## v1.78.1
 - **Forklift Certs → Employees: hide people who don't need to be on the list** (office / shop staff, people no longer here).
   - Tick the boxes (or the header box for everyone shown) → **Hide from list**.

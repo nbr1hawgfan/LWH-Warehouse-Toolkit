@@ -5,6 +5,7 @@
    To add a new tool to Home, add one line to TOOLS below. */
 (function () {
   const CATS = [
+    { id: 'msg',    label: 'Messages' },
     { id: 'inv',    label: 'Inventory & Lookup' },
     { id: 'ship',   label: 'Shipping & Receiving' },
     { id: 'labels', label: 'Labels & Badges' },
@@ -13,6 +14,8 @@
     { id: 'tools',  label: 'Scan & Utilities' }
   ];
   const TOOLS = [
+    { view: "messages", cat: "msg", name: "Messages", desc: "Messages from your managers — read them, open attached files, answer with one tap. Send a manager a message or a photo.", kw: "messages message manager inbox text chat notice announcement reply photo bol",
+      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 5h16v11H9l-5 4z\"/><path d=\"M8 9.5h8M8 12.5h5\"/></svg>" },
     { view: "quickLookup", cat: "inv", name: "Quick Lookup", desc: "One box: type, scan or speak an LWH ID, item, customer ID, bay or lot. See pallets, summary and history, print with barcodes, or send it to Excel.", kw: "quick lookup search scan speak voice find pallet item bay customer id lot history excel export print barcode",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 6v12M7 6v12M10 6v8M13 6v8\"/><circle cx=\"16.5\" cy=\"15.5\" r=\"3.5\"/><path d=\"M19 18l2.5 2.5\"/></svg>" },
     { view: "customerLookup", cat: "inv", name: "Master Lookup", desc: "Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.", kw: "search find inventory lwh id invrec receipt item lot vendor bay customer",

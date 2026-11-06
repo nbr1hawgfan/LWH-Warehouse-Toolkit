@@ -1,0 +1,601 @@
+<!doctype html>
+<!-- Warehouse Message Center — copy of the Driver Toolkit's dispatch/index.html with warehouse wording and the
+     whm_* / emp_* functions (sql/warehouse_messages.sql). Keep the two in step when changing features. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Warehouse Message Center</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="../icons/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" />
+<style>
+:root{--brand:#c8102e;--brand-dark:#8f0b21;--brand-tint:#fbe7ea;--ink:#141414;--muted:#5c5c66;--line:#dedede;--bg:#f3f3f3;--card:#fff;--good:#1a7a1a;--warn:#a15c00;--bad:#b91c1c}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+h1,h2,h3,.tab,button{font-family:Oswald,"Arial Narrow",Arial,sans-serif;letter-spacing:.03em}
+h2{margin:0 0 10px;font-size:20px;text-transform:uppercase}
+h3{margin:18px 0 8px;font-size:15px;text-transform:uppercase;color:var(--muted)}
+header{background:var(--brand);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;border-bottom:4px solid #111}
+header img{width:44px;height:44px;background:#fff;border-radius:50%;object-fit:contain}
+header h1{margin:0;font-size:22px;text-transform:uppercase}
+header .sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.85}
+header .who{margin-left:auto;text-align:right;font-size:13px}
+header .who b{display:block;font-family:Oswald,Arial,sans-serif;font-size:15px;text-transform:uppercase}
+header .who button{margin-top:4px;background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;min-height:30px;padding:2px 10px;font-size:12px}
+main{max-width:1100px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);padding:18px;margin:0 0 16px}
+button{border:0;background:var(--brand);color:#fff;font-weight:600;text-transform:uppercase;font-size:14px;padding:9px 16px;min-height:42px;cursor:pointer}
+button:hover{background:var(--brand-dark)}
+button.ghost{background:#fff;color:#111;border:2px solid #111}
+button.ghost:hover{background:#f0f0f0}
+button.dark{background:#111}button.dark:hover{background:#333}
+button:disabled{opacity:.55;cursor:default}
+label{display:block;font-weight:600;margin:0 0 12px}
+input[type=text],input[type=password],input[type=search],select,textarea{display:block;width:100%;margin-top:5px;padding:10px 12px;border:1.5px solid #bbb;background:#fff;font:inherit;font-weight:400;border-radius:0}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:0;border-color:var(--brand)}
+textarea{min-height:120px;resize:vertical;font-size:17px}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0;font-weight:400}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.err{background:#fdecec;border:2px solid var(--bad);color:#7f1d1d;padding:10px 12px;margin:10px 0;font-weight:600}
+.ok{background:#e9f6e9;border:2px solid var(--good);color:#145f14;padding:10px 12px;margin:10px 0;font-weight:600}
+.tabs{display:flex;gap:0;margin:0 0 16px;border-bottom:3px solid #111;max-width:100%}
+.tab{background:#fff;color:#111;border:2px solid #111;border-bottom:0;margin-right:-2px;min-height:44px;padding:8px 20px;font-size:15px}
+.tab.active{background:#111;color:#fff}
+.seg{display:flex;flex-wrap:wrap;gap:0;margin:6px 0 12px}
+.seg button{background:#fff;color:#111;border:2px solid #111;margin-right:-2px;flex:1 1 auto}
+.seg button.active{background:var(--brand);border-color:var(--brand);color:#fff;position:relative;z-index:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.chip{background:#fff;color:#111;border:1.5px solid #999;text-transform:none;font-family:inherit;font-weight:600;letter-spacing:0;min-height:38px;padding:6px 12px;font-size:14px}
+.chip.on{background:#111;color:#fff;border-color:#111}
+.chip small{font-weight:400;opacity:.75;margin-left:4px}
+.pick{max-height:300px;overflow:auto;border:1.5px solid #bbb;background:#fff}
+.pick label{display:flex;gap:10px;align-items:center;margin:0;padding:8px 12px;border-bottom:1px solid #eee;font-weight:500}
+.pick label span{color:var(--muted);font-size:13px;margin-left:auto}
+.pick input{width:18px;height:18px;accent-color:var(--brand)}
+.opt-row{display:flex;gap:8px;margin:0 0 8px}
+.opt-row input{margin:0}
+.opt-row button{min-height:40px;padding:4px 12px}
+.count{font-size:12.5px;color:var(--muted);text-align:right;margin-top:4px}
+.preview{background:#fafafa;border-left:5px solid var(--brand);padding:12px 14px;margin:8px 0 12px;font-size:16px;white-space:pre-wrap}
+.sent-item{display:grid;grid-template-columns:1fr auto;gap:6px 14px;padding:14px;border:1px solid var(--line);border-left:6px solid #111;background:#fff;margin:0 0 10px;cursor:pointer}
+.sent-item:hover{border-color:#111}
+.sent-item.sel{outline:3px solid var(--brand)}
+.sent-item.recalled{opacity:.55;border-left-color:#999}
+.sent-item.partial{border-left-color:var(--brand)}
+.sent-item.done{border-left-color:var(--good)}
+.sent-body{font-size:15.5px;white-space:pre-wrap;word-break:break-word}
+.meta{font-size:12.5px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;background:#eee;margin-right:6px}
+.tag.urgent{background:var(--bad);color:#fff}
+.bar{height:8px;background:#e6e6e6;margin-top:6px;min-width:150px}
+.bar i{display:block;height:100%;background:var(--good)}
+.score{font-family:Oswald,Arial,sans-serif;font-size:20px;text-align:right;white-space:nowrap}
+.score small{display:block;font-family:inherit;font-size:12px;color:var(--muted);font-weight:400}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #e6e6e6;vertical-align:top}
+th{font-family:Oswald,Arial,sans-serif;text-transform:uppercase;font-size:12.5px;letter-spacing:.05em;background:#111;color:#fff;position:sticky;top:0}
+.st{display:inline-block;font-weight:700;font-size:12px;text-transform:uppercase;padding:3px 8px}
+.st-none{background:#eee;color:#555}.st-dlv{background:#fff4dc;color:var(--warn)}.st-read{background:#e7eefc;color:#1d3f8f}.st-ok{background:#e3f4e3;color:#145f14}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;font-weight:700;letter-spacing:.12em}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}
+.sticky{position:sticky;top:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;font-weight:600;z-index:9;max-width:90vw}
+.login{max-width:440px;margin:30px auto}
+.tab .badge{display:inline-block;min-width:22px;padding:0 6px;margin-left:6px;background:var(--brand);color:#fff;font-size:13px;line-height:22px;text-align:center}
+.tab.active .badge{background:#fff;color:var(--brand)}
+.files-pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 12px}
+.fchip{display:inline-flex;align-items:center;gap:8px;border:1.5px solid #111;background:#fff;padding:6px 10px;font-size:14px;font-weight:600}
+.fchip button{min-height:26px;padding:0 8px;font-size:12px}
+.fchip.busy{opacity:.6}
+.attach-btn{display:inline-flex;align-items:center;gap:8px;border:2px solid #111;background:#fff;color:#111;padding:8px 14px;min-height:42px;font-family:Oswald,Arial,sans-serif;text-transform:uppercase;font-weight:600;cursor:pointer;font-size:14px;margin:0}
+.flink{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--brand);color:var(--brand);background:#fff;padding:5px 10px;font-size:13.5px;font-weight:600;text-transform:none;font-family:inherit;letter-spacing:0;min-height:32px}
+.flink:hover{background:var(--brand-tint)}
+.inb-item{padding:14px;border:1px solid var(--line);border-left:6px solid var(--brand);background:#fff;margin:0 0 10px;cursor:pointer}
+.inb-item.seen{border-left-color:#111}
+.inb-item.done{border-left-color:var(--good);opacity:.8}
+.inb-item.sel{outline:3px solid var(--brand)}
+.inb-item .who{font-family:Oswald,Arial,sans-serif;font-size:16px;text-transform:uppercase}
+.inb-item .txt{font-size:15.5px;margin:4px 0;white-space:pre-wrap;word-break:break-word}
+.new-dot{display:inline-block;background:var(--brand);color:#fff;font-size:11px;font-weight:700;padding:1px 6px;margin-left:6px;text-transform:uppercase}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.thumbs img{max-width:220px;max-height:160px;border:1px solid var(--line);cursor:zoom-in;background:#eee}
+.thread{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+.bubble{padding:10px 12px;margin:0 0 8px;max-width:92%;white-space:pre-wrap;word-break:break-word}
+.bubble.drv{background:#f1f1f1;border-left:4px solid #111}
+.bubble.disp{background:var(--brand-tint);border-left:4px solid var(--brand);margin-left:auto}
+.bubble .meta{margin-bottom:3px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:20;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
+.lightbox img{max-width:100%;max-height:100%;background:#fff}
+@media(max-width:820px){.tabs{overflow-x:auto;scrollbar-width:none}.tab{flex:0 0 auto;padding:8px 12px;font-size:14px}.split,.grid2{grid-template-columns:1fr}.sticky{position:static}header .sub{display:none}}
+@media print{header,.tabs,.no-print{display:none!important}body{background:#fff}.card{border:0;padding:0}th{background:#fff;color:#000;border-bottom:2px solid #000}}
+</style>
+</head>
+<body>
+<header>
+  <img src="../icons/company-logo.png" alt="" />
+  <div><h1>Warehouse Message Center</h1><div class="sub">Logistics Warehouse · Warehouse Managers</div></div>
+  <div class="who" id="whoBox" hidden><span>Signed in</span><b id="whoName"></b><button type="button" id="logoutBtn">Sign out</button></div>
+</header>
+<main>
+  <!-- Sign in -->
+  <section id="loginView" class="card login">
+    <h2>Manager sign-in</h2>
+    <p class="hint" style="margin:0 0 14px">Use your employee ID and 6-digit PIN — the same sign-in employees use for Messages in the Warehouse Toolkit. Only people on the <b>warehouse manager list</b> can send messages.</p>
+    <label>Employee ID<input type="text" id="lgId" autocomplete="username" inputmode="numeric" maxlength="6" /></label>
+    <div id="lgPinBox"><label>6-digit PIN<input type="password" id="lgPin" inputmode="numeric" maxlength="6" autocomplete="current-password" /></label>
+      <button type="button" id="lgBtn">Sign in</button></div>
+    <div id="lgSetupBox" hidden>
+      <label>Setup code<input type="text" id="lgCode" autocapitalize="characters" autocomplete="off" /></label>
+      <div class="grid2"><label>New 6-digit PIN<input type="password" id="lgNew1" inputmode="numeric" maxlength="6" autocomplete="new-password" /></label>
+      <label>Type it again<input type="password" id="lgNew2" inputmode="numeric" maxlength="6" autocomplete="new-password" /></label></div>
+      <button type="button" id="lgSetupBtn">Create PIN &amp; sign in</button>
+    </div>
+    <div id="lgErr" class="err" hidden></div>
+    <p><button type="button" id="lgToggle" class="ghost">First time sign-in</button></p>
+  </section>
+
+  <section id="appView" hidden>
+    <div class="tabs no-print">
+      <button type="button" class="tab active" data-tab="inbox">Employee Inbox<span class="badge" id="inbBadge" hidden>0</span></button>
+      <button type="button" class="tab" data-tab="send">Send</button>
+      <button type="button" class="tab" data-tab="sent">Sent &amp; Read Receipts</button>
+      <button type="button" class="tab" data-tab="pins">Employee Sign-in</button>
+    </div>
+
+    <!-- INBOX -->
+    <div id="tab-inbox" class="split">
+      <div>
+        <div class="row no-print" style="margin:0 0 10px">
+          <div class="seg" id="inbSeg" style="margin:0"><button type="button" class="active" data-inb="open">Needs attention</button><button type="button" data-inb="all">All (7 days)</button></div>
+          <button type="button" class="ghost" id="inbRefresh">Refresh</button>
+          <label style="display:flex;gap:8px;align-items:center;margin:0;font-weight:500"><input type="checkbox" id="inbChime" checked style="width:18px;height:18px;accent-color:var(--brand)"> Chime on new</label>
+          <span class="hint" id="inbStatus"></span>
+        </div>
+        <div id="inbList"></div>
+      </div>
+      <div class="card sticky" id="inbDetail"><p class="hint" style="margin:0">Messages employees send from the Warehouse Toolkit land here — every warehouse manager sees the same list. Pick one to see the details and photos, and to answer.</p></div>
+    </div>
+
+    <!-- SEND -->
+    <div id="tab-send" class="split" hidden>
+      <div class="card">
+        <h2>New message</h2>
+        <h3 style="margin-top:0">1. Who gets it</h3>
+        <div class="seg" id="audSeg"><button type="button" class="active" data-aud="all">Everyone</button><button type="button" data-aud="locations">By location</button><button type="button" data-aud="drivers">Pick people</button></div>
+        <div id="audAll" class="hint">All active employees (managers not included).</div>
+        <div id="audLoc" hidden><div class="chips" id="locChips"></div></div>
+        <div id="audDrv" hidden>
+          <input type="search" id="drvSearch" placeholder="Search name, ID or location" />
+          <div class="row" style="margin:6px 0"><button type="button" class="ghost" id="drvAll" style="min-height:34px;padding:2px 10px">Select shown</button><button type="button" class="ghost" id="drvNone" style="min-height:34px;padding:2px 10px">Clear</button><span class="hint" id="drvCount"></span></div>
+          <div class="pick" id="drvPick"></div>
+        </div>
+
+        <h3>2. What kind</h3>
+        <div class="seg" id="typeSeg"><button type="button" class="active" data-type="notice">Notice</button><button type="button" data-type="ack">Must acknowledge</button><button type="button" data-type="reply">Quick reply</button></div>
+        <p class="hint" id="typeHint">Just information. Shows up and can be read out loud.</p>
+        <div id="replyBox" hidden>
+          <div class="chips" id="presetChips"></div>
+          <div id="optList"></div>
+          <p class="hint">Up to 4 answers, 40 characters each. Employees tap one — no typing.</p>
+        </div>
+
+        <h3>3. Message</h3>
+        <textarea id="body" maxlength="1000" placeholder="Keep it short — employees can have it read out loud."></textarea>
+        <div class="count"><span id="bodyCount">0</span>/1000</div>
+        <div class="files-pick"><label class="attach-btn"><input type="file" id="sendFile" accept="application/pdf,image/*" multiple hidden>📎 Attach BOL / PDF / photo</label><span id="sendFiles" class="files-pick" style="margin:0"></span></div>
+        <p class="hint" style="margin:-6px 0 12px">Up to 5 files, 10 MB each. Employees' devices save them so they open with no signal. Files are removed after 14 days.</p>
+        <div class="grid2">
+          <label>Remove from employees' screens<select id="expires"><option value="">Never (after 30 days)</option><option value="eod">End of today</option><option value="24">In 24 hours</option><option value="72">In 3 days</option><option value="168">In 1 week</option></select></label>
+          <label style="display:flex;gap:10px;align-items:center;margin-top:26px"><input type="checkbox" id="urgent" style="width:20px;height:20px;accent-color:var(--brand)" /> Mark urgent</label>
+        </div>
+        <div id="sendErr" class="err" hidden></div>
+        <div class="row"><button type="button" id="sendBtn">Send message</button><button type="button" class="ghost" id="hearBtn">Hear it</button></div>
+      </div>
+      <div class="card sticky">
+        <h2>Preview</h2>
+        <div class="meta" id="pvTo">To: Everyone</div>
+        <div class="preview" id="pvBody">Your message will show here.</div>
+        <div class="meta" id="pvSpoken"></div>
+        <h3>Tips</h3>
+        <ul class="hint" style="padding-left:18px;margin:0">
+          <li>Employees can have messages read out loud, so write it the way you'd say it.</li>
+          <li>Use <b>Must acknowledge</b> for safety and policy notices. You'll see exactly who tapped Got It.</li>
+          <li><b>By location</b> goes by where each person last clocked in.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SENT -->
+    <div id="tab-sent" class="split" hidden>
+      <div>
+        <div class="row no-print" style="margin:0 0 10px"><select id="sentDays" style="width:auto;margin:0"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select><button type="button" class="ghost" id="sentRefresh">Refresh</button><span class="hint" id="sentStatus"></span></div>
+        <div id="sentList"></div>
+      </div>
+      <div class="card sticky" id="detail">
+        <p class="hint" style="margin:0">Pick a message to see who got it, read it, and answered.</p>
+      </div>
+    </div>
+
+    <!-- PINS -->
+    <div id="tab-pins" hidden>
+      <div class="card">
+        <h2>Setup codes</h2>
+        <p class="hint" style="margin:0 0 10px">Each employee signs in once in the Warehouse Toolkit: <b>Messages → First time sign-in</b>, their employee ID, this setup code, then a PIN they choose. It is the same PIN for every company app that uses employee sign-in. A code disappears from this list once it is used. Hand codes out in person or by text — treat them like a key.</p>
+        <div class="row no-print" style="margin:0 0 10px"><button type="button" class="ghost" id="pinsRefresh">Refresh</button><button type="button" class="ghost" id="pinsPrint">Print</button><span class="hint" id="pinsStatus"></span></div>
+        <div style="overflow:auto"><table><thead><tr><th>Employee</th><th>Employee ID</th><th>Location</th><th>Setup code</th></tr></thead><tbody id="pinsBody"></tbody></table></div>
+      </div>
+      <div class="card no-print">
+        <h2>Reset a PIN</h2>
+        <p class="hint" style="margin:0 0 10px">Forgot their PIN, or a new phone? Resetting signs them out everywhere and gives a new setup code.</p>
+        <div class="row"><select id="resetSel" style="max-width:420px;margin:0"></select><button type="button" id="resetBtn">Reset PIN</button></div>
+        <div id="resetOut"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script>
+(function(){
+  const API='https://tjivcqxnkftujceumdtx.supabase.co/rest/v1/rpc/';
+  const KEY='sb_publishable_PYlWSW6-Gi-QZl91IXUq0Q_W5mO3sDT';
+  const TK='lwhwhmc_token';
+  const PRESETS=['On my way','Running late','Call me','Yes','No','Can do','Can’t do it'];
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+  const FILE_API='https://tjivcqxnkftujceumdtx.supabase.co/functions/v1/msg-file';
+  let sendFiles=[], inb=[], inbView='open', inbSel=null, inbTimer=null, lastUnread=-1, replyFiles=[];
+  let token=ls.get(TK)||'', dir=[], aud='all', type='notice', locSel=new Set(), drvSel=new Set(), opts=['',''], sent=[], selId=null, sentTimer=null;
+
+  function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2800)}
+  async function rpc(name,args){
+    const r=await fetch(API+name,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(args||{}),cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(j&&j.ok===false&&(j.error==='signed_out'||j.error==='not_manager')){ signOut(j.error==='not_manager'?'This employee ID is not on the warehouse manager list.':'Your sign-in ran out. Please sign in again.'); throw new Error('stop'); }
+    return j;
+  }
+  function when(iso){ if(!iso) return ''; const d=new Date(iso); const t=d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); return d.toDateString()===new Date().toDateString()?t:d.toLocaleDateString([], {month:'short',day:'numeric'})+' '+t; }
+
+  // ------------------------------------------------ sign in
+  function lgErr(m){$('lgErr').textContent=m||'';$('lgErr').hidden=!m}
+  function signOut(msg){ token=''; ls.set(TK,null); clearInterval(sentTimer); clearInterval(inbTimer); $('appView').hidden=true; $('whoBox').hidden=true; $('loginView').hidden=false; lgErr(msg||''); }
+  async function start(){
+    try{ const d=await rpc('whm_directory',{p_token:token}); dir=d.drivers||[]; $('whoName').textContent=d.me||''; }
+    catch(e){ return; }
+    $('loginView').hidden=true; $('appView').hidden=false; $('whoBox').hidden=false;
+    renderAudience(); renderReply(); updatePreview(); renderResetSel();
+    loadInbox(); clearInterval(inbTimer); inbTimer=setInterval(()=>{ loadInbox(true); },30000);
+  }
+  async function doLogin(){
+    const id=$('lgId').value.replace(/\D/g,''), pin=$('lgPin').value.trim();
+    if(!id||!/^\d{6}$/.test(pin)) return lgErr('Enter your employee ID and 6-digit PIN.');
+    $('lgBtn').disabled=true;
+    try{ const r=await fetch(API+'emp_login',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_emp_id:Number(id),p_pin:pin})}).then(r=>r.json());
+      if(!r.ok){ lgErr(r.error+' First time? Tap “First time sign-in” below.'); return; }
+      token=r.token; ls.set(TK,token); ls.set('lwhwhmc_id',id); $('lgPin').value=''; lgErr(''); start();
+    }catch(e){ lgErr('Could not reach the server. Check your connection.'); } finally{ $('lgBtn').disabled=false; }
+  }
+  async function doSetup(){
+    const id=$('lgId').value.replace(/\D/g,''), code=$('lgCode').value.trim(), a=$('lgNew1').value.trim(), b=$('lgNew2').value.trim();
+    if(!id||!code) return lgErr('Enter your employee ID and setup code.');
+    if(!/^\d{6}$/.test(a)) return lgErr('PIN must be exactly 6 digits.'); if(a!==b) return lgErr('The two PINs do not match.');
+    try{ const r=await fetch(API+'emp_create_pin',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_emp_id:Number(id),p_setup_code:code,p_pin:a})}).then(r=>r.json());
+      if(!r.ok) return lgErr(r.error);
+      token=r.token; ls.set(TK,token); ls.set('lwhwhmc_id',id); setSetup(false); lgErr(''); start();
+    }catch(e){ lgErr('Could not reach the server. Check your connection.'); }
+  }
+  function setSetup(on){ $('lgSetupBox').hidden=!on; $('lgPinBox').hidden=on; $('lgToggle').textContent=on?'I already have a PIN':'First time sign-in'; }
+  $('lgBtn').onclick=doLogin; $('lgPin').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+  $('lgSetupBtn').onclick=doSetup; $('lgToggle').onclick=()=>setSetup($('lgSetupBox').hidden);
+  $('logoutBtn').onclick=async()=>{ const t=token; signOut(); try{ await fetch(API+'emp_logout',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:t})}); }catch(e){} };
+  $('lgId').value=ls.get('lwhwhmc_id')||'';
+
+  // ------------------------------------------------ tabs
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
+    ['inbox','send','sent','pins'].forEach(t=>$('tab-'+t).hidden=t!==b.dataset.tab);
+    if(b.dataset.tab==='inbox') loadInbox();
+    clearInterval(sentTimer);
+    if(b.dataset.tab==='sent'){ loadSent(); sentTimer=setInterval(()=>{ if(!document.hidden) loadSent(true); },30000); }
+    if(b.dataset.tab==='pins') loadPins();
+  });
+
+  // ------------------------------------------------ audience
+  const drivers=()=>dir.filter(d=>d.role!=='Manager');
+  function renderAudience(){
+    document.querySelectorAll('#audSeg button').forEach(b=>b.classList.toggle('active',b.dataset.aud===aud));
+    $('audAll').hidden=aud!=='all'; $('audLoc').hidden=aud!=='locations'; $('audDrv').hidden=aud!=='drivers';
+    $('audAll').textContent=`All ${drivers().length} active employees (managers not included).`;
+    const locs={}; drivers().forEach(d=>{ const l=d.location||''; if(l) locs[l]=(locs[l]||0)+1; });
+    $('locChips').innerHTML=Object.keys(locs).sort().map(l=>`<button type="button" class="chip${locSel.has(l)?' on':''}" data-loc="${esc(l)}">${esc(l)}<small>${locs[l]}</small></button>`).join('')||'<span class="hint">Nobody has clocked in at a location yet.</span>';
+    const q=($('drvSearch').value||'').toLowerCase();
+    const shown=dir.filter(d=>!q||(d.name+' '+d.driver_id+' '+d.location).toLowerCase().includes(q));
+    $('drvPick').innerHTML=shown.map(d=>`<label><input type="checkbox" data-drv="${esc(d.driver_id)}"${drvSel.has(d.driver_id)?' checked':''}/> ${esc(d.name)} <span>${esc(d.role==="Manager"?"Manager":(d.location||"No clock-in location"))}${d.has_pin?'':' · not signed up'}</span></label>`).join('');
+    $('drvCount').textContent=drvSel.size?`${drvSel.size} selected`:'';
+    updatePreview();
+  }
+  $('audSeg').onclick=e=>{ const b=e.target.closest('[data-aud]'); if(b){ aud=b.dataset.aud; renderAudience(); } };
+  $('locChips').onclick=e=>{ const b=e.target.closest('[data-loc]'); if(!b) return; const l=b.dataset.loc; locSel.has(l)?locSel.delete(l):locSel.add(l); renderAudience(); };
+  $('drvPick').onchange=e=>{ const c=e.target.closest('[data-drv]'); if(!c) return; c.checked?drvSel.add(c.dataset.drv):drvSel.delete(c.dataset.drv); $('drvCount').textContent=drvSel.size?`${drvSel.size} selected`:''; updatePreview(); };
+  $('drvSearch').oninput=renderAudience;
+  $('drvAll').onclick=()=>{ document.querySelectorAll('#drvPick [data-drv]').forEach(c=>drvSel.add(c.dataset.drv)); renderAudience(); };
+  $('drvNone').onclick=()=>{ drvSel.clear(); renderAudience(); };
+  function audienceLabel(){
+    if(aud==='all') return `Everyone (${drivers().length})`;
+    if(aud==='locations'){ const n=drivers().filter(d=>locSel.has(d.location)).length; return locSel.size?`${[...locSel].join(', ')} (${n})`:'Pick at least one location'; }
+    return drvSel.size?(drvSel.size===1?(dir.find(d=>d.driver_id===[...drvSel][0])||{}).name:`${drvSel.size} drivers`):'Pick at least one person';
+  }
+
+  // ------------------------------------------------ type + replies
+  const TYPE_HINT={notice:'Just information. Shows up and can be read out loud.',ack:'They must tap Got It. You will see who has and hasn’t.',reply:'They tap one of your answers. You will see each answer.'};
+  $('typeSeg').onclick=e=>{ const b=e.target.closest('[data-type]'); if(!b) return; type=b.dataset.type; document.querySelectorAll('#typeSeg button').forEach(x=>x.classList.toggle('active',x===b)); $('typeHint').textContent=TYPE_HINT[type]; $('replyBox').hidden=type!=='reply'; updatePreview(); };
+  function renderReply(){
+    $('presetChips').innerHTML=PRESETS.map(p=>`<button type="button" class="chip${opts.includes(p)?' on':''}" data-preset="${esc(p)}">${esc(p)}</button>`).join('');
+    $('optList').innerHTML=opts.map((o,i)=>`<div class="opt-row"><input type="text" maxlength="40" data-opt="${i}" value="${esc(o)}" placeholder="Answer ${i+1}" /><button type="button" class="ghost" data-optdel="${i}" title="Remove">✕</button></div>`).join('')+(opts.length<4?'<button type="button" class="ghost" id="optAdd" style="min-height:36px">+ Add answer</button>':'');
+    const add=$('optAdd'); if(add) add.onclick=()=>{ opts.push(''); renderReply(); };
+    updatePreview();
+  }
+  $('presetChips').onclick=e=>{ const b=e.target.closest('[data-preset]'); if(!b) return; const p=b.dataset.preset;
+    if(opts.includes(p)) opts=opts.filter(o=>o!==p); else { const i=opts.indexOf(''); if(i>=0) opts[i]=p; else if(opts.length<4) opts.push(p); else return toast('4 answers max'); }
+    renderReply(); };
+  $('optList').oninput=e=>{ const i=e.target.dataset.opt; if(i!=null){ opts[+i]=e.target.value; updatePreview(); } };
+  $('optList').onclick=e=>{ const b=e.target.closest('[data-optdel]'); if(!b) return; opts.splice(+b.dataset.optdel,1); if(!opts.length) opts=['']; renderReply(); };
+
+  // ------------------------------------------------ preview + send
+  function cleanOpts(){ const seen=new Set(); return opts.map(o=>o.trim()).filter(o=>o&&!seen.has(o.toLowerCase())&&seen.add(o.toLowerCase())).slice(0,4); }
+  function spoken(){
+    const name=$('whoName').textContent||'your manager', b=$('body').value.trim(); if(!b) return '';
+    let t=`Message from ${name}. ${b}`;
+    if(type==='ack') t+=' Please tap Got it.';
+    if(type==='reply'){ const o=cleanOpts(); if(o.length) t+=` Reply options: ${o.length>1?o.slice(0,-1).join(', ')+', or '+o[o.length-1]:o[0]}.`; }
+    return t;
+  }
+  function updatePreview(){
+    $('bodyCount').textContent=$('body').value.length;
+    $('pvTo').textContent='To: '+audienceLabel()+' · '+({notice:'Notice',ack:'Must acknowledge',reply:'Quick reply'})[type]+($('urgent').checked?' · URGENT':'');
+    $('pvBody').textContent=$('body').value.trim()||'Your message will show here.';
+    const s=spoken(); $('pvSpoken').textContent=s?'Read out loud as: “'+s+'”':'';
+  }
+  $('body').oninput=updatePreview; $('urgent').onchange=updatePreview;
+  $('hearBtn').onclick=()=>{ const s=spoken(); if(!s) return toast('Type a message first'); if(!('speechSynthesis' in window)) return toast('This browser cannot read out loud'); speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(s); u.lang='en-US'; u.rate=.95; speechSynthesis.speak(u); };
+  function expiresAt(){
+    const v=$('expires').value; if(!v) return null;
+    const d=new Date(); if(v==='eod'){ d.setHours(23,59,0,0); } else d.setTime(d.getTime()+(+v)*3600e3);
+    return d.toISOString();
+  }
+  function audiencePayload(){
+    if(aud==='all') return {all:true};
+    if(aud==='locations') return locSel.size?{locations:[...locSel]}:null;
+    return drvSel.size?{drivers:[...drvSel]}:null;
+  }
+  $('sendBtn').onclick=async()=>{
+    const e=$('sendErr'); e.hidden=true;
+    const a=audiencePayload(), body=$('body').value.trim(), o=cleanOpts();
+    const fail=m=>{ e.textContent=m; e.hidden=false; };
+    if(!a) return fail(aud==='locations'?'Pick at least one location.':'Pick at least one person.');
+    if(sendFiles.some(f=>!f.id)) return fail('Wait for the files to finish uploading.');
+    if(!body&&!sendFiles.length) return fail('Type a message or attach a file.');
+    if(type==='reply'&&!o.length) return fail('Add at least one quick-reply answer.');
+    if(aud==='all'&&!confirm(`Send this to all ${drivers().length} employees?`)) return;
+    $('sendBtn').disabled=true;
+    try{
+      const r=await rpc('whm_send',{p_token:token,p_audience:a,p_type:type,p_body:body,p_reply_options:type==='reply'?o:[],p_urgent:$('urgent').checked,p_expires_at:expiresAt(),p_reminder_of:null,p_reply_to:null,p_attachments:sendFiles.map(f=>f.id)});
+      if(!r.ok) return fail(r.error);
+      toast(`Sent to ${r.recipients} ${r.recipients===1?'person':'people'}`);
+      $('body').value=''; $('urgent').checked=false; $('expires').value=''; sendFiles=[]; renderSendFiles(); updatePreview();
+    }catch(err){ if(err.message!=='stop') fail('Could not send. Check your connection and try again.'); }
+    finally{ $('sendBtn').disabled=false; }
+  };
+
+  // ------------------------------------------------ sent
+  function goal(m){ return m.msg_type==='notice'?m.read:m.msg_type==='ack'?m.acked:m.replied; }
+  function goalWord(m){ return m.msg_type==='notice'?'read':m.msg_type==='ack'?'got it':'replied'; }
+  async function loadSent(quiet){
+    if(!quiet) $('sentStatus').textContent='Loading…';
+    try{
+      const r=await rpc('whm_sent',{p_token:token,p_days:+$('sentDays').value});
+      sent=r.messages||[]; $('sentStatus').textContent='Updated '+when(new Date().toISOString());
+      $('sentList').innerHTML=sent.length?sent.map(m=>{
+        const g=goal(m), pct=m.total?Math.round(g/m.total*100):0, cls=m.recalled_at?' recalled':g>=m.total?' done':' partial';
+        return `<div class="sent-item${cls}${m.id===selId?' sel':''}" data-id="${m.id}">
+          <div><div class="meta">${when(m.created_at)} · ${esc(m.sender_name)} → <b>${esc(m.audience_label)}</b></div>
+          <div style="margin:4px 0">${m.urgent?'<span class="tag urgent">Urgent</span>':''}<span class="tag">${({notice:'Notice',ack:'Must acknowledge',reply:'Quick reply'})[m.msg_type]}</span>${m.reminder_of?'<span class="tag">Reminder</span>':''}${m.recalled_at?'<span class="tag">Recalled</span>':''}${(m.attachments||[]).length?`<span class="tag">📎 ${m.attachments.length}${m.opened?` · ${m.opened} opened`:''}</span>`:''}</div>
+          <div class="sent-body">${esc(m.body)}</div></div>
+          <div class="score">${g} of ${m.total}<small>${goalWord(m)}${m.msg_type!=='notice'?` · ${m.read} read`:''}</small><div class="bar"><i style="width:${pct}%"></i></div></div></div>`;
+      }).join(''):'<div class="card"><p class="hint" style="margin:0">Nothing sent in this window yet.</p></div>';
+      if(selId) loadDetail(selId,true);
+    }catch(e){ if(e.message!=='stop') $('sentStatus').textContent='Could not load. Retrying in 30 seconds.'; }
+  }
+  $('sentDays').onchange=()=>loadSent(); $('sentRefresh').onclick=()=>loadSent();
+  $('sentList').onclick=e=>{ const it=e.target.closest('.sent-item'); if(!it) return; selId=+it.dataset.id; document.querySelectorAll('.sent-item').forEach(x=>x.classList.toggle('sel',x===it)); loadDetail(selId); };
+  let detailRows=[];
+  function statusOf(r,m){
+    if(r.replied_at) return `<span class="st st-ok">Replied: ${esc(r.reply)}</span>`;
+    if(r.acked_at) return '<span class="st st-ok">Got it</span>';
+    if(r.opened_at) return '<span class="st st-ok">Opened file</span>';
+    if(r.read_at) return '<span class="st st-read">Read</span>';
+    if(r.delivered_at) return '<span class="st st-dlv">Delivered</span>';
+    return '<span class="st st-none">Not yet</span>';
+  }
+  async function loadDetail(id,quiet){
+    const m=sent.find(x=>x.id===id); if(!m) return;
+    if(!quiet) $('detail').innerHTML='<p class="hint">Loading…</p>';
+    try{
+      const r=await rpc('whm_detail',{p_token:token,p_message_id:id}); detailRows=r.recipients||[];
+      const pending=detailRows.filter(x=>m.msg_type==='notice'?!x.read_at:m.msg_type==='ack'?!x.acked_at:!x.replied_at);
+      let tally='';
+      if(m.msg_type==='reply'){ const c={}; detailRows.forEach(x=>{ if(x.reply) c[x.reply]=(c[x.reply]||0)+1; }); tally=Object.keys(c).length?'<div class="chips">'+Object.entries(c).map(([k,v])=>`<span class="chip on" style="cursor:default">${esc(k)}<small>${v}</small></span>`).join('')+'</div>':''; }
+      $('detail').innerHTML=`<h2>Read receipts</h2><div class="preview">${esc(m.body)}</div>${filesHtml(m.attachments)}${tally}
+        <div class="row no-print" style="margin:0 0 12px">
+          ${pending.length&&!m.recalled_at?`<button type="button" id="remindBtn">Remind ${pending.length} who haven't ${goalWord(m)==='got it'?'acknowledged':goalWord(m)}</button>`:''}
+          <button type="button" class="ghost" id="csvBtn">Export to Excel (CSV)</button>
+          ${!m.recalled_at?'<button type="button" class="ghost" id="recallBtn">Recall</button>':''}
+        </div>
+        <div style="max-height:520px;overflow:auto"><table><thead><tr><th>Employee</th><th>Location</th><th>Status</th><th>When</th></tr></thead><tbody>
+        ${detailRows.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.location)}</td><td>${statusOf(x,m)}</td><td class="meta">${when(x.replied_at||x.acked_at||x.read_at||x.delivered_at)}</td></tr>`).join('')}
+        </tbody></table></div>`;
+      const rb=$('remindBtn'); if(rb) rb.onclick=async()=>{
+        if(!confirm(`Send a reminder to ${pending.length} ${pending.length===1?'person':'people'}?`)) return;
+        try{ const s=await rpc('whm_send',{p_token:token,p_audience:{drivers:pending.map(x=>x.driver_id)},p_type:m.msg_type,p_body:'Reminder: '+m.body.replace(/^Reminder:\s*/,''),p_reply_options:m.reply_options||[],p_urgent:m.urgent,p_expires_at:m.expires_at,p_reminder_of:m.reminder_of||m.id});
+          if(!s.ok) return toast(s.error); toast('Reminder sent to '+s.recipients); loadSent(true); }catch(e){}
+      };
+      $('csvBtn').onclick=()=>{
+        const rows=[['Employee','Employee ID','Location','Delivered','Read','Got it','Reply','Replied']].concat(detailRows.map(x=>[x.name,x.driver_id,x.location,when(x.delivered_at),when(x.read_at),when(x.acked_at),x.reply||'',when(x.replied_at)]));
+        const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`message-${m.id}-receipts.csv`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+      };
+      const rc=$('recallBtn'); if(rc) rc.onclick=async()=>{ if(!confirm('Recall this message? It disappears from employees’ screens. Read receipts stay here.')) return; try{ await rpc('whm_recall',{p_token:token,p_message_id:m.id}); toast('Recalled'); loadSent(true); }catch(e){} };
+    }catch(e){ if(e.message!=='stop') $('detail').innerHTML='<p class="err">Could not load read receipts.</p>'; }
+  }
+
+  // ------------------------------------------------ files
+  async function uploadFile(file){
+    let blob=file, name=file.name||'file';
+    if(/^image\//.test(file.type)&&file.size>3*1024*1024) blob=await shrink(file);
+    if(blob.size>10*1024*1024) throw new Error(name+' is over 10 MB');
+    const r=await fetch(FILE_API+'?action=upload',{method:'POST',headers:{apikey:KEY,'Content-Type':blob.type||'application/octet-stream','x-msg-token':token,'x-file-name':encodeURIComponent(name)},body:blob});
+    const j=await r.json().catch(()=>({ok:false,error:'HTTP '+r.status}));
+    if(!j.ok){ if(j.error==='signed_out'){ signOut('Your sign-in ran out. Please sign in again.'); } throw new Error(j.error||'Upload failed'); }
+    return j;
+  }
+  async function shrink(file){
+    const url=URL.createObjectURL(file);
+    try{ const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});
+      const k=Math.min(1,2000/Math.max(img.naturalWidth,img.naturalHeight)); const c=document.createElement('canvas'); c.width=img.naturalWidth*k; c.height=img.naturalHeight*k;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height); return await new Promise(r=>c.toBlob(r,'image/jpeg',.85)); } finally{ URL.revokeObjectURL(url); }
+  }
+  function fileChips(list,kind){ return list.map((f,i)=>`<span class="fchip${f.id?'':' busy'}">${f.id?'📎':'⏳'} ${esc(f.name)}<button type="button" class="ghost" data-fdel="${kind}:${i}">✕</button></span>`).join(''); }
+  function renderSendFiles(){ $('sendFiles').innerHTML=fileChips(sendFiles,'send'); updatePreview(); }
+  async function addFiles(input,list,render){
+    const fs=[...(input.files||[])]; input.value='';
+    for(const f of fs){
+      if(list.length>=5){ toast('5 files max'); break; }
+      if(!/^(application\/pdf|image\/)/.test(f.type)){ toast(f.name+': PDF or photos only'); continue; }
+      const item={name:f.name,id:null}; list.push(item); render();
+      try{ const j=await uploadFile(f); item.id=j.id; }catch(e){ list.splice(list.indexOf(item),1); toast(e.message); }
+      render();
+    }
+  }
+  $('sendFile').onchange=e=>addFiles(e.target,sendFiles,renderSendFiles);
+  document.addEventListener('click',e=>{ const d=e.target.closest('[data-fdel]'); if(!d) return; const [k,i]=d.dataset.fdel.split(':'); (k==='send'?sendFiles:replyFiles).splice(+i,1); k==='send'?renderSendFiles():renderReplyFiles(); });
+  async function fileUrl(id){
+    const r=await fetch(FILE_API+'?action=url',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({token,id})});
+    const j=await r.json().catch(()=>({ok:false})); if(!j.ok) throw new Error(j.error||'File not available'); return j.url;
+  }
+  function filesHtml(list){
+    list=list||[]; if(!list.length) return '';
+    return '<div class="row" style="margin:6px 0 10px">'+list.map(a=>a.removed?`<span class="hint">${esc(a.name)} (removed)</span>`:`<button type="button" class="flink" data-open="${a.id}">📎 ${esc(a.name)}</button>`).join('')+'</div>';
+  }
+  document.addEventListener('click',async e=>{
+    const o=e.target.closest('[data-open]'); if(o){ e.stopPropagation(); try{ window.open(await fileUrl(o.dataset.open),'_blank','noopener'); }catch(err){ toast(err.message); } return; }
+    const im=e.target.closest('img[data-full]'); if(im){ e.stopPropagation(); const lb=document.createElement('div'); lb.className='lightbox'; lb.innerHTML=`<img src="${im.src}" alt="">`; lb.onclick=()=>lb.remove(); document.body.appendChild(lb); }
+  });
+  async function loadThumbs(root){
+    for(const el of root.querySelectorAll('img[data-thumb]')){ try{ el.src=await fileUrl(el.dataset.thumb); el.removeAttribute('data-thumb'); el.setAttribute('data-full','1'); }catch(e){ el.alt='Photo not available'; } }
+  }
+
+  // ------------------------------------------------ employee inbox
+  function beep(){ if(!$('inbChime').checked) return; try{ const C=window.AudioContext||window.webkitAudioContext, c=new C(), t=c.currentTime; [[988,0],[1319,.16]].forEach(([f,d])=>{ const o=c.createOscillator(), g=c.createGain(); o.frequency.value=f; g.gain.setValueAtTime(.0001,t+d); g.gain.exponentialRampToValueAtTime(.3,t+d+.02); g.gain.exponentialRampToValueAtTime(.0001,t+d+.15); o.connect(g).connect(c.destination); o.start(t+d); o.stop(t+d+.17); }); setTimeout(()=>c.close(),600);}catch(e){} }
+  async function loadInbox(quiet){
+    if(!token) return;
+    if(!quiet) $('inbStatus').textContent='Loading…';
+    try{
+      const r=await rpc('whm_mgr_inbox',{p_token:token,p_view:inbView,p_days:7});
+      inb=r.messages||[];
+      const u=r.unread||0; $('inbBadge').hidden=!u; $('inbBadge').textContent=u;
+      document.title=(u?`(${u}) `:'')+'Warehouse Message Center';
+      if(lastUnread>=0&&u>lastUnread){ beep(); toast('New message from an employee'); }
+      lastUnread=u;
+      $('inbStatus').textContent='Updated '+when(new Date().toISOString());
+      renderInbox();
+      if(inbSel){ const m=inb.find(x=>x.id===inbSel); if(m) renderInbDetail(m,true); }
+    }catch(e){ if(e.message!=='stop') $('inbStatus').textContent='Could not load. Retrying in 30 seconds.'; }
+  }
+  function inbState(m){ return m.handled_at?'done':m.dispatch_read_at?'seen':'new'; }
+  function renderInbox(){
+    $('inbList').innerHTML=inb.length?inb.map(m=>{ const st=inbState(m);
+      return `<div class="inb-item ${st==='new'?'':st}${m.id===inbSel?' sel':''}" data-inb-id="${m.id}">
+        <div class="row" style="justify-content:space-between"><span class="who">${esc(m.driver_name)}${st==='new'?'<span class="new-dot">New</span>':''}</span><span class="meta">${when(m.created_at)}</span></div>
+        <div class="meta">${esc(m.location||'')}${m.in_reply_to?' · answering “'+esc((m.in_reply_to.body||'').slice(0,60))+'”':''}</div>
+        <div style="margin:4px 0">${m.topic?`<span class="tag urgent" style="background:#111">${esc(m.topic)}</span>`:''}${(m.attachments||[]).length?'<span class="tag">📷 Photo</span>':''}${m.lat!=null?'<span class="tag">📍 Location</span>':''}${m.replies.length?`<span class="tag">${m.replies.length} answered</span>`:''}</div>
+        ${m.body?`<div class="txt">${esc(m.body)}</div>`:''}
+        <div class="meta">${m.handled_at?'✓ Done by '+esc(m.handled_by):m.dispatch_read_at?'Seen by '+esc(m.dispatch_read_by):'Not seen yet'}</div></div>`; }).join('')
+      :`<div class="card"><p class="hint" style="margin:0">${inbView==='open'?'All caught up — no employee messages need attention.':'No employee messages in the last 7 days.'}</p></div>`;
+  }
+  $('inbSeg').onclick=e=>{ const b=e.target.closest('[data-inb]'); if(!b) return; inbView=b.dataset.inb; document.querySelectorAll('#inbSeg button').forEach(x=>x.classList.toggle('active',x===b)); loadInbox(); };
+  $('inbRefresh').onclick=()=>loadInbox();
+  $('inbList').onclick=async e=>{
+    const it=e.target.closest('[data-inb-id]'); if(!it) return; const m=inb.find(x=>x.id===+it.dataset.inbId); if(!m) return;
+    inbSel=m.id; replyFiles=[]; renderInbox(); renderInbDetail(m);
+    if(!m.dispatch_read_at){ try{ await rpc('whm_mgr_mark',{p_token:token,p_message_id:m.id,p_action:'read'}); m.dispatch_read_at=new Date().toISOString(); m.dispatch_read_by=$('whoName').textContent; renderInbox(); loadInbox(true); }catch(err){} }
+  };
+  function renderReplyFiles(){ const el=$('rpFiles'); if(el) el.innerHTML=fileChips(replyFiles,'reply'); }
+  function renderInbDetail(m,keepDraft){
+    const draft=keepDraft&&$('rpText')?$('rpText').value:'';
+    const photos=(m.attachments||[]).filter(a=>!a.removed&&/^image\//.test(a.mime));
+    const map=m.lat==null?'':m.lat!=null?`<a class="flink" href="https://www.google.com/maps?q=${m.lat},${m.lon}" target="_blank" rel="noopener">📍 Open location in Maps${m.loc_acc_m?` (±${m.loc_acc_m} m)`:''}</a>`:'<span class="hint">No location sent</span>';
+    const thread=m.replies.map(r=>`<div class="bubble disp"><div class="meta">${esc(r.sender_name)} · ${when(r.created_at)} · ${r.read_at?'Read':'Not read yet'}</div>${esc(r.body)}${filesHtml(r.attachments)}</div>`).join('');
+    $('inbDetail').innerHTML=`<h2>${esc(m.driver_name)}</h2>
+      <div class="meta" style="margin:-6px 0 10px">${esc(m.driver_id)} · ${esc(m.location||'')} · ${when(m.created_at)}</div>
+      ${m.in_reply_to?`<div class="preview" style="font-size:14px">Answering ${esc(m.in_reply_to.sender_name)}: “${esc(m.in_reply_to.body)}”</div>`:''}
+      <div class="bubble drv">${m.topic?`<b>${esc(m.topic)}</b>${m.body?'<br>':''}`:''}${esc(m.body)}</div>
+      ${photos.length?'<div class="thumbs">'+photos.map(a=>`<img data-thumb="${a.id}" alt="Loading photo…">`).join('')+'</div>':''}
+      <div class="row" style="margin:8px 0">${map}</div>
+      <div class="thread">${thread}
+        <h3 style="margin-top:6px">Answer ${esc(m.driver_name.split(' ')[0])}</h3>
+        <div class="chips">${['On my way','Come see me','Thanks — handling it','Tag it out and park it','Call me when you can'].map(q=>`<button type="button" class="chip" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>
+        <textarea id="rpText" style="min-height:80px" maxlength="1000" placeholder="Type your answer.">${esc(draft)}</textarea>
+        <div class="files-pick"><label class="attach-btn"><input type="file" id="rpFile" accept="application/pdf,image/*" multiple hidden>📎 Attach</label><span id="rpFiles" class="files-pick" style="margin:0"></span></div>
+        <label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" id="rpAck" style="width:18px;height:18px;accent-color:var(--brand)"> They must tap Got It</label>
+        <div class="row"><button type="button" id="rpSend">Send answer</button>
+          ${m.handled_at?'<button type="button" class="ghost" id="rpReopen">Reopen</button>':'<button type="button" class="ghost" id="rpDone">Mark done (no answer needed)</button>'}</div>
+        <p class="hint">${m.handled_at?'Done by '+esc(m.handled_by)+' · '+when(m.handled_at):'Sending an answer marks this done.'}</p>
+      </div>`;
+    renderReplyFiles(); loadThumbs($('inbDetail'));
+    $('inbDetail').querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>{ const t=$('rpText'); t.value=t.value?t.value+' '+b.dataset.quick:b.dataset.quick; t.focus(); });
+    $('rpFile').onchange=e=>addFiles(e.target,replyFiles,renderReplyFiles);
+    $('rpSend').onclick=async()=>{
+      const body=$('rpText').value.trim();
+      if(replyFiles.some(f=>!f.id)) return toast('Wait for the files to finish uploading');
+      if(!body&&!replyFiles.length) return toast('Type an answer first');
+      $('rpSend').disabled=true;
+      try{ const r=await rpc('whm_send',{p_token:token,p_audience:{},p_type:$('rpAck').checked?'ack':'notice',p_body:body,p_reply_options:[],p_urgent:false,p_expires_at:null,p_reminder_of:null,p_reply_to:m.id,p_attachments:replyFiles.map(f=>f.id)});
+        if(!r.ok) return toast(r.error); toast('Answer sent to '+m.driver_name); replyFiles=[]; $('rpText').value=''; await loadInbox(true);
+        const nm=inb.find(x=>x.id===m.id); if(nm) renderInbDetail(nm); else $('inbDetail').innerHTML='<p class="hint" style="margin:0">Answer sent. It moved out of “Needs attention”.</p>';
+      }catch(e){} finally{ if($('rpSend')) $('rpSend').disabled=false; }
+    };
+    const dn=$('rpDone'); if(dn) dn.onclick=async()=>{ try{ await rpc('whm_mgr_mark',{p_token:token,p_message_id:m.id,p_action:'done'}); toast('Marked done'); await loadInbox(true); const nm=inb.find(x=>x.id===m.id); if(nm) renderInbDetail(nm); else $('inbDetail').innerHTML='<p class="hint" style="margin:0">Marked done.</p>'; }catch(e){} };
+    const ro=$('rpReopen'); if(ro) ro.onclick=async()=>{ try{ await rpc('whm_mgr_mark',{p_token:token,p_message_id:m.id,p_action:'reopen'}); await loadInbox(true); const nm=inb.find(x=>x.id===m.id); if(nm) renderInbDetail(nm); }catch(e){} };
+  }
+
+  // ------------------------------------------------ pins
+  async function loadPins(){
+    $('pinsStatus').textContent='Loading…';
+    try{ const r=await rpc('whm_setup_list',{p_token:token}); const c=r.codes||[];
+      $('pinsBody').innerHTML=c.length?c.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.driver_id)}</td><td>${esc(x.location)}</td><td class="code">${esc(x.setup_code)}</td></tr>`).join(''):'<tr><td colspan="4" class="hint">Everyone active has a PIN. 👍</td></tr>';
+      $('pinsStatus').textContent=c.length?`${c.length} not signed up yet`:'';
+      const d=await rpc('whm_directory',{p_token:token}); dir=d.drivers||dir; renderResetSel();
+    }catch(e){ if(e.message!=='stop') $('pinsStatus').textContent='Could not load.'; }
+  }
+  function renderResetSel(){ $('resetSel').innerHTML='<option value="">Pick a person…</option>'+dir.map(d=>`<option value="${esc(d.driver_id)}">${esc(d.name)} (${esc(d.driver_id)})${d.has_pin?'':' — no PIN yet'}</option>`).join(''); }
+  $('pinsRefresh').onclick=loadPins; $('pinsPrint').onclick=()=>window.print();
+  $('resetBtn').onclick=async()=>{
+    const id=$('resetSel').value; if(!id) return toast('Pick a person');
+    const d=dir.find(x=>x.driver_id===id);
+    if(!confirm(`Reset the PIN for ${d?d.name:id}? They will be signed out and need a new setup code.`)) return;
+    try{ const r=await rpc('whm_reset_pin',{p_token:token,p_driver_id:id}); if(!r.ok) return toast(r.error);
+      $('resetOut').innerHTML=`<div class="ok">${esc(r.name)}'s new setup code: <span class="code">${esc(r.setup_code)}</span></div>`; loadPins();
+    }catch(e){}
+  };
+
+  if(token) start(); else $('loginView').hidden=false;
+})();
+</script>
+</body>
+</html>
