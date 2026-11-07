@@ -149,6 +149,13 @@
       b.innerHTML='<svg class="icon" viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>Sign Out <small>'+esc(m.first_name||m.name||'')+'</small>';
       b.onclick=signOut; nav.insertAdjacentElement('afterend',b);
     }
+    const bar=document.querySelector('.app-header .header-actions');
+    if(bar&&!document.getElementById('authHeadOut')){
+      const h=document.createElement('button'); h.type='button'; h.id='authHeadOut'; h.className='ghost auth-head-out';
+      h.title='Signed in as '+(m.name||'')+' — tap to sign out';
+      h.innerHTML='<svg class="icon" viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span class="auth-head-name">'+esc(m.first_name||m.name||'')+'</span><span class="auth-head-label">Sign Out</span>';
+      h.onclick=signOut; bar.insertBefore(h,document.getElementById('printBtn')||null);
+    }
     const grid=document.querySelector('#settings .settings-grid');
     if(grid&&!document.getElementById('authCard')){
       const c=document.createElement('div'); c.className='card'; c.id='authCard';

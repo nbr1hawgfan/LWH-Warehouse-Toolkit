@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.80.1
+- **Sign Out in the header.** The red bar at the top now shows who is signed in (first name) with a Sign Out button, so a shared device is easy to hand off. On phones it shrinks to the icon and first name.
+
 ## v1.80.0
 - **Sign-in required for the whole Toolkit.** Employee ID + 6-digit PIN (setup code from a manager the first time) — the same sign-in as Messages, so one sign-in covers both. "Keep me signed in" lasts 30 days from last use; uncheck it on shared computers (then it lasts until the tab closes). Sign Out is in the menu and in Settings.
 - **Locked on the data side too**, not just the screen: the Toolkit's database functions (inventory, transactions, bays, load scans, outbound, forklift certs, hours, missed punches) and the inventory / transaction / load-details CSV exports refuse requests without a signed-in session. `sql/toolkit_lock.sql`, `supabase/functions/*-csv`.

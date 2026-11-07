@@ -2192,3 +2192,10 @@ html.auth-locked .app-shell,html.auth-locked main,html.auth-locked header,html.a
 .auth-help{font-size:13px;color:var(--muted);margin:8px 0 0}
 .auth-nav-out small{margin-left:auto;opacity:.7;font-weight:400;text-transform:none;letter-spacing:0}
 @media(max-width:420px){.auth-two{grid-template-columns:1fr}}
+
+/* Header sign-out (shared devices) */
+.header-actions .auth-head-out{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.auth-head-out .icon{width:18px;height:18px}
+.auth-head-name{font-weight:700}
+.auth-head-name::after{content:"·";margin-left:6px;opacity:.7}
+@media (max-width:560px){.auth-head-label,.auth-head-name::after{display:none}}
