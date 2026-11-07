@@ -399,6 +399,9 @@ function initQuickLinks(){
 // interrupt someone's actual work.
 const USAGE_LOG_URL_DEFAULT='https://script.google.com/macros/s/AKfycbxK1F5DNmXdtJma1NZHXQj6-URZdjjRgE8maFm9ypPQ7JinlXnzQGwUmLuwyCgau0YR/exec';
 function promptForNameIfNeeded(){
+  const signed=window.LWHAuth&&LWHAuth.me&&LWHAuth.me();
+  if(signed&&signed.name&&LWHAuth.isSignedIn()){ LWHStorage.set('userName',signed.name); if(window.setUserName) setUserName.value=signed.name; return; }
+  if(window.LWHAuth&&!LWHAuth.isSignedIn()) return; // the sign-in screen handles it
   let name=LWHStorage.get('userName','');
   if(!name){
     name=(prompt("What's your name? Used to track app usage for the team — nothing else is collected.")||'').trim();

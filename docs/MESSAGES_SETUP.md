@@ -1,4 +1,12 @@
-# Messages — setup and day-to-day
+# Toolkit sign-in & Messages — setup and day-to-day
+
+> Since v1.80.0 the **whole Toolkit** uses this sign-in (not just Messages). Everyone needs a PIN
+> before they can use any tool. Setup codes are on the Warehouse Message Center's
+> **Employee Sign-in** tab. Shared screens (dock TV, floor PCs): sign in once with "Keep me signed in"
+> checked — it stays signed in as long as it's used at least once every 30 days.
+>
+> Emergency open-up (no app change needed): in the Supabase SQL Editor run
+> `update lwh_settings set enforce = false where id = 1;` — and `= true` to lock again.
 
 ## Who can send
 The 12 people on the warehouse manager list (from `Manager_List.xlsx`, Nov 6, 2026), stored in the

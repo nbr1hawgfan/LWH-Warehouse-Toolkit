@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.80.0
+- **Sign-in required for the whole Toolkit.** Employee ID + 6-digit PIN (setup code from a manager the first time) — the same sign-in as Messages, so one sign-in covers both. "Keep me signed in" lasts 30 days from last use; uncheck it on shared computers (then it lasts until the tab closes). Sign Out is in the menu and in Settings.
+- **Locked on the data side too**, not just the screen: the Toolkit's database functions (inventory, transactions, bays, load scans, outbound, forklift certs, hours, missed punches) and the inventory / transaction / load-details CSV exports refuse requests without a signed-in session. `sql/toolkit_lock.sql`, `supabase/functions/*-csv`.
+- Still public: the forklift certificate check the wallet-card QR opens (`?view=fcVerify`).
+- **My Hours** opens on your own ID and only shows your own hours (managers on the warehouse manager list can look anyone up).
+- Usage tracking now uses your signed-in name — no more name prompt.
+- Lock switch: `update lwh_settings set enforce = false where id = 1;` opens everything back up instantly if ever needed.
+
 ## v1.79.0
 - **Messages** (new — top of Home, and in the menu). Employees sign in once with their employee ID + a 6-digit PIN (setup code from a manager the first time). Same PIN system as the other company apps that use employee sign-in.
   - Messages from managers: notices, **must acknowledge** (Got It), and **quick replies** (one tap). Read Aloud, optional auto read-aloud and chime.

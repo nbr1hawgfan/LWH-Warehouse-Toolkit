@@ -89,6 +89,11 @@
     try{
       const data=await fetchWeek(id,weekStart);
       if(seq!==requestSeq) return; // a newer request (week change) already took over
+      if(data && data.error==='own_hours_only'){
+        out.innerHTML='<div class="card">You can look up your own hours only. You\'re signed in as employee '+safe((window.LWHAuth&&LWHAuth.me()||{}).emp_id||'')+'.</div>';
+        status('');
+        return;
+      }
       if(!data || !data.found){
         out.innerHTML='<div class="card">We couldn\'t find employee ID '+safe(id)+' in the timeclock. Double-check the number, or see your supervisor.</div>';
         status('');
@@ -263,8 +268,9 @@
 
   window.addEventListener('load',()=>{
     if(!el('mhShowBtn')) return;
-    const saved=LWHStorage.get(ID_KEY,'');
-    if(saved){ el('mhEmpId').value=saved; el('mhRemember').checked=true; }
+    const signedIn=window.LWHAuth&&LWHAuth.me&&LWHAuth.me();
+    const saved=LWHStorage.get(ID_KEY,'')||(signedIn&&signedIn.emp_id?String(signedIn.emp_id):'');
+    if(saved){ el('mhEmpId').value=saved; el('mhRemember').checked=!!LWHStorage.get(ID_KEY,''); }
     renderWeekNav();
 
     el('mhShowBtn').onclick=()=>load();

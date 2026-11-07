@@ -123,6 +123,7 @@
     store.token=''; store.me=null; messages=[]; sentMsgs=[]; stopPoll(); stopSpeaking(); closeCompose(); closeViewer();
     try{ if(window.caches) caches.delete(FILE_CACHE); }catch(e){}
     render(); if(msg) showLoginErr(msg);
+    if(msg&&window.LWHAuth) LWHAuth.requireSignIn(msg);
   }
   async function afterSignIn(token){
     store.keep=$('wmKeep').checked; store.token=token; store.seen=[]; firstLoad=true;
@@ -157,6 +158,7 @@
   }
   function setSetupMode(on){ $('wmSetupBox').hidden=!on; $('wmPinBox').hidden=on; $('wmSetupToggle').textContent=on?'I already have a PIN':'First time sign-in'; showLoginErr(''); }
   async function doLogout(){
+    if(window.LWHAuth) return LWHAuth.signOut();
     if(!confirm('Sign out of Messages on this device?')) return;
     const t=store.token; signedOut();
     try{ await rpc('emp_logout',{p_token:t}); }catch(e){}

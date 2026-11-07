@@ -2166,3 +2166,29 @@ button.fc-danger{color:var(--bad);border-color:var(--bad)}
 .wm-viewer-img{max-width:none;background:#fff}
 .wm-viewer-note{color:#fff;font-size:17px;padding:30px 10px}
 body.wm-viewer-open{overflow:hidden}
+
+/* ===================== Sign-in (v1.80.0) ===================== */
+html.auth-locked body{overflow:hidden}
+html.auth-locked .app-shell,html.auth-locked main,html.auth-locked header,html.auth-locked nav{filter:blur(6px);pointer-events:none;user-select:none}
+.auth-gate{position:fixed;inset:0;z-index:5000;background:rgba(20,20,20,.72);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:6vh 16px 24px}
+.auth-box{width:100%;max-width:420px;background:#fff;color:var(--ink);border-top:6px solid var(--brand);box-shadow:0 20px 50px rgba(0,0,0,.35);padding:24px 24px 18px}
+.auth-brand{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.auth-brand img{width:46px;height:46px;object-fit:contain}
+.auth-brand b{display:block;font-size:17px;text-transform:uppercase;letter-spacing:.04em}
+.auth-brand span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.auth-box h2{margin:0 0 4px;font-size:22px;text-transform:uppercase;letter-spacing:.03em}
+.auth-msg{margin:0 0 14px;color:var(--muted);font-size:14.5px}
+.auth-box label{display:block;font-weight:600;margin:0 0 12px}
+.auth-box input[type=text],.auth-box input:not([type]),.auth-box input[type=password]{display:block;width:100%;margin-top:5px;font-size:18px;padding:11px 12px;border:1.5px solid #bbb;border-radius:0}
+.auth-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.auth-check{display:flex !important;gap:10px;align-items:flex-start;font-weight:600;font-size:14.5px}
+.auth-check input{width:20px;height:20px;accent-color:var(--brand);flex:0 0 auto;margin-top:1px}
+.auth-check span{font-weight:400;color:var(--muted)}
+.auth-err{background:#fdecec;border:2px solid #b91c1c;color:#7f1d1d;padding:10px 12px;margin:0 0 12px;font-weight:600;font-size:14.5px}
+.auth-go{display:block;width:100%;min-height:52px;font-size:17px;border-radius:0;background:var(--brand)}
+.auth-go:hover{background:var(--brand-dark)}
+.auth-link{display:block;width:100%;background:none;border:0;color:var(--brand);text-decoration:underline;font-weight:700;padding:12px 0 4px;min-height:0}
+.auth-link:hover{background:none;color:var(--brand-dark)}
+.auth-help{font-size:13px;color:var(--muted);margin:8px 0 0}
+.auth-nav-out small{margin-left:auto;opacity:.7;font-weight:400;text-transform:none;letter-spacing:0}
+@media(max-width:420px){.auth-two{grid-template-columns:1fr}}
