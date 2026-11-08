@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.81.0
+- **Manager Message Center is now inside the Toolkit.** Managers on the warehouse manager list get **Manager Messages** in the menu and a button at the top of Messages (with a red count of employee messages that need attention). Same tools as before — inbox from employees, send to people or locations with files, read receipts, setup codes and PIN resets — with no second page and no second sign-in. Everyone else never sees it.
+- The old `/messages/` page now forwards into the Toolkit, so existing bookmarks still work.
+
 ## v1.80.1
 - **Sign Out in the header.** The red bar at the top now shows who is signed in (first name) with a Sign Out button, so a shared device is easy to hand off. On phones it shrinks to the icon and first name.
 

@@ -1,7 +1,7 @@
 # Toolkit sign-in & Messages — setup and day-to-day
 
 > Since v1.80.0 the **whole Toolkit** uses this sign-in (not just Messages). Everyone needs a PIN
-> before they can use any tool. Setup codes are on the Warehouse Message Center's
+> before they can use any tool. Setup codes are in **Manager Messages** (menu, managers only) →
 > **Employee Sign-in** tab. Shared screens (dock TV, floor PCs): sign in once with "Keep me signed in"
 > checked — it stays signed in as long as it's used at least once every 30 days.
 >
@@ -23,8 +23,9 @@ update msg_wh_managers set is_active = false where emp_id = 12345;
 ```
 
 ## Getting everyone signed in
-1. A manager who already has a PIN opens the **Warehouse Message Center** (`/messages/`, or
-   Messages → *Open Warehouse Message Center*) and signs in with employee ID + PIN.
+1. A manager who already has a PIN signs in to the Toolkit and opens **Manager Messages** (in the menu,
+   or the button at the top of Messages). Since v1.81.0 it lives inside the Toolkit; the old
+   `/messages/` link forwards there.
 2. **Employee Sign-in** tab lists a setup code for everyone without a PIN (managers included).
    Print it or hand codes out. New hires get a code automatically once they're in the timeclock sync.
 3. Each person: Warehouse Toolkit → **Messages → First time sign-in** → employee ID, setup code,

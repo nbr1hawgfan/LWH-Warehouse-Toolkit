@@ -1,8 +1,8 @@
-# LWH Warehouse Toolkit v1.80.1
+# LWH Warehouse Toolkit v1.81.0
 
 **v1.80.0 — sign-in required:** everyone signs in with employee ID + PIN (same as Messages); the data side is locked too. See `CHANGELOG.md` and `docs/MESSAGES_SETUP.md`.
 
-**New in v1.79.0 — Messages:** managers send messages (with PDFs/photos) and read receipts from the Warehouse Message Center (`/messages/`); employees read, answer, and message managers from **Messages** in the Toolkit. Setup: `docs/MESSAGES_SETUP.md`.
+**New in v1.79.0 — Messages:** managers send messages (with PDFs/photos) and read receipts from **Manager Messages** inside the Toolkit (managers only, since v1.81.0); employees read, answer, and message managers from **Messages** in the Toolkit. Setup: `docs/MESSAGES_SETUP.md`.
 
 Internal Logistics Warehouse PWA for lookup, labels, receiving print, signs, contact QR cards, and visitor badges.
 

@@ -2199,3 +2199,13 @@ html.auth-locked .app-shell,html.auth-locked main,html.auth-locked header,html.a
 .auth-head-name{font-weight:700}
 .auth-head-name::after{content:"·";margin-left:6px;opacity:.7}
 @media (max-width:560px){.auth-head-label,.auth-head-name::after{display:none}}
+
+/* Manager Message Center inside the Toolkit */
+.mc-bar{display:flex;align-items:center;gap:14px;margin:0 0 10px}
+.mc-bar b{font-size:18px;text-transform:uppercase;letter-spacing:.03em}
+.mc-frame{display:block;width:100%;border:1px solid var(--line,#ddd);background:#f3f3f3;min-height:460px}
+button.wm-mgr{width:100%;text-align:left;background:#fff;cursor:pointer;font:inherit;font-weight:800}
+.wm-mgr-badge{display:inline-block;min-width:22px;padding:0 6px;margin-left:8px;background:var(--brand);color:#fff;font-size:13px;line-height:22px;text-align:center;letter-spacing:0}
+.wm-mgr .wm-mgr-badge{display:inline-block}
+.wm-mgr .wm-mgr-badge[hidden],.nav-btn .wm-mgr-badge[hidden]{display:none}
+.mc-bar .ghost{white-space:nowrap;flex:0 0 auto}
