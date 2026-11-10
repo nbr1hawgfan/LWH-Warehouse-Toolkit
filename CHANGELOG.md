@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.82.0
+- **Absence Calendar** (new — Time section on Home, and in the menu for managers). PTO, call-ins and other absences from the PTO tracker as a month calendar: type legend you can tap to hide types, department filter, name search, show/hide pending, tap a day for the full list, prints landscape. On phones it switches to a day-by-day list. **PTO Balances** tab: allocation, current balance and this year's approved absences by type for any employee, printable.
+- Managers only: the same warehouse manager list and 6-digit sign-in as Manager Messages. Checked in the database, not just on screen.
+- Data comes from the tracker's Export_ tabs through a new script file in the tracker, `gas/PTO_Supabase_Push.gs`, on its own hourly timer. Nothing in the tracker, `PTO_TLand_Export.gs`, `Sync-PTO.ps1` or TLand changes. Only the columns the calendar needs are sent (no emails or PINs).
+- Backend: `sql/absence_calendar.sql` (applied Nov 10, 2026).
+
 ## v1.81.0
 - **Manager Message Center is now inside the Toolkit.** Managers on the warehouse manager list get **Manager Messages** in the menu and a button at the top of Messages (with a red count of employee messages that need attention). Same tools as before — inbox from employees, send to people or locations with files, read receipts, setup codes and PIN resets — with no second page and no second sign-in. Everyone else never sees it.
 - The old `/messages/` page now forwards into the Toolkit, so existing bookmarks still work.

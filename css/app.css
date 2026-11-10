@@ -2209,3 +2209,101 @@ button.wm-mgr{width:100%;text-align:left;background:#fff;cursor:pointer;font:inh
 .wm-mgr .wm-mgr-badge{display:inline-block}
 .wm-mgr .wm-mgr-badge[hidden],.nav-btn .wm-mgr-badge[hidden]{display:none}
 .mc-bar .ghost{white-space:nowrap;flex:0 0 auto}
+
+/* ===================== ABSENCE CALENDAR (v1.82.0) ===================== */
+#absenceCal .ac-wrap{max-width:1280px;margin:0 auto}
+.ac-top{background:#fff;border:1.5px solid var(--line);border-top:4px solid var(--brand);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.ac-toprow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:12px}
+.ac-toprow .ff-tabs{margin:0}
+.ac-status{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+button.ac-small{min-height:38px;padding:6px 12px;font-size:14px}
+.ac-msg{border:1.5px solid var(--line);border-left:4px solid var(--muted);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;background:#fff;font-size:15px}
+.ac-msg-warn{border-left-color:#d97706;background:#fffbeb}
+.ac-msg-bad{border-left-color:var(--bad);background:#fef2f2}
+.ac-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.ac-monthnav{display:flex;align-items:center;gap:8px}
+.ac-month{font-family:var(--tk-head,inherit);font-weight:600;font-size:22px;text-transform:uppercase;letter-spacing:.3px;min-width:190px;text-align:center}
+.ac-filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ac-filters select,.ac-filters input[type=search]{min-height:40px;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:6px 10px;background:#fff;color:var(--ink);font-size:15px;max-width:260px}
+.ac-check{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;white-space:nowrap}
+.ac-check input{width:18px;height:18px}
+.ac-legend{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+button.ac-chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 10px;font-size:13px;font-weight:600;background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+button.ac-chip:hover{background:var(--bg);border-color:var(--ink)}
+button.ac-chip.off{opacity:.4;text-decoration:line-through}
+.ac-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.ac-summary{font-size:14px;color:var(--muted);margin-bottom:8px}
+.ac-summary b{color:var(--ink)}
+.ac-print-head{display:none}
+table.ac-cal{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff;border:1.5px solid var(--frame-black)}
+table.ac-cal th{background:var(--frame-black);color:#fff;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:7px 4px;border-bottom:3px solid var(--brand)}
+table.ac-cal td{vertical-align:top;height:108px;border:1px solid var(--line);padding:5px 6px;font-size:12px}
+table.ac-cal td.weekend{background:#fafaf9}
+table.ac-cal td.outside{background:#efedea;color:#b7b2a8}
+table.ac-cal td.today{box-shadow:inset 0 0 0 2px var(--brand)}
+table.ac-cal td.has{cursor:pointer}
+table.ac-cal td.has:hover,table.ac-cal td.has:focus{background:var(--brand-tint);outline:none}
+.ac-daynum{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:13px;margin-bottom:4px}
+.ac-daynum b{background:var(--brand);color:#fff;font-size:11px;min-width:20px;text-align:center;border-radius:3px;padding:1px 5px}
+.ac-hol{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.ac-entry{position:relative;padding-left:12px;line-height:1.3;margin-bottom:3px;word-break:break-word}
+.ac-entry .ac-dot{position:absolute;left:0;top:4px;width:7px;height:7px}
+.ac-entry .ac-n,.ac-aentry .ac-n{font-weight:700}
+.ac-entry .ac-t{color:var(--muted)}
+.ac-entry.pending,.ac-aentry.pending .ac-meta{font-style:italic;opacity:.75}
+.ac-agenda{display:none}
+.ac-aday{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);margin-bottom:10px}
+.ac-aday.today{border-color:var(--brand);border-width:2px}
+.ac-ahead{display:flex;justify-content:space-between;align-items:center;background:var(--frame-black);color:#fff;padding:8px 12px;font-weight:700;font-size:15px;border-bottom:3px solid var(--brand)}
+.ac-ahead b{background:var(--brand);border-radius:3px;padding:1px 8px;font-size:13px}
+.ac-aentry{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border-bottom:1px solid var(--line);font-size:15px}
+.ac-aentry:last-child{border-bottom:0}
+.ac-aentry .ac-dot{margin-top:6px;width:10px;height:10px}
+.ac-meta{color:var(--muted);font-size:13px}
+.ac-empty{text-align:center;color:var(--muted);padding:40px 16px;font-size:15px;background:#fff;border:1.5px dashed var(--line);border-radius:var(--radius)}
+.ac-bcard{background:#fff;border:1.5px solid var(--frame-black);border-radius:var(--radius);max-width:640px}
+.ac-bhead{background:var(--frame-black);color:#fff;padding:14px 18px;border-bottom:4px solid var(--brand);position:relative}
+.ac-bname{font-family:var(--tk-head,inherit);font-weight:600;font-size:24px;text-transform:uppercase}
+.ac-bmeta{font-size:13px;color:#f0c3ce;margin-top:2px}
+.ac-tag{position:absolute;top:14px;right:16px;background:var(--brand);font-size:11px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:.05em}
+.ac-bnums{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.ac-bnums>div{padding:16px;text-align:center;border-right:1px solid var(--line)}
+.ac-bnums>div:last-child{border-right:0}
+.ac-bnums span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.ac-bnums b{display:block;font-family:var(--tk-head,inherit);font-size:34px;font-weight:600;margin-top:2px}
+.ac-bnums .low b{color:var(--bad)}
+.ac-bnums em{display:inline-block;font-style:normal;font-size:11px;font-weight:800;color:#fff;background:var(--bad);border-radius:3px;padding:2px 7px;text-transform:uppercase}
+.ac-bsec{padding:12px 18px 6px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-left:4px solid var(--brand);margin:12px 0 4px}
+.ac-brow{display:flex;justify-content:space-between;gap:10px;padding:9px 18px;border-top:1px solid var(--line);font-size:15px}
+.ac-brow>span:first-child{display:flex;align-items:center;gap:8px;font-weight:600}
+.ac-brow>span:last-child{color:var(--muted);font-size:14px;text-align:right}
+.ac-brow.ac-none{color:var(--muted);padding-bottom:16px}
+.ac-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:900;padding:16px}
+.ac-modal[hidden]{display:none}
+.ac-modal-box{background:#fff;border-radius:var(--radius);border-top:4px solid var(--brand);width:100%;max-width:440px;max-height:80vh;overflow:auto}
+.ac-modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:17px}
+@media (max-width:760px){
+  table.ac-cal{display:none}
+  .ac-agenda{display:block}
+  .ac-bar{flex-direction:column;align-items:stretch}
+  .ac-monthnav{justify-content:space-between}
+  .ac-month{min-width:0;font-size:20px;flex:1}
+  .ac-filters select,.ac-filters input[type=search]{max-width:none;flex:1 1 100%}
+  .ac-toprow{flex-direction:column;align-items:stretch}
+  .ac-status{justify-content:space-between}
+}
+@media print{
+  #absenceCal .ac-wrap{max-width:none;padding:.35in}
+  #absenceCal .ac-print-head{display:block;font-family:var(--tk-head,Arial);font-size:18pt;font-weight:600;text-transform:uppercase;margin-bottom:6px;border-bottom:3px solid #c8102e;padding-bottom:4px}
+  #absenceCal .ac-legend{margin:4px 0}
+  #absenceCal button.ac-chip{min-height:0;padding:1px 6px;font-size:8pt;border:0}
+  #absenceCal button.ac-chip.off{display:none}
+  #absenceCal .ac-summary{font-size:9pt;margin-bottom:4px}
+  #absenceCal table.ac-cal{display:table!important;page-break-inside:avoid}
+  #absenceCal .ac-agenda{display:none!important}
+  #absenceCal table.ac-cal th{-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:8pt;padding:3px}
+  #absenceCal table.ac-cal td{height:1.05in;font-size:7.5pt;padding:3px 4px}
+  #absenceCal table.ac-cal td.today{box-shadow:none}
+  #absenceCal .ac-dot,#absenceCal .ac-daynum b{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #absenceCal .ac-bhead,#absenceCal .ac-bnums em,#absenceCal .ac-tag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
