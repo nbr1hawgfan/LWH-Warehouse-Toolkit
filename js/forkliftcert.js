@@ -4,7 +4,7 @@
   // Three screens:
   //   forkliftTest  — employee: enter ID → pick manager + equipment → written
   //                   test (random questions, shuffled answers) → result.
-  //   forkliftCerts — managers (shared manager passcode): driving evaluation
+  //   forkliftCerts — managers (manager sign-in, js/mgrauth.js): driving evaluation
   //                   sign-off → certificate issued; reprint certificate /
   //                   wallet card / PDF any time; revoke; settings; export.
   //   fcVerify      — anyone: the QR on certificates and wallet cards lands
@@ -17,7 +17,6 @@
   const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
   const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
   const APP_URL='https://nbr1hawgfan.github.io/LWH-Warehouse-Toolkit/';
-  const PASS_KEY='lwh_mgrPass'; // shared with Missed Punches — unlock once per tab
 
   // Equipment an operator can be certified on (OSHA treats each type separately).
   const TRUCK_TYPES=[
@@ -57,8 +56,6 @@
   function trucksText(c,sep){ return (c.truck_types||[]).length?(c.truck_types||[]).join(sep||', '):'Equipment not recorded'; }
   function needsInfo(c){ return ['active','expiring'].includes(c.state) && (!c.emp_id || !(c.truck_types||[]).length); }
   function verifyUrl(certNo){ return APP_URL+'?view=fcVerify&cert='+encodeURIComponent(certNo); }
-  function getPass(){ try{ return sessionStorage.getItem(PASS_KEY)||''; }catch{ return ''; } }
-  function setPass(v){ try{ if(v) sessionStorage.setItem(PASS_KEY,v); else sessionStorage.removeItem(PASS_KEY); }catch{} }
   function toast(m){ if(window.LWHUI) LWHUI.toast(m); }
 
   async function rpc(fn,args){
@@ -80,9 +77,6 @@
     not_enough_questions:'Not enough active test questions — a manager needs to add some in Forklift Certs → Settings.',
     already_submitted:'This test was already turned in.',
     expired:'This test was open more than 3 hours and was closed. Please start again.',
-    bad_passcode:'Wrong passcode.',
-    locked:'Too many wrong passcodes — locked for 10 minutes.',
-    not_set_up:'The manager passcode hasn\'t been set up yet (see sql/missed_punches.sql).',
     need_evaluator:'Enter the evaluator\'s name.',
     not_pending:'This one is no longer waiting on a driving evaluation — refresh.',
     bad_date:'Evaluation date can\'t be in the future.',
@@ -95,7 +89,7 @@
     modules_left:'A training module isn\'t finished yet.',
     bad_question:'Each question needs text, at least 2 answer choices, and the correct answer must match one of them exactly.'
   };
-  function errText(code){ return ERRORS[code]||('Something went wrong ('+code+').'); }
+  function errText(code){ return ERRORS[code]||(LWHMgr.isAuthError(code)?LWHMgr.errText(code):('Something went wrong ('+code+').')); }
 
   // ---------------------------------------------------------------------
   // Shared: logo, QR images, certificate PDF, printing, email
@@ -535,33 +529,34 @@
   // =====================================================================
   // MANAGERS — Forklift Certs
   // =====================================================================
-  const M={pass:'',data:null,tab:'pending',certFilter:'active',certQuery:'',histQuery:'',evalId:null,detail:null,photo:null};
+  const M={pass:'',on:false,data:null,tab:'pending',certFilter:'active',certQuery:'',histQuery:'',evalId:null,detail:null,photo:null};
 
   function mstatus(msg,isErr){ const s=el('fcmStatus'); s.textContent=msg||''; s.style.color=isErr?'var(--bad)':'var(--muted)'; }
 
-  async function unlock(){
-    const p=el('fcmPass').value||getPass();
-    if(!p){ el('fcmLockStatus').textContent='Enter the manager passcode.'; return; }
+  // cred: '' for a signed-in manager, 'pin:…' for a manager approved on this tab; omitted → read the fields.
+  async function unlock(cred){
+    let p=cred;
+    if(p==null){ const c=LWHMgr.read('fcm'); if(!c.ok){ el('fcmLockStatus').textContent=c.msg; return; } p=c.cred; }
     el('fcmLockStatus').style.color='var(--muted)'; el('fcmLockStatus').textContent='Checking…';
     try{
       const r=await rpc('fc_mgr_dashboard',{p_passcode:p});
       el('fcmLockStatus').style.color='';
-      if(!r.ok){ setPass(''); el('fcmLockStatus').textContent=errText(r.error); return; }
+      if(!r.ok){ if(LWHMgr.isAuthError(r.error)) LWHMgr.forget(); el('fcmLockStatus').textContent=errText(r.error); return; }
       el('fcmLockStatus').textContent='';
-      M.pass=p; setPass(p); el('fcmPass').value='';
+      M.pass=p; M.on=true; LWHMgr.set(p); LWHMgr.clear('fcm');
       M.data=r; setUnlocked(true); renderMgr();
     }catch(e){ el('fcmLockStatus').style.color=''; el('fcmLockStatus').textContent='Couldn\'t reach the server. ('+e.message+')'; }
   }
   function setUnlocked(on){
     el('fcmLocked').hidden=on; el('fcmUnlocked').hidden=!on;
-    if(!on){ M.pass=''; M.data=null; el('fcmBody').innerHTML=''; }
+    if(!on){ M.pass=''; M.on=false; M.data=null; el('fcmBody').innerHTML=''; }
   }
   async function refresh(quiet){
-    if(!M.pass) return;
+    if(!M.on) return;
     if(!quiet) mstatus('Refreshing…');
     try{
       const r=await rpc('fc_mgr_dashboard',{p_passcode:M.pass});
-      if(!r.ok){ if(['bad_passcode','locked','not_set_up'].includes(r.error)){ setPass(''); setUnlocked(false); el('fcmLockStatus').textContent=errText(r.error); } else mstatus(errText(r.error),true); return; }
+      if(!r.ok){ if(LWHMgr.isAuthError(r.error)){ LWHMgr.forget(); setUnlocked(false); el('fcmLockStatus').textContent=errText(r.error); } else mstatus(errText(r.error),true); return; }
       M.data=r; mstatus(''); renderMgr();
     }catch(e){ mstatus('Refresh failed — '+e.message,true); }
   }
@@ -1211,13 +1206,14 @@
     window.addEventListener('beforeunload',e=>{ if(!el('fcStepTest').hidden && Object.keys(T.answers).length){ e.preventDefault(); e.returnValue=''; } });
 
     // Managers
-    el('fcmUnlock').onclick=unlock;
-    el('fcmPass').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); unlock(); } });
+    el('fcmUnlock').onclick=()=>unlock();
+    LWHMgr.onEnter('fcm',()=>unlock());
     el('fcmRefresh').onclick=()=>refresh(false);
-    el('fcmLock').onclick=()=>{ setPass(''); setUnlocked(false); };
+    el('fcmLock').onclick=()=>{ LWHMgr.forget(); setUnlocked(false); };
     document.querySelectorAll('[data-fctab]').forEach(b=>b.onclick=()=>{ M.tab=b.dataset.fctab; M.evalId=null; renderMgr(); });
-    // Already unlocked Missed Punches in this tab? Open straight in.
-    new MutationObserver(()=>{ if(el('forkliftCerts').classList.contains('active') && !M.pass && getPass()) unlock(); })
+    // Signed-in manager (or a manager already approved on this tab)? Open straight in.
+    const autoOpen=()=>{ if(M.on) return; if(LWHMgr.isMgr()) unlock(''); else if(LWHMgr.get()) unlock(LWHMgr.get()); };
+    new MutationObserver(()=>{ if(el('forkliftCerts').classList.contains('active')) autoOpen(); })
       .observe(el('forkliftCerts'),{attributes:true,attributeFilter:['class']});
 
     // Verify
@@ -1225,7 +1221,7 @@
     el('fcvNo').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); verify(el('fcvNo').value); } });
     const params=new URLSearchParams(location.search);
     if(params.get('view')==='fcVerify' && params.get('cert')) verify(params.get('cert'));
-    if(params.get('view')==='forkliftCerts' && getPass()) unlock();
+    if(params.get('view')==='forkliftCerts') setTimeout(autoOpen,1200);
   });
 
   window.LWHForkliftCert={verify,certPdf};

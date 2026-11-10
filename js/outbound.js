@@ -20,7 +20,6 @@
   const XLSXJS='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
   const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
   const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
-  const MGR_PASS_KEY='lwh_mgrPass';   // same tab-only passcode as Missed Punches / Load Tag Scan records
   const PARTY_KINDS=[['shipFrom','ship_from','Ship from'],['shipTo','ship_to','Ship to (consignee)'],['billTo','bill_to','Bill to']];
   const DEFAULT_CO={name:'Logistics Warehouse',addr:'700 Fresno Street, Fort Smith, AR 72901',phone:'(479) 410-2611'};
 
@@ -265,33 +264,35 @@
       const f=el('obModalBody').querySelector('input,select,textarea'); if(f) setTimeout(()=>f.focus(),50);
     });
   }
-  function getPass(){ try{ return sessionStorage.getItem(MGR_PASS_KEY)||''; }catch{ return ''; } }
-  function setPass(v){ try{ v?sessionStorage.setItem(MGR_PASS_KEY,v):sessionStorage.removeItem(MGR_PASS_KEY); }catch{} }
-  // Checks the manager passcode in Supabase. If the hotspot is down the
-  // override still goes through, but it's recorded as "not verified".
-  async function verifyPass(pass){
-    try{ const r=await rpc('toolkit_outbound_verify',{p_passcode:pass}); if(r&&r.ok) return {ok:true,verified:true};
-      return {ok:false,msg:r.error==='bad_passcode'?'That passcode isn\'t right.':r.error==='locked'?'Too many wrong tries — locked for a few minutes.':r.error==='not_set_up'?'The manager passcode hasn\'t been set up yet.':'Couldn\'t check the passcode.'}; }
-    catch(e){ if(e.setup) return {ok:false,msg:'Outbound records aren\'t set up yet — run sql/outbound_loads.sql in Supabase.'}; return {ok:true,verified:false}; }
-  }
+  // Manager approval (js/mgrauth.js): a signed-in manager approves with no code; on anyone else's
+  // device the manager types THEIR employee ID + 6-digit PIN. The approval records the manager's
+  // real name from the sign-in. If the hotspot is down the override still goes through, but it's
+  // recorded as "not verified".
   function managerFields(reasonLabel,reasonPh){
-    return `<label class="ps-field"><span>Manager name</span><input id="obMgrName" autocomplete="off" /></label>
+    setTimeout(()=>LWHMgr.refresh(),0);   // after the dialog is on screen
+    return `${LWHMgr.fields('obMgr')}
       <label class="ps-field"><span>${safe(reasonLabel||'Reason')}</span><input id="obMgrReason" autocomplete="off" placeholder="${safe(reasonPh||'')}" /></label>
-      <label class="ps-field"><span>Manager passcode</span><input id="obMgrPass" type="password" autocomplete="current-password" placeholder="Same as Missed Punches" /></label>
       <div id="obMgrErr" class="ob-err" hidden></div>`;
   }
   async function readManager(){
-    const name=el('obMgrName').value.trim(), reason=el('obMgrReason').value.trim(), pass=el('obMgrPass').value.trim()||getPass();
+    const reason=el('obMgrReason').value.trim();
     const err=m=>{ const e=el('obMgrErr'); e.hidden=false; e.textContent=m; return null; };
-    if(!name) return err('Enter the manager\'s name.');
+    const c=LWHMgr.read('obMgr');
+    if(!c.ok) return err(c.msg);
     if(!reason) return err('Enter the reason.');
-    if(!pass) return err('Enter the manager passcode.');
     el('obMgrErr').hidden=false; el('obMgrErr').textContent='Checking…';
-    const v=await verifyPass(pass);
-    if(!v.ok) return err(v.msg);
-    setPass(pass);
-    if(!v.verified&&!confirm('No connection — the passcode can\'t be checked right now. Record this as an unverified manager approval?')) return err('Cancelled.');
-    return {by:name,reason,verified:v.verified,at:new Date().toISOString()};
+    try{
+      const r=await rpc('toolkit_manager_whoami',{p_passcode:c.cred});
+      if(!r||!r.ok) return err(LWHMgr.errText(r&&r.error));
+      LWHMgr.clear('obMgr');
+      return {by:r.name||('Manager ID '+r.emp_id),byId:r.emp_id,cred:c.cred,reason,verified:true,at:new Date().toISOString()};
+    }catch(e){
+      if(e.setup) return err('Manager check isn\'t set up yet — run sql/manager_pin_signin.sql in Supabase.');
+      if(!confirm('No connection — the manager can\'t be checked right now. Record this as an unverified manager approval?')) return err('Cancelled.');
+      const who=LWHMgr.isMgr()?(LWHMgr.me().name||'Manager'):('Manager ID '+c.cred.split(':')[1]);
+      LWHMgr.clear('obMgr');
+      return {by:who,cred:c.cred,reason,verified:false,at:new Date().toISOString()};
+    }
   }
   function overrideDialog(o){
     const p=modal(`<h3>${safe(o.title)}</h3><p class="hint">${safe(o.detail)}</p>${managerFields(o.reasonLabel,o.reasonPh)}
@@ -689,7 +690,7 @@
     if(!o.verified){ alert('Voiding needs a connection so every device stops treating these pallets as shipped. Try again when the hotspot is connected.'); return; }
     try{
       await syncOne(load);
-      const r=await rpc('toolkit_outbound_manage',{p_passcode:getPass(),p_client_key:load.key,p_action:'void',p_by:o.by,p_reason:o.reason});
+      const r=await rpc('toolkit_outbound_manage',{p_passcode:o.cred||'',p_client_key:load.key,p_action:'void',p_by:o.by,p_reason:o.reason});
       if(!r.ok&&r.error!=='not_found') throw new Error(r.error);
     }catch(e){ alert('Couldn\'t void it in records: '+e.message); return; }
     load.status='void'; load.voidedOnServer=true; load.closed=load.closed||new Date().toISOString(); logEvent(load,`Voided by manager ${o.by}: ${o.reason}`);
@@ -817,7 +818,7 @@
   }
 
   // ================================================================ records (managers, every device)
-  let recPass='', recData=null;
+  let recPass='', recOn=false, recData=null;
   function fromServer(x){
     const p=o=>Object.assign(blankParty(),o||{});
     return {id:'rec-'+x.client_key,key:x.client_key,bol:x.bol_no||'',status:x.status,warehouse:x.warehouse||'',subCust:x.sub_customer||'',billRef:x.bill_to_ref||'',appt:x.appt||'',pro:x.pro_no||'',
@@ -827,16 +828,15 @@
   }
   async function recSearch(){
     const out=el('obRecResults'), st=el('obRecStatus');
-    recPass=recPass||el('obRecPass').value.trim()||getPass();
-    if(!recPass){ st.textContent='Enter the manager passcode.'; return; }
+    if(!recOn){ const c=LWHMgr.read('obRec'); if(!c.ok){ st.textContent=c.msg; return; } recPass=c.cred; recOn=true; }
     st.textContent='Looking up loads…';
     try{
       const r=await rpc('toolkit_outbound_records',{p_passcode:recPass,p_search:el('obRecQ').value.trim(),p_days:+el('obRecDays').value||14,p_filter:el('obRecFilter').value});
-      if(!r.ok){ recPass=''; setPass(''); el('obRecLocked').hidden=false; el('obRecOpen').hidden=true; out.innerHTML='';
-        st.textContent=r.error==='bad_passcode'?'That passcode isn\'t right.':r.error==='locked'?'Too many wrong tries — locked for a few minutes.':r.error==='not_set_up'?'The manager passcode hasn\'t been set up yet.':'Couldn\'t open records.'; return; }
-      setPass(recPass); el('obRecLocked').hidden=true; el('obRecOpen').hidden=false;
+      if(!r.ok){ recPass=''; recOn=false; LWHMgr.forget(); el('obRecLocked').hidden=false; el('obRecOpen').hidden=true; out.innerHTML='';
+        st.textContent=LWHMgr.isAuthError(r.error)?LWHMgr.errText(r.error):'Couldn\'t open records.'; return; }
+      LWHMgr.set(recPass); LWHMgr.clear('obRec'); el('obRecLocked').hidden=true; el('obRecOpen').hidden=false;
       recData=r; renderRecords(); st.textContent='';
-    }catch(e){ st.textContent=e.setup?'Records not set up yet — run sql/outbound_loads.sql in Supabase.':'Couldn\'t reach records — check the connection.'; }
+    }catch(e){ if(!recData) recOn=false; st.textContent=e.setup?'Records not set up yet — run sql/outbound_loads.sql in Supabase.':'Couldn\'t reach records — check the connection.'; }
   }
   function renderRecords(){
     const out=el('obRecResults'), raw=recData.loads||[], list=raw.map(fromServer), q=recData.search;
@@ -940,12 +940,12 @@
     el('obLocalXlsx').onclick=()=>{ const l=loads.filter(L=>L.status==='closed'); if(!l.length) return LWHUI.toast('No closed loads on this device'); downloadXlsx(l); };
 
     el('obRecGo').onclick=recSearch;
-    el('obRecPass').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); recSearch(); } };
+    LWHMgr.onEnter('obRec',recSearch);
     el('obRecQ').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); recSearch(); } };
     el('obRecSearch').onclick=recSearch;
     el('obRecDays').onchange=recSearch; el('obRecFilter').onchange=recSearch;
-    el('obRecLock').onclick=()=>{ recPass=''; setPass(''); recData=null; el('obRecResults').innerHTML=''; el('obRecLocked').hidden=false; el('obRecOpen').hidden=true; el('obRecPass').value=''; };
-    el('obRecDetails').addEventListener('toggle',()=>{ if(el('obRecDetails').open&&getPass()&&!recData){ recPass=getPass(); recSearch(); } });
+    el('obRecLock').onclick=()=>{ recPass=''; recOn=false; LWHMgr.forget(); recData=null; el('obRecResults').innerHTML=''; el('obRecLocked').hidden=false; el('obRecOpen').hidden=true; LWHMgr.clear('obRec'); };
+    el('obRecDetails').addEventListener('toggle',()=>{ if(el('obRecDetails').open&&!recData&&!recOn&&(LWHMgr.isMgr()||LWHMgr.get())){ recPass=LWHMgr.isMgr()?'':LWHMgr.get(); recOn=true; recSearch(); } });
 
     window.addEventListener('online',()=>{ scheduleSync(200); refreshShipped(); });
     document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ scheduleSync(500); if(isEditorOpen()) refreshShipped(); } });

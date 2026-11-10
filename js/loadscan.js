@@ -14,7 +14,6 @@
   // Records: every load is also saved to Supabase (sql/load_scan_records.sql)
   const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
   const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
-  const MGR_PASS_KEY='lwh_mgrPass';   // same tab-only passcode as Missed Punches
 
   let load=blankLoad();
   let cam=null, camLast={v:'',t:0}, audio=null;
@@ -242,21 +241,19 @@
   }
 
   // ---------------------------------------------------------------- records lookup (managers)
-  let recPass='', recData=null;
-  function getPass(){ try{ return sessionStorage.getItem(MGR_PASS_KEY)||''; }catch{ return ''; } }
-  function setPass(v){ try{ v?sessionStorage.setItem(MGR_PASS_KEY,v):sessionStorage.removeItem(MGR_PASS_KEY); }catch{} }
+  // Manager access: signed-in manager, or a manager's ID + PIN typed here (js/mgrauth.js).
+  let recPass='', recOn=false, recData=null;
   async function recSearch(){
     const out=el('lsRecResults'); const st=el('lsRecStatus');
-    recPass=recPass||el('lsRecPass').value.trim()||getPass();
-    if(!recPass){ st.textContent='Enter the manager passcode.'; return; }
+    if(!recOn){ const c=LWHMgr.read('lsRec'); if(!c.ok){ st.textContent=c.msg; return; } recPass=c.cred; recOn=true; }
     st.textContent='Looking up records…'; out.innerHTML='';
     try{
       const r=await rpc('toolkit_load_scan_records',{p_passcode:recPass,p_search:el('lsRecQ').value.trim(),p_days:+el('lsRecDays').value||30});
-      if(!r.ok){ const e=r.error; recPass=''; setPass(''); el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true;
-        st.textContent=e==='bad_passcode'?'That passcode isn\'t right.':e==='locked'?'Too many wrong tries — locked for a few minutes.':e==='not_set_up'?'The manager passcode hasn\'t been set up yet.':'Couldn\'t open records.'; return; }
-      setPass(recPass); el('lsRecLocked').hidden=true; el('lsRecOpen').hidden=false;
+      if(!r.ok){ const e=r.error; recPass=''; recOn=false; LWHMgr.forget(); el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true;
+        st.textContent=LWHMgr.isAuthError(e)?LWHMgr.errText(e):'Couldn\'t open records.'; return; }
+      LWHMgr.set(recPass); LWHMgr.clear('lsRec'); el('lsRecLocked').hidden=true; el('lsRecOpen').hidden=false;
       recData=r; renderRecords(); st.textContent='';
-    }catch(e){ st.textContent=e.setup?'Records not set up yet — run sql/load_scan_records.sql in Supabase.':'Couldn\'t reach records — check your connection.'; }
+    }catch(e){ if(!recData) recOn=false; st.textContent=e.setup?'Records not set up yet — run sql/load_scan_records.sql in Supabase.':'Couldn\'t reach records — check your connection.'; }
   }
   function renderRecords(){
     const out=el('lsRecResults'); const L=recData.loads||[];
@@ -300,24 +297,25 @@
     const i=clearInfo();
     el('lsClearInfo').innerHTML=`Removes <b>${i.count}</b> load${i.count===1?'':'s'} from this device${load.scans.length?' (including the one on screen)':''}. Records already saved in Supabase are not touched.`+
       (i.unsaved?` <b style="color:var(--bad)">${i.unsaved} of them ${i.unsaved===1?'has':'have'} not been saved to records yet and will be lost.</b>`:'');
-    el('lsClearStatus').textContent=''; el('lsClearPass').value=getPass(); el('lsClearPass').focus();
+    el('lsClearStatus').textContent=''; LWHMgr.refresh();
   }
   async function clearDevice(){
-    const st=el('lsClearStatus'), pass=el('lsClearPass').value.trim();
-    if(!pass){ st.textContent='Enter the manager passcode.'; return; }
-    st.textContent='Checking passcode…';
+    const st=el('lsClearStatus');
+    const c=LWHMgr.read('lsClear'); if(!c.ok){ st.textContent=c.msg; return; }
+    const pass=c.cred;
+    st.textContent='Checking manager…';
     try{
       const r=await rpc('toolkit_load_scan_records',{p_passcode:pass,p_search:'',p_days:1});
-      if(!r.ok){ st.textContent=r.error==='bad_passcode'?'That passcode isn\'t right.':r.error==='locked'?'Too many wrong tries — locked for a few minutes.':r.error==='not_set_up'?'The manager passcode hasn\'t been set up yet.':'Couldn\'t check the passcode.'; return; }
-    }catch(e){ st.textContent=e.setup?'Records not set up yet — run sql/load_scan_records.sql in Supabase.':'Needs a connection to check the passcode — try again when online.'; return; }
-    setPass(pass);
+      if(!r.ok){ st.textContent=LWHMgr.isAuthError(r.error)?LWHMgr.errText(r.error):'Couldn\'t check the manager.'; return; }
+    }catch(e){ st.textContent=e.setup?'Records not set up yet — run sql/load_scan_records.sql in Supabase.':'Needs a connection to check the manager — try again when online.'; return; }
+    LWHMgr.clear('lsClear');
     const i=clearInfo();
     if(!confirm(`Clear ${i.count} load${i.count===1?'':'s'} from this device?${i.unsaved?`\n\n${i.unsaved} not saved to records yet — they will be lost.`:''}\n\nThis can't be undone.`)){ st.textContent='Cancelled.'; return; }
     clearTimeout(syncTimer); stopCamera();
     LWHStorage.remove(HIST_KEY);
     load=blankLoad(); LWHStorage.set(DRAFT_KEY,load);
     fieldsToUi(); render();
-    el('lsLast').hidden=true; el('lsClearBox').hidden=true; el('lsClearPass').value='';
+    el('lsLast').hidden=true; el('lsClearBox').hidden=true;
     LWHUI.toast('This device\'s Load Tag Scan history is cleared');
   }
 
@@ -424,15 +422,15 @@
     document.addEventListener('visibilitychange',()=>{ if(!document.hidden) scheduleSync(500); });
     ensureKey(load); scheduleSync(800);
     el('lsRecGo').onclick=recSearch;
-    el('lsRecPass').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); recSearch(); } };
+    LWHMgr.onEnter('lsRec',recSearch);
     el('lsRecQ').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); recSearch(); } };
     el('lsRecSearch').onclick=recSearch;
     el('lsRecDays').onchange=recSearch;
-    el('lsRecLock').onclick=()=>{ recPass=''; setPass(''); recData=null; el('lsRecResults').innerHTML=''; el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true; el('lsRecPass').value=''; };
-    el('lsRecDetails').addEventListener('toggle',()=>{ if(el('lsRecDetails').open&&getPass()&&!recData){ recPass=getPass(); recSearch(); } });
+    el('lsRecLock').onclick=()=>{ recPass=''; recOn=false; LWHMgr.forget(); recData=null; el('lsRecResults').innerHTML=''; el('lsRecLocked').hidden=false; el('lsRecOpen').hidden=true; LWHMgr.clear('lsRec'); };
+    el('lsRecDetails').addEventListener('toggle',()=>{ if(el('lsRecDetails').open&&!recData&&!recOn&&(LWHMgr.isMgr()||LWHMgr.get())){ recPass=LWHMgr.isMgr()?'':LWHMgr.get(); recOn=true; recSearch(); } });
     el('lsClearDev').onclick=showClearBox;
     el('lsClearGo').onclick=clearDevice;
-    el('lsClearPass').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); clearDevice(); } };
+    LWHMgr.onEnter('lsClear',clearDevice);
     el('lsPrint').onclick=()=>printSheet();
     el('lsPdf').onclick=()=>downloadPdf();
     el('lsXlsx').onclick=downloadXlsx;

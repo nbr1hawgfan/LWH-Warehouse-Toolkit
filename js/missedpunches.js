@@ -4,12 +4,12 @@
   // limit, and usual workdays with no punches at all. Hours only, no pay.
   //
   // Backed by toolkit_timeclock_exceptions(passcode, date, max_hours) — see
-  // sql/missed_punches.sql. The passcode is checked inside the database, so
-  // the report can't be pulled without it. The passcode is kept only for this
-  // browser tab (sessionStorage), never saved to the device.
+  // sql/missed_punches.sql. Manager access is checked inside the database
+  // (toolkit_manager_check, sql/manager_pin_signin.sql): a signed-in manager
+  // opens it directly; anyone else enters a manager's employee ID + PIN, kept
+  // in memory for this tab only (js/mgrauth.js).
   const SUPABASE_URL='https://tjivcqxnkftujceumdtx.supabase.co';
   const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqaXZjcXhua2Z0dWpjZXVtZHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4OTE5NDMsImV4cCI6MjEwMDQ2Nzk0M30.GzDc-_u92jvAHq7eG1X-1cet5Av9qF3ZDEVJMRKEP0E';
-  const PASS_KEY='lwh_mgrPass';
   const KINDS={
     missing_out:{label:'Missing clock-out',tone:'bad',rank:0},
     missing_in:{label:'Missing clock-in',tone:'bad',rank:1},
@@ -17,7 +17,7 @@
     no_punches:{label:'No punches',tone:'info',rank:3}
   };
 
-  let passcode='';
+  let passcode='', unlocked=false;
   let weekStart=sundayOf(new Date());
   let data=null, kindFilter='', groupFilter='';
   let tab='missed';                       // 'missed' | 'hours'
@@ -37,8 +37,6 @@
   function fmtHours(n){ return (Math.round((Number(n)||0)*100)/100).toFixed(2); }
   function weekLabel(s){ return `${fmtShort(s)} – ${fmtShort(addDays(s,6))}, ${addDays(s,6).getFullYear()}`; }
   function dayName(d){ return d.toLocaleDateString('en-US',{weekday:'long'}); }
-  function getPass(){ try{ return sessionStorage.getItem(PASS_KEY)||''; }catch{ return ''; } }
-  function setPass(v){ try{ if(v) sessionStorage.setItem(PASS_KEY,v); else sessionStorage.removeItem(PASS_KEY); }catch{} }
 
   async function fetchReport(){
     const hours=tab==='hours';
@@ -68,7 +66,7 @@
   }
 
   async function run(){
-    if(!passcode) return;
+    if(!unlocked) return;
     const mine=++seq;
     status('Checking the timeclock…');
     el('mpResults').innerHTML='<div class="card">Loading…</div>';
@@ -77,16 +75,13 @@
       if(mine!==seq) return;
       if(!r || !r.ok){
         const err=r&&r.error;
-        passcode=''; setPass('');
+        passcode=''; unlocked=false; LWHMgr.forget();
         setUnlocked(false);
-        if(err==='bad_passcode') status('That passcode isn\'t right.',true);
-        else if(err==='locked') status('Too many wrong tries — locked for a few minutes. Try again shortly.',true);
-        else if(err==='not_set_up') status('The manager passcode hasn\'t been set up yet — see sql/missed_punches.sql.',true);
-        else status('Couldn\'t open the report.',true);
-        el('mpPass').value=''; el('mpPass').focus();
+        status(LWHMgr.isAuthError(err)?LWHMgr.errText(err):'Couldn\'t open the report.',true);
+        LWHMgr.clear('mp');
         return;
       }
-      setPass(passcode);
+      LWHMgr.set(passcode);
       setUnlocked(true);
       if(tab==='hours'){ hoursData=r; renderHours(); }
       else { data=r; kindFilter=''; groupFilter=''; render(); }
@@ -300,31 +295,33 @@
   }
 
   function unlock(){
-    const v=String(el('mpPass').value||'').trim();
-    if(!v){ status('Enter the manager passcode.',true); el('mpPass').focus(); return; }
-    passcode=v; run();
+    const c=LWHMgr.read('mp');
+    if(!c.ok){ status(c.msg,true); return; }
+    passcode=c.cred; unlocked=true; run();
   }
   function lock(){
-    passcode=''; setPass(''); setUnlocked(false); el('mpPass').value=''; status('Locked.');
+    passcode=''; unlocked=false; LWHMgr.forget(); setUnlocked(false); LWHMgr.clear('mp'); status('Locked.');
+  }
+  // Signed-in manager, or a manager already approved on this tab → open straight to the report.
+  function autoOpen(){
+    if(unlocked) return;
+    if(LWHMgr.isMgr()){ passcode=''; unlocked=true; run(); }
+    else if(LWHMgr.get()){ passcode=LWHMgr.get(); unlocked=true; run(); }
   }
 
   window.addEventListener('load',()=>{
     if(!el('mpUnlockBtn')) return;
     renderWeekNav();
     el('mpUnlockBtn').onclick=unlock;
-    el('mpPass').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); unlock(); } };
+    LWHMgr.onEnter('mp',unlock);
     el('mpPrev').onclick=()=>{ weekStart=addDays(weekStart,-7); renderWeekNav(); run(); };
     el('mpNext').onclick=()=>{ const n=addDays(weekStart,7); if(n>sundayOf(new Date())) return; weekStart=n; renderWeekNav(); run(); };
     el('mpLastWeek').onclick=()=>{ weekStart=addDays(sundayOf(new Date()),-7); renderWeekNav(); run(); };
     el('mpLimit').onchange=run;
     document.querySelectorAll('#missedPunches [data-mptab]').forEach(b=>b.onclick=()=>setTab(b.dataset.mptab));
     el('mpLockBtn').onclick=lock;
-    // Same browser tab, already unlocked → open straight to the report.
-    const saved=getPass();
-    document.addEventListener('click',e=>{
-      const v=e.target.closest('[data-view="missedPunches"]');
-      if(v && !passcode && getPass()){ passcode=getPass(); run(); }
-    });
-    if(saved && el('missedPunches').classList.contains('active')){ passcode=saved; run(); }
+    const sec=el('missedPunches');
+    new MutationObserver(()=>{ if(sec.classList.contains('active')) autoOpen(); }).observe(sec,{attributes:true,attributeFilter:['class']});
+    if(sec.classList.contains('active')) autoOpen();
   });
 })();

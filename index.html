@@ -53,6 +53,7 @@
   <script defer src="./js/myhours.js"></script>
   <script defer src="./js/messages.js"></script>
   <script defer src="./js/msgcenter.js"></script>
+  <script defer src="./js/mgrauth.js"></script>
   <script defer src="./js/missedpunches.js"></script>
   <script defer src="./js/absencecal.js"></script>
   <script defer src="./js/forkliftcert-training.js"></script>
@@ -76,7 +77,7 @@
 </head>
 <body>
   <header class="app-header no-print">
-    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.82.0</div></div></div>
+    <div class="brand-row"><div id="brandLogoBox" class="brand-logo"></div><div><div class="eyebrow">Logistics Warehouse</div><h1 id="companyTitle">Warehouse Toolkit</h1><div class="version">v1.83.0</div></div></div>
     <div class="header-actions"><button id="homeNavBtn" class="ghost" data-view="home" hidden><svg class="icon" viewBox="0 0 24 24" style="vertical-align:-4px;margin-right:6px"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>Home</button><button id="navToggle" class="ghost" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="installBtn" class="ghost" hidden>Install App</button><button id="printBtn" class="ghost" onclick="window.print()">Print</button></div>
   </header>
 
@@ -573,14 +574,14 @@
             <div class="ls-clear-dev"><button type="button" class="mh-link ls-clear-btn" id="lsClearDev">Clear recent loads on this device (managers)</button>
               <div id="lsClearBox" hidden>
                 <div class="hint" id="lsClearInfo"></div>
-                <label for="lsClearPass" class="mh-field-label">Manager passcode</label>
-                <div class="ls-input-row"><input id="lsClearPass" type="password" autocomplete="current-password" placeholder="Same as Missed Punches" /><button type="button" id="lsClearGo" class="ls-clear-go">Clear this device</button></div>
+                <div data-mgrcred-slot="lsClear"></div>
+                <div class="ls-input-row"><button type="button" id="lsClearGo" class="ls-clear-go">Clear this device</button></div>
                 <div class="hint" id="lsClearStatus" style="margin-top:6px"></div>
               </div></div></details>
           <details class="card ls-hist" id="lsRecDetails"><summary>Records — look up past loads (managers)</summary>
             <div id="lsRecLocked" class="ls-rec-lock">
-              <label for="lsRecPass" class="mh-field-label">Manager passcode</label>
-              <div class="ls-input-row"><input id="lsRecPass" type="password" autocomplete="current-password" placeholder="Same as Missed Punches" /><button type="button" id="lsRecGo">Open</button></div>
+              <div data-mgrcred-slot="lsRec"></div>
+              <div class="ls-input-row"><button type="button" id="lsRecGo">Open records</button></div>
             </div>
             <div id="lsRecOpen" hidden>
               <div class="ls-rec-bar">
@@ -715,8 +716,8 @@
             <div class="hint" style="margin-top:10px">Loads stay on this device until they're saved to records. <button type="button" class="mh-link" id="obLocalXlsx">Excel of this device's closed loads</button></div></div>
           <details class="card ls-hist" id="obRecDetails"><summary>Records — every load from every device (managers)</summary>
             <div id="obRecLocked" class="ls-rec-lock">
-              <label for="obRecPass" class="mh-field-label">Manager passcode</label>
-              <div class="ls-input-row"><input id="obRecPass" type="password" autocomplete="current-password" placeholder="Same as Missed Punches" /><button type="button" id="obRecGo">Open</button></div>
+              <div data-mgrcred-slot="obRec"></div>
+              <div class="ls-input-row"><button type="button" id="obRecGo">Open records</button></div>
             </div>
             <div id="obRecOpen" hidden>
               <div class="ls-rec-bar ob-rec-bar">
@@ -1074,9 +1075,8 @@
             <div><h2>Missed Punches</h2><div class="mh-entry-sub">Managers — timeclock problems to fix before payroll. Hours only, no pay info.</div></div>
           </div>
           <div id="mpLocked">
-            <label for="mpPass" class="mh-field-label">Manager passcode</label>
-            <input id="mpPass" type="password" class="ff-item-input mp-pass" autocomplete="current-password" placeholder="Passcode" />
-            <button type="button" id="mpUnlockBtn" class="mh-show-btn mp-unlock"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Unlock Report</button>
+            <div data-mgrcred-slot="mp"></div>
+            <button type="button" id="mpUnlockBtn" class="mh-show-btn mp-unlock"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Open Report</button>
           </div>
           <div id="mpUnlocked" hidden>
             <div class="ff-tabs" role="tablist">
@@ -1240,11 +1240,10 @@
         <div class="panel fc-mgr-lock" id="fcmLocked">
           <div class="mh-entry-head">
             <div class="mh-entry-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><path d="M13 17l2 2 4-4"/></svg></div>
-            <div><h2>Forklift Certs</h2><div class="mh-entry-sub">Managers — driving evaluations, certificates, wallet cards, test history. Same passcode as Missed Punches.</div></div>
+            <div><h2>Forklift Certs</h2><div class="mh-entry-sub">Managers — driving evaluations, certificates, wallet cards, test history. Managers sign in with their own employee ID and PIN.</div></div>
           </div>
-          <label for="fcmPass" class="mh-field-label">Manager passcode</label>
-          <input id="fcmPass" type="password" class="mp-pass" autocomplete="current-password" placeholder="Passcode" />
-          <button type="button" id="fcmUnlock" class="mh-show-btn mp-unlock" style="margin-top:12px"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Unlock</button>
+          <div data-mgrcred-slot="fcm"></div>
+          <button type="button" id="fcmUnlock" class="mh-show-btn mp-unlock" style="margin-top:12px"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Open</button>
           <div id="fcmLockStatus" class="mh-status" role="status"></div>
         </div>
 
@@ -2090,7 +2089,7 @@
 
     <section id="settings" class="view no-print"><div class="settings-grid"><div class="card"><h2>Appearance</h2><label class="mh-remember" style="font-size:15px;color:var(--ink);font-weight:600;margin:6px 0 8px"><input id="setGlass" type="checkbox" /> Rounded look (soft panels, rounded corners)</label><p class="hint">Same company colors and white background either way. Turn off for the classic squared-off look — handy on older computers. This only changes your own device.</p></div><div class="card"><h2>App Settings</h2><label>Company name<input id="setCompany" value="Logistics Warehouse" /></label><label>Company logo<input id="setLogo" type="file" accept="image/*" /></label><label>Company tagline (optional)<input id="setTagline" placeholder="e.g. Great spaces in the right places." /></label><p class="hint">Colors are the company theme — red, maroon and black on white — the same on every device.</p><label>Weather location (lat,lon)<input id="setWeatherLoc" placeholder="35.3859,-94.3985 (Fort Smith, AR default)" /></label><label><input id="setReadAloud" type="checkbox" checked /> Read Master Lookup results aloud (when exactly one match is found)</label><div id="ttsVoiceRow" style="margin-top:8px"><label>Read-aloud voice<select id="setTtsVoice"><option value="">Loading voices…</option></select></label><div class="actions" style="margin-top:6px"><button type="button" id="testTtsVoice" class="ghost">Test Voice</button></div><p class="hint" style="margin-top:6px">Voices come from your own device/browser, so the options (and how natural they sound) vary computer to computer. Chrome and Edge usually offer the most natural-sounding choices — try a few and pick whichever sounds best.</p></div><div class="actions"><button id="saveBrand" type="button">Save Branding</button><button id="clearLogo" type="button" class="ghost">Clear Logo</button></div></div><div class="card"><h2>Print Calibration</h2><p class="hint">These apply to screen preview and print output. Use small values like -10, 0, 10.</p><div class="grid-3"><label>Offset X px<input id="calX" type="number" value="0" /></label><label>Offset Y px<input id="calY" type="number" value="0" /></label><label>Scale %<input id="calScale" type="number" value="100" /></label></div><div class="actions"><button id="saveCalibration" type="button">Save Calibration</button><button id="calRack" type="button" class="ghost">Test 4x6</button><button id="calLetter" type="button" class="ghost">Test Letter</button></div></div><div class="card"><h2>Master Lookup Source</h2><p class="hint">Feeds Master Lookup <b>and</b> Receiving/InvRec Print — both search this one source now. Default is live inventory, refreshed from birdsEye every ~15 minutes. Auto-loads fresh every time the app opens.</p><label>CSV export URL (Supabase, Google Sheet, or any plain CSV)<input id="setCustomerLookupUrl" /></label><div class="actions"><button id="saveCustomerLookupUrl" type="button">Save Source</button><button id="testCustomerLookupUrl" type="button" class="ghost">Test Load</button><button id="resetCustomerLookupUrl" type="button" class="ghost">Reset to Default (Live Inventory)</button></div></div><div class="card"><h2>Customer Field Labels</h2><p class="hint">The CSV headers stay generic, but users can see friendly names. Leave as-is until the team decides better labels.</p><details><summary>Edit display labels</summary><div class="grid-2"><label>ControlNumber<input id="custLabel_controlNumber" /></label><label>INV_Receipt<input id="custLabel_invReceipt" /></label><label>SubCustNm<input id="custLabel_subCustNm" /></label><label>ItemNm<input id="custLabel_itemNm" /></label><label>LotNum<input id="custLabel_lotNum" /></label><label>Qty<input id="custLabel_qty" /></label><label>Location<input id="custLabel_location" /></label><label>Comments<input id="custLabel_comments" /></label><label>Vendor<input id="custLabel_vendor" /></label><label>Unique2<input id="custLabel_unique2" /></label><label>Unique3<input id="custLabel_unique3" /></label><label>Unique5<input id="custLabel_unique5" /></label><label>Unique6<input id="custLabel_unique6" /></label><label>Unique7<input id="custLabel_unique7" /></label><label>Unique8<input id="custLabel_unique8" /></label><label>ItemDesc<input id="custLabel_itemDesc" /></label><label>Warehouse<input id="custLabel_warehouse" /></label><label>BayName<input id="custLabel_bayName" /></label><label>Still_In_Inventory<input id="custLabel_stillInInventory" /></label><label>CurrentBay<input id="custLabel_currentBay" /></label></div><div class="actions"><button id="saveCustomerFieldLabels" type="button">Save Customer Labels</button></div></details></div><div class="card"><h2>Managers</h2><p class="hint">Feeds the Send To list in Warehouse Tools → Quick Message. A default list is already baked in and auto-loads on every install — no sharing a link required. Loading from a sheet here is completely separate from the Master Lookup sheet — this one is just two plain columns: Name, Email.</p><label>Google Sheet CSV URL<input id="mgrSourceUrl" placeholder="Published CSV link — columns: Name, Email" /></label><div class="actions"><button id="mgrLoadBtn" type="button">Load / Refresh from Sheet</button><button id="mgrResetBtn" type="button" class="ghost">Reset to Default</button></div><div id="mgrSourceStatus" class="hint">Not loaded yet.</div><div id="mgrList" style="margin-top:12px"></div><div class="actions"><button id="mgrAddBtn" type="button" class="ghost">Add Manager Manually</button></div></div><div class="card"><h2>Quick Links</h2><p class="hint">Shortcuts shown on the Home screen — e.g. your Forklift Inspection or PTO Request apps. These open in a new tab; Google Apps Script web apps generally can't be embedded directly in another app due to Google's own security restrictions, so this is a fast link instead of a true embed.</p><div id="qlList"></div><div class="actions"><button id="qlAddBtn" type="button" class="ghost">Add Link</button><button id="qlResetBtn" type="button" class="ghost">Reset to Defaults</button></div></div><div class="card"><h2>Usage Tracking</h2><p class="hint">Simple usage counter — logs your name once per day to a Google Sheet, so your team lead can see who's using the app and how often (e.g. "John Smith — 12 days this month"). Not a login system, just self-reported. The logging endpoint is already baked in — just enter your name below and you're set. Editable here if it ever needs to point somewhere else.</p><label>Your Name<input id="setUserName" placeholder="Jane Smith" /></label><label>Usage Log URL<input id="setUsageLogUrl" placeholder="https://script.google.com/macros/s/.../exec" /></label><div class="actions"><button id="saveUsageSettings" type="button" class="ghost">Save</button></div></div><div class="card"><h2>PWA Status</h2><p id="pwaStatus">Checking...</p><div class="actions"><button id="clearStorage" type="button" class="ghost">Clear Saved Settings</button></div></div></div></section>
 
-    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.82.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Messages (from and to managers, with files), Quick Lookup, Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Bay Scan, Outbound Loads / BOL, Paper Forms, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Forklift Test &amp; Certs, Absence Calendar (managers), Generate Code, Scan Code, Doc Scanner, Formula Builder (XLOOKUP, VLOOKUP, IF / IFS, SUMIFS / COUNTIFS), Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
+    <section id="about" class="view no-print"><div class="card"><h2>LWH Warehouse Toolkit</h2><p><b>Version:</b> 1.83.0</p><p>Built for Logistics Warehouse Operations. Master Lookup now runs on live inventory, refreshed automatically every ~15 minutes.</p><h3>Modules</h3><p>Messages (from and to managers, with files), Quick Lookup, Master Lookup, Item Summary, Transaction History, Item Transaction Lookup, Receiving Print, Trailer Checklist, Pick List, Bill of Lading, Load Tag Scan, Bay Scan, Outbound Loads / BOL, Paper Forms, Rack Labels, Bay Signs, Pallet Labels, Contact QR Cards, Visitor Badges, Employee Badges, Forklift Test &amp; Certs, Absence Calendar (managers), Generate Code, Scan Code, Doc Scanner, Formula Builder (XLOOKUP, VLOOKUP, IF / IFS, SUMIFS / COUNTIFS), Weather Radar, Warehouse Tools (including Age, Loan, Cost-per-Foot, Axle Weight, Margin, Freight Class, Square Footage, Rack Capacity, Standards, and Password Generator calculators), Settings, Print Calibration.</p></div></section>
   </main>
   <div id="scannerModal" class="scanner-modal no-print" hidden>
     <div class="scanner-card">

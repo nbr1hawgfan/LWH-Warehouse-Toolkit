@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.83.0
+- **One PIN for manager tools — the shared manager passcode is retired.** Missed Punches (and Everyone's Hours), Forklift Certs, Outbound (records and overrides) and Load Tag Scan (records and clear-device) now use the same 6-digit sign-in as the Toolkit and Messages.
+  - Signed in as a manager on the warehouse manager list → manager tools open with nothing to type.
+  - On someone else's device (a loader's phone, a shared PC) → the manager enters **their own** employee ID + 6-digit PIN. Same 5-tries / 15-minute lockout as sign-in. Outbound overrides now record the manager's real name from the sign-in instead of a typed name.
+  - An approval typed on a device is kept in memory for that tab only — never saved to the device.
+- Who counts as a manager = the warehouse manager list (Manager Messages). Managers who haven't done their first-time sign-in need a setup code from Manager Messages → Employee Sign-in.
+- Backend: `sql/manager_pin_signin.sql` (applied Nov 10, 2026) — one change to `toolkit_manager_check()`, so all 18 manager functions switch at once; function signatures unchanged. New `toolkit_manager_whoami()`.
+- The old shared passcode still works until **Nov 18, 2026** so phones still on the cached older app keep working until they update. After that it's refused.
+
 ## v1.82.0
 - **Absence Calendar** (new — Time section on Home, and in the menu for managers). PTO, call-ins and other absences from the PTO tracker as a month calendar: type legend you can tap to hide types, department filter, name search, show/hide pending, tap a day for the full list, prints landscape. On phones it switches to a day-by-day list. **PTO Balances** tab: allocation, current balance and this year's approved absences by type for any employee, printable.
 - Managers only: the same warehouse manager list and 6-digit sign-in as Manager Messages. Checked in the database, not just on screen.

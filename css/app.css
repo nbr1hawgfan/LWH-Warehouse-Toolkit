@@ -2307,3 +2307,14 @@ table.ac-cal td.has:hover,table.ac-cal td.has:focus{background:var(--brand-tint)
   #absenceCal .ac-dot,#absenceCal .ac-daynum b{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #absenceCal .ac-bhead,#absenceCal .ac-bnums em,#absenceCal .ac-tag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* ===================== MANAGER SIGN-IN FIELDS (v1.83.0) ===================== */
+.mgr-cred{margin:4px 0 10px}
+.mgr-cred-me{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-left:4px solid var(--good);border-radius:var(--radius);padding:10px 12px;font-size:15px}
+.mgr-cred-me .icon{width:20px;height:20px;stroke:var(--good);flex:none}
+.mgr-cred-hint{font-size:14px;color:var(--muted);margin-bottom:8px}
+.mgr-cred-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mgr-cred-row label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mgr-cred-row input{min-height:44px;border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px;font-size:17px;color:var(--ink);background:#fff;letter-spacing:.08em;text-transform:none;font-weight:600}
+.mgr-cred-row input:focus{outline:2px solid var(--brand);outline-offset:0;border-color:var(--brand)}
+@media (max-width:420px){ .mgr-cred-row{grid-template-columns:1fr} }
