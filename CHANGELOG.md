@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.84.0
+- **Tool-level usage.** Opening a tool now counts as `tool:<menu name>` in the anonymous app-usage log (once per tool per device per 30 minutes), so the hub's App Usage page shows which of the ~50 Toolkit tools actually get used, not just "Warehouse Toolkit". Same anonymous device ID as before; no names or data.
+
 ## v1.83.0
 - **One PIN for manager tools — the shared manager passcode is retired.** Missed Punches (and Everyone's Hours), Forklift Certs, Outbound (records and overrides) and Load Tag Scan (records and clear-device) now use the same 6-digit sign-in as the Toolkit and Messages.
   - Signed in as a manager on the warehouse manager list → manager tools open with nothing to type.
