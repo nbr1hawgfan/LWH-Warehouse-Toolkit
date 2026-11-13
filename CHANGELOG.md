@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.85.0
+- **Production** (new — Time & Hours on Home, and in the menu for managers). Replaces the "Scrapping Production Analytics" Apps Script page; the records stay in the same Google Sheet.
+  - **Crew entry:** pick several people at once (tap names, saved crews, or "Last crew"), set hours for everyone with one box and adjust anyone, enter the crew's total units once. Units and customer OT hours are split by each person's share of the hours. Live preview of units/hr vs target, revenue, labor, margin and who goes into OT.
+  - **Entries:** every job for any dates — edit or delete (logged), Excel export. A same-day / same-crew / same-units save asks before saving twice.
+  - **Dashboard:** Today / Yesterday / This week / Last week / This month / Last month / Last 30 days / Custom. Revenue, labor, margin, units, units/hr, labor per unit, OT — each vs the previous period. Revenue and labor by day, projects and employees with **% of target**, weekly **OT watch**, email this report, Excel, print.
+  - **Timeclock:** production hours vs timeclock hours by day for the week; flags gaps and "clocked in, no production" (optional setup).
+  - **Settings (admin):** project pricing with start dates and price history, new projects, targets, turn projects off; add / edit employees and pay rates (pick from the timeclock list); OT rules; daily report recipients and on/off; Access list; recheck OT; change log.
+  - **Access:** warehouse managers = manager. Access tab can add admins, give leads **entry** (no dollars or pay rates anywhere — removed on the server), or block someone. Checked by the Apps Script on every request using the Toolkit sign-in.
+  - **Weekly OT is now figured for the whole Sun–Sat week** every time a job is added, edited or deleted, so back-dated and corrected entries come out right.
+  - **Daily 9 AM email** keeps going, now with % of target, employee performance, weekly OT watch, and a timeclock check.
+  - Backend: `gas/ProductionAPI.gs` (replaces Code.gs in the existing project), optional `sql/production_timeclock.sql`. Setup: `docs/PRODUCTION_SETUP.md`.
+
 ## v1.84.0
 - **Tool-level usage.** Opening a tool now counts as `tool:<menu name>` in the anonymous app-usage log (once per tool per device per 30 minutes), so the hub's App Usage page shows which of the ~50 Toolkit tools actually get used, not just "Warehouse Toolkit". Same anonymous device ID as before; no names or data.
 

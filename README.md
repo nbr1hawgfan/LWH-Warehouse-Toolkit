@@ -1,4 +1,6 @@
-# LWH Warehouse Toolkit v1.81.0
+# LWH Warehouse Toolkit v1.85.0
+
+**New in v1.85.0 — Production:** crew production entry, pricing, employees and analytics for managers, replacing the Scrapping Production Analytics page (same Google Sheet, same 9 AM email). Setup: `docs/PRODUCTION_SETUP.md`.
 
 **v1.80.0 — sign-in required:** everyone signs in with employee ID + PIN (same as Messages); the data side is locked too. See `CHANGELOG.md` and `docs/MESSAGES_SETUP.md`.
 
