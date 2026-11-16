@@ -125,6 +125,7 @@
     const sec=$('sonocoReels'); if(!sec||built) return; built=true;
     sec.innerHTML=`<div class="pr-wrap">
       <div class="pr-top no-print">
+        <div class="si-switch"><span>Sonoco</span><button type="button" class="pr-preset on" data-sonoco="sonocoReels">Reels Production</button><button type="button" class="pr-preset" data-sonoco="sonocoInv">Inventory &amp; BOM</button></div>
         <div class="mh-entry-head">
           <div class="mh-entry-icon">${ICON}</div>
           <div><h2>Sonoco Reels</h2><div class="mh-entry-sub">Enter production, check incentives, log issues and absences. Daily report emails at 8 AM.</div></div>
@@ -143,6 +144,7 @@
       <div id="srBody"></div>
     </div>`;
     $('srTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-srtab]'); if(b) setTab(b.dataset.srtab); });
+    sec.addEventListener('click',e=>{ const b=e.target.closest('[data-sonoco]'); if(b&&b.dataset.sonoco!=='sonocoReels'&&window.LWHUI) LWHUI.show(b.dataset.sonoco); });
     $('srRefresh').onclick=()=>{ dayRows=null; dash=null; iss=null; att=null; rep.rows=null; boot(true); };
   }
 
