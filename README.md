@@ -1,6 +1,8 @@
-# LWH Warehouse Toolkit v1.85.0
+# LWH Warehouse Toolkit v1.86.0
 
-**New in v1.85.0 — Production:** crew production entry, pricing, employees and analytics for managers, replacing the Scrapping Production Analytics page (same Google Sheet, same 9 AM email). Setup: `docs/PRODUCTION_SETUP.md`.
+**New in v1.86.0 — Sonoco Reels:** production entry, incentive reports, issues and attendance for the Sonoco reels line, replacing the Employee Production Tracker page (same Google Sheet, same emails, same TLand export). Access list only. Setup: `docs/SONOCO_REELS_SETUP.md`.
+
+**v1.85.0 — Production:** crew production entry, pricing, employees and analytics for managers, replacing the Scrapping Production Analytics page (same Google Sheet, same 9 AM email). Setup: `docs/PRODUCTION_SETUP.md`.
 
 **v1.80.0 — sign-in required:** everyone signs in with employee ID + PIN (same as Messages); the data side is locked too. See `CHANGELOG.md` and `docs/MESSAGES_SETUP.md`.
 

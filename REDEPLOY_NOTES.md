@@ -1,34 +1,29 @@
-# Production — v1.85.0
+# Sonoco Reels — v1.86.0
 
-## 1. Apps Script (do this first) — full steps in docs/PRODUCTION_SETUP.md
+## 1. Apps Script (do this first) — full steps in docs/SONOCO_REELS_SETUP.md
 1. Back up the Sheet and the old Code.gs.
-2. Replace Code.gs with `gas/ProductionAPI.gs`, delete Index.html.
-3. Run `setupProductionV2` once. Put your employee ID with role `admin` on the new **Access** tab.
-4. Deploy → Manage deployments → edit → **New version** (Execute as Me, Anyone). Copy the /exec URL.
-5. Run `createDailyEmailTrigger` once.
+2. Replace Code.gs with `gas/SonocoReelsAPI.gs`. Leave Index.html alone.
+3. Run `setupToolkitApi` once. Put the allowed employee IDs on the new **Access** tab.
+4. Deploy → **New deployment** → Web app (Execute as Me, Anyone). Copy the /exec URL.
 
 ## 2. URL
-Already set in `js/production.js` (`PROD_API_DEFAULT`). If you ever make a NEW deployment (instead of a new version of this one), update it there.
+Put it in `js/sonocoreels.js` (`SR_API_DEFAULT`), or paste it on the Connect screen on each device.
 
-## 3. SQL (optional — timeclock comparison)
-`sql/production_timeclock.sql` in the Supabase SQL Editor, then set the key there and in Script Property `PROD_TIMECLOCK_KEY`.
-
-## 4. Upload these files (everything else is unchanged)
-- `js/production.js` — **new file**
-- `index.html` — replace (menu entry, screen, script tag, About, version 1.85.0)
-- `js/hometiles.js` — replace (Production tile under Time & Hours)
-- `css/app.css` — replace (Production styles at the end)
-- `service-worker.js` — replace (cache v1-85-0, new file cached)
-- `gas/ProductionAPI.gs`, `sql/production_timeclock.sql`, `docs/PRODUCTION_SETUP.md` — reference copies
+## 3. Files in this release (everything else is unchanged)
+- `js/sonocoreels.js` — **new file**
+- `index.html` — menu entry, screen, script tag, version 1.86.0
+- `js/hometiles.js` — Sonoco Reels tile under Time & Hours
+- `css/app.css` — Sonoco Reels styles at the end
+- `service-worker.js` — cache v1-86-0, new file cached
+- `gas/SonocoReelsAPI.gs`, `docs/SONOCO_REELS_SETUP.md` — reference copies
 - `CHANGELOG.md`, `README.md`, `REDEPLOY_NOTES.md` — docs
 
-Hard refresh after upload; on phones close and reopen the app once with signal.
+Hard refresh after it's live; on phones close and reopen the app once with signal.
 
-## 5. Check after deploy
-- Signed in as a manager → menu shows **Production**; Home → search "production".
-- Record a 2-person job → Sheet shows 2 rows, same Job ID, units split by hours.
-- Entries → Edit → change hours → saved; Audit Log tab has the change.
-- Settings → Pricing → change a rate starting today → Rate History row added.
-- Settings → OT & daily report → Send yesterday's report now → email arrives.
-- Old web app URL → "Production has moved" page with a button into the Toolkit.
-- Bookmark: `index.html?view=production` opens straight to it.
+## 4. Check after deploy
+- Signed in as someone on the Access tab → Home → search "sonoco" → opens.
+- Save an entry → Production tab has the row with your name in column F; Dashboard tab updated.
+- Reports → Weekly incentive → Last week matches Monday's email.
+- Someone not on the Access tab → "You don't have access".
+- Bookmark: `index.html?view=sonocoReels` opens straight to it.
+- When happy: archive the old web app deployment.
