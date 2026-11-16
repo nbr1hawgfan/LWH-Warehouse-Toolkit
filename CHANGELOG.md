@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.87.0
+- **Sonoco Inventory & BOM** (new — Time & Hours on Home; in the menu once a device has got in). One screen replaces the two Apps Script pages "Spool Works Dashboard" and "Sonoco Component Inventory". Both Google Sheets stay the database.
+  - **Open Orders:** every order with whether its components are in stock (tap for the component list), finished stock vs. what's ordered, and the total components needed for all open orders with what's short.
+  - **Inventory:** finished spools, add / ship with a before-and-after preview, Excel.
+  - **Shipments:** calendar (tap a day) and searchable list; last 13 months loaded, all history on request.
+  - **Components:** stock with each component's own low / critical limits from the Thresholds tab, "Needs attention" filter, Set count with a note.
+  - **Builds:** pick an item and quantity to see what comes out of stock, record the build, build history.
+  - **Transactions:** the finished add / ship log.
+  - A **Sonoco** switch at the top moves between this and Reels Production.
+  - **Access:** each Sheet has its own Access tab (edit or view), checked by its script on every request.
+  - Script fixes: locking on every stock change, all-or-nothing builds, who-did-it on builds / transactions / counts, a Stock_Log for count changes, hyphenated BOM items now match open orders.
+  - The 7 AM and 8 AM emails and the TLand inventory snapshot are unchanged.
+  - Backends: `gas/SonocoInventoryAPI.gs`, `gas/SonocoBomAPI.gs`. Setup: `docs/SONOCO_INVENTORY_SETUP.md`.
+
 ## v1.86.0
 - **Sonoco Reels** (new — Time & Hours on Home; in the menu once a device has got in). Moves the screens of the "Employee Production Tracker" Apps Script page into the Toolkit; the records stay in the same Google Sheet.
   - **Enter:** date, employee, part, quantity, hours + minutes. Keeps the date and employee for the next entry, shows performance vs standard and the incentive as soon as it saves, and lists everything entered for that date. A same-date / employee / part / quantity / time save asks before saving twice.
