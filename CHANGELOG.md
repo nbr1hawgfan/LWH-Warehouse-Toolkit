@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.86.0
+- **Sonoco Reels** (new — Time & Hours on Home; in the menu once a device has got in). Moves the screens of the "Employee Production Tracker" Apps Script page into the Toolkit; the records stay in the same Google Sheet.
+  - **Enter:** date, employee, part, quantity, hours + minutes. Keeps the date and employee for the next entry, shows performance vs standard and the incentive as soon as it saves, and lists everything entered for that date. A same-date / employee / part / quantity / time save asks before saving twice.
+  - **Dashboard:** Today / Yesterday / This week / Last week / This month / Last month / Custom. Pieces, hours, average performance, employees, incentives, revenue, top employees and parts, records with a filter, Excel, print, email.
+  - **Reports:** Weekly incentive (Mon–Sun, with the Call-In / Unexcused rule), Part summary, Daily production, Daily employee performance — Excel, print, email.
+  - **Issues** and **Attendance** logs with their entry forms; **Employees** list and Add employee.
+  - **Access:** only employee IDs on the Sheet's new **Access** tab, checked by the Apps Script on every request using the Toolkit sign-in. Being a manager isn't enough — everyone who gets in sees cost, incentive and revenue.
+  - Script fixes that came with the move: Dashboard rebuild is locked and no longer blanks the tab first; deleting an absence checks the row is still the one on screen; Toolkit entries record who entered them; date filtering happens on the server.
+  - The 8 AM daily email, the Monday incentive email, error alerts and the TLand CSV are unchanged.
+  - Backend: `gas/SonocoReelsAPI.gs` (replaces Code.gs in the existing project). Setup: `docs/SONOCO_REELS_SETUP.md`.
+
 ## v1.85.0
 - **Production** (new — Time & Hours on Home, and in the menu for managers). Replaces the "Scrapping Production Analytics" Apps Script page; the records stay in the same Google Sheet.
   - **Crew entry:** pick several people at once (tap names, saved crews, or "Last crew"), set hours for everyone with one box and adjust anyone, enter the crew's total units once. Units and customer OT hours are split by each person's share of the hours. Live preview of units/hr vs target, revenue, labor, margin and who goes into OT.

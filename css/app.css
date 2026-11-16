@@ -2496,3 +2496,41 @@ tr.pr-off td{color:#9a98a2}
   #production .pr-card{break-inside:avoid;box-shadow:none}
   #production .pr-tiles{grid-template-columns:repeat(4,1fr)}
 }
+
+/* =========================================================================
+   SONOCO REELS (v1.86.0) — js/sonocoreels.js
+   Uses the Production (.pr-*) pieces; only what's different is here.
+   ========================================================================= */
+#sonocoReels{min-width:0;max-width:100%}
+#sonocoReels .pr-wrap{max-width:1280px;margin:0 auto;min-width:0}
+#sonocoReels .pr-card{min-width:0}
+#sonocoReels .mh-entry-head{margin-bottom:12px}
+.sr-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;align-items:start}
+.sr-two.sr-even{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sr-two>*{min-width:0}
+.sr-time{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.sr-calc{font-size:14px;font-weight:700;color:var(--brand);min-height:21px;margin:0 0 6px}
+.sr-top{display:flex;justify-content:space-between;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:15px}
+.sr-top:last-child{border-bottom:0}
+.sr-top b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.sr-good{color:var(--good)!important;font-weight:800}
+.sr-mid{color:#b45309!important;font-weight:800}
+.sr-low{color:var(--bad)!important;font-weight:800}
+tr.sr-inel td{background:#fef2f2!important}
+.pr-tiles.sr-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+#sonocoReels .pr-cardhead .pr-email{flex:1 1 320px;max-width:460px}
+#sonocoReels textarea{resize:vertical}
+@media(max-width:1000px){
+  .sr-two,.sr-two.sr-even{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  #sonocoReels .mh-entry-head{flex-wrap:wrap}
+  .pr-tiles.sr-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media print{
+  #sonocoReels .pr-tabs,#sonocoReels .mh-entry-head,#sonocoReels button,#sonocoReels .no-print{display:none!important}
+  #sonocoReels .pr-print-head{display:block;font-size:18px;font-weight:800;margin-bottom:10px}
+  #sonocoReels .pr-card{break-inside:avoid;box-shadow:none}
+  #sonocoReels .pr-scroll{overflow:visible}
+  .pr-tiles.sr-tiles{grid-template-columns:repeat(3,1fr)}
+}
