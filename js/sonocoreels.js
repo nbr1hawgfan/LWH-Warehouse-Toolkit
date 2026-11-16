@@ -11,7 +11,7 @@
   'use strict';
   // Paste the Sonoco Reels Apps Script web app URL here (Deploy → Manage deployments → /exec URL).
   // It can also be set on a device from the Connect screen.
-  const SR_API_DEFAULT='';
+  const SR_API_DEFAULT='https://script.google.com/macros/s/AKfycbzYJIjyU5dXpFD_5jAK-rwYilhfJfwNyp0xsGe422qNG3u5REpb7V4GqQErMbY2BBU9JA/exec';
   const LS_URL='lwh_srApi', LS_ROLE='lwh_srRole', LS_EMAIL='lwh_srEmail', LS_EMP='lwh_srLastEmp';
 
   const $=id=>document.getElementById(id);
