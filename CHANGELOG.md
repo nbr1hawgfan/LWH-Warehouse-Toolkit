@@ -11,7 +11,7 @@
   - A **Sonoco** switch at the top moves between this and Reels Production.
   - **Access:** each Sheet has its own Access tab (edit or view), checked by its script on every request.
   - Script fixes: locking on every stock change, all-or-nothing builds, who-did-it on builds / transactions / counts, a Stock_Log for count changes, hyphenated BOM items now match open orders.
-  - The 7 AM and 8 AM emails and the TLand inventory snapshot are unchanged.
+  - The 7 AM emails and the TLand inventory snapshot are unchanged. The 8 AM component stock email now uses the Thresholds tab (same limits as the screen) and lists low items too.
   - Backends: `gas/SonocoInventoryAPI.gs`, `gas/SonocoBomAPI.gs`. Setup: `docs/SONOCO_INVENTORY_SETUP.md`.
 
 ## v1.86.0
