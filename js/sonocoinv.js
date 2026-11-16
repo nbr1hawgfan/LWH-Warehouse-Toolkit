@@ -11,7 +11,10 @@
 (function(){
   'use strict';
   // Apps Script web app URLs (Deploy → Manage deployments → /exec). Can also be set per device on the Connect screen.
-  const API_DEFAULT={ inv:'', bom:'' };
+  const API_DEFAULT={
+    inv:'https://script.google.com/macros/s/AKfycbzLUPrfoKL0bpOu59DxJGOO2gvXxAm7L6DrLuitns3BcrUyvqfrrXPXwciqHduyOA5T5Q/exec',
+    bom:'https://script.google.com/macros/s/AKfycbwqnmWARcsnhCsNG8N7Rv3Us70Hn1UCCUQWZW6Zd4W-tPVpkXmr9gy1rw8FgL_ta-T4Ug/exec'
+  };
   const LS_URL={ inv:'lwh_siInvApi', bom:'lwh_siBomApi' }, LS_OK='lwh_siOk', LS_SECTION='lwh_sonocoSection';
 
   const $=id=>document.getElementById(id);
