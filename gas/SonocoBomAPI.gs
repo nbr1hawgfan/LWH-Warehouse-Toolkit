@@ -4,7 +4,7 @@
  * This is the complete Code.gs for the existing "Sonoco BOM Inventory (Sonoco Component Inventory)" Apps Script project.
  *
  * Unchanged: the Sheet is still the database, and the 8 AM component
- * stock email runs exactly as before (same recipients, same 10 / 20 limits).
+ * stock email goes to the same recipients at the same time.
  *
  * New (search for "TOOLKIT API" near the bottom):
  *   - doPost() — a JSON API the Warehouse Toolkit's "Sonoco Inventory" screen calls
@@ -16,7 +16,8 @@
  *   - changing a component count is locked and written to a new "Stock_Log" tab (who, from, to)
  *   - open orders match the exact BOM item number first, so items with a hyphen in their own
  *     name (e.g. N0260150140A010-SP27) are no longer reported as "BOM Missing"
- *   - the Toolkit screen uses each component's own limits from the Thresholds tab
+ *   - the Toolkit screen AND the 8 AM email use each component's own limits from the Thresholds
+ *     tab (the email used a fixed 10 / 20 for everything); the email now lists low items too
  *
  * Setup: docs/SONOCO_INVENTORY_SETUP.md in the Toolkit repo. Short version:
  *   1. Keep a copy of the old Code.gs. Paste this file over Code.gs.
@@ -469,7 +470,9 @@ function sendDailyReport() {
       return;
     }
     
-    const components = getComponents();
+    // Each component's own limits from the Thresholds tab (same rule as the Toolkit screen).
+    // A component with no limits there is only flagged when it is out. Duplicate rows are skipped.
+    const components = componentsFull_().filter(c => c.status !== 'duplicate');
     const openOrdersData = calculateOpenOrderRequirements();
     const bomItems = getBOMItems();
     
@@ -479,17 +482,17 @@ function sendDailyReport() {
     
     components.forEach(comp => {
       const quantity = comp.quantity || 0;
-      const criticalThreshold = comp.criticalThreshold || 10;
-      const lowThreshold = comp.lowThreshold || 20;
+      const criticalThreshold = comp.critical;
+      const lowThreshold = comp.low;
       
-      if (quantity <= criticalThreshold) {
+      if (comp.status === 'out' || comp.status === 'critical') {
         criticalStockItems.push({
           code: comp.code,
           description: comp.description,
           quantity: quantity,
           threshold: criticalThreshold
         });
-      } else if (quantity <= lowThreshold) {
+      } else if (comp.status === 'low') {
         lowStockItems.push({
           code: comp.code,
           description: comp.description,
@@ -628,11 +631,45 @@ function buildEmailBody(companyName, components, criticalItems, lowStockItems, h
                                     <tr style="background-color: #fef2f2;">
                                         <th style="padding: 10px; border: 1px solid #fca5a5; text-align: left; font-size: 12px;">Component</th>
                                         <th style="padding: 10px; border: 1px solid #fca5a5; text-align: center; font-size: 12px;">Stock</th>
+                                        <th style="padding: 10px; border: 1px solid #fca5a5; text-align: center; font-size: 12px;">Critical Limit</th>
                                     </tr>
                                     ${criticalItems.map(item => `
                                         <tr>
                                             <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-family: monospace;">${item.code}</td>
                                             <td style="padding: 8px 10px; border: 1px solid #e5e7eb; text-align: center; color: #dc2626; font-weight: bold;">${item.quantity}</td>
+                                            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; text-align: center;">${item.threshold || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        ` : ''}
+        
+        ${lowStockItems.length > 0 ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+                <td align="center">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px;">
+                        <tr>
+                            <td style="background-color: #ffffff; padding: 30px;">
+                                <h3 style="margin: 0 0 20px 0; color: #d97706; font-size: 20px; font-weight: bold;">
+                                    LOW STOCK ITEMS
+                                </h3>
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse: collapse;">
+                                    <tr style="background-color: #fffbeb;">
+                                        <th style="padding: 10px; border: 1px solid #fcd34d; text-align: left; font-size: 12px;">Component</th>
+                                        <th style="padding: 10px; border: 1px solid #fcd34d; text-align: center; font-size: 12px;">Stock</th>
+                                        <th style="padding: 10px; border: 1px solid #fcd34d; text-align: center; font-size: 12px;">Low Limit</th>
+                                    </tr>
+                                    ${lowStockItems.map(item => `
+                                        <tr>
+                                            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; font-family: monospace;">${item.code}</td>
+                                            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; text-align: center; color: #d97706; font-weight: bold;">${item.quantity}</td>
+                                            <td style="padding: 8px 10px; border: 1px solid #e5e7eb; text-align: center;">${item.threshold}</td>
                                         </tr>
                                     `).join('')}
                                 </table>

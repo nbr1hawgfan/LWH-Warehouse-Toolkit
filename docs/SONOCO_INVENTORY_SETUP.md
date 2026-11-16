@@ -46,7 +46,7 @@ Then put both /exec links in `js/sonocoinv.js` (`API_DEFAULT`), or paste them on
 - Production_History records who entered the build instead of "Web User".
 - Changing a count is locked, only works for components already on the Inventory tab (a typo no longer creates a new row), and is written to **Stock_Log**.
 - Open orders match the exact BOM item number first, so items with a hyphen in their own name (`N0260150140A010-SP27`, `N0320190160A014- SP33`) are no longer "BOM Missing".
-- The Toolkit screen uses each component's limits from the **Thresholds** tab. **The 8 AM email is unchanged** and still uses 10 / 20 for every component.
+- The Toolkit screen and the 8 AM email both use each component's limits from the **Thresholds** tab (the email used a fixed 10 / 20 for everything). The email now lists low items as well as critical ones, shows each limit, and skips duplicate rows. A component with no limits on the tab is only flagged when it's out.
 
 ## Going back
 Paste the old `Code.gs` back, then Manage deployments → New version. The Sheets are unchanged apart from the Access and Stock_Log tabs.
