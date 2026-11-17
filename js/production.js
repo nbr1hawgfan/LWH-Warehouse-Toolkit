@@ -60,7 +60,7 @@
   async function api(action,args){
     const url=apiUrl(); if(!url) throw new Error('not_connected');
     const a=auth(); const token=a&&a.token&&a.token();
-    if(!token){ if(a) a.requireSignIn('Please sign in to use Production.'); throw new Error('signed_out'); }
+    if(!token){ if(a) a.requireSignIn('Please sign in to use Scrapping Production.'); throw new Error('signed_out'); }
     let res;
     try{ res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({},args||{},{action,token})),cache:'no-store',redirect:'follow'}); }
     catch(e){ throw new Error('offline'); }
@@ -95,7 +95,7 @@
       <div class="pr-top no-print">
         <div class="mh-entry-head">
           <div class="mh-entry-icon">${ICON}</div>
-          <div><h2>Production</h2><div class="mh-entry-sub">Record crew production, track units per hour and margin. Daily report emails at 9 AM.</div></div>
+          <div><h2>Scrapping Production</h2><div class="mh-entry-sub">Record crew production, track units per hour and margin. Daily report emails at 9 AM.</div></div>
           <div class="pr-who"><span id="prWho"></span><button type="button" class="ghost pr-small" id="prRefresh">Refresh</button></div>
         </div>
         <div class="pr-tabs" role="tablist" id="prTabs">
@@ -116,7 +116,7 @@
   async function boot(force){
     if(loading) return; if(B&&!force){ render(); return; }
     const a=auth();
-    if(!a||!a.isSignedIn()){ msg('Please sign in to use Production.','warn'); $('prBody').innerHTML=''; return; }
+    if(!a||!a.isSignedIn()){ msg('Please sign in to use Scrapping Production.','warn'); $('prBody').innerHTML=''; return; }
     if(!apiUrl()){ renderConnect(); return; }
     loading=true; msg('Loading…');
     try{
