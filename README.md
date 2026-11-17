@@ -1,4 +1,6 @@
-# LWH Warehouse Toolkit v1.89.0
+# LWH Warehouse Toolkit v1.90.0
+
+**v1.90.0:** red header and side menu with black accents (company theme).
 
 **New in v1.89.0 — Battery Box & BOM:** battery box build runs, master stock, components and receiving, BOMs, and shipping orders with FedEx tracking + LD numbers per box, replacing the BOM Inventory Apps Script page (same Google Sheet, same emails and timers, same tracking-sheet sync). Access list only. Setup: `docs/BATTERY_BOX_SETUP.md`.
 
