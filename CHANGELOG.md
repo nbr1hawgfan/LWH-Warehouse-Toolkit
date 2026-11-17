@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.91.0
+- **Battery Box & BOM — set up the way the floor works.**
+  - **Ship is a pop-up again**, like the old page: one row per box for the order quantity, FedEx tracking + LD number on each row, progress bar, Shipped by / Notes, Cancel / Ship Order. The rows show even when master stock is short (Ship Order stays off until a build is recorded, with a Go to Build button). Esc or the ✕ closes it.
+  - **LD numbers always start with "LD"** — the prefix is fixed on each box; type (or scan) the digits. A scanned "LD123…" isn't doubled. Two boxes with the same LD number are caught before shipping, and you're asked before shipping boxes with no LD number.
+  - **Orders are always ARCB — Fort Smith, AR and item S19845** (shown, not typed). No ship-to address entry.
+  - **Priority** is now **FedEx 2-Day** (default) or **Overnight**. Older orders keep Normal / High / Rush.
+  - Ship buttons are green, priority shows as a badge, and old addresses saved as ", Fort Smith, AR" display cleanly.
+  - Script v4.1 (`gas/BatteryBoxAPI.gs`): `ORDER_DEFAULTS` at the top of the Toolkit API section holds the customer, address, item, priorities and LD prefix in one place; the script adds the LD prefix too.
+
 ## Sonoco Reels Apps Script — 5-minute rebuild (Nov 17, 2026)
 - `gas/SonocoReelsAPI.gs` only; the Toolkit app is unchanged.
 - The 5-minute Dashboard rebuild now skips when nothing it's built from has changed (Production, Employees, Standards, Incentives, Prices, Dashboard row count). Toolkit saves still rebuild straight away; edits made on the Sheet are picked up within 5 minutes as before.

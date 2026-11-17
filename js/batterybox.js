@@ -34,7 +34,7 @@
   const fedex=t=>'https://www.fedex.com/fedextrack/?tracknumbers='+encodeURIComponent(t);
 
   // ---------------------------------------------------------------- state
-  let D=null, ME=null, ERR='', loading=false, built=false;
+  let D=null, ME=null, DEF=null, ERR='', loading=false, built=false;
   let tab='dashboard';
   let orderFilter='Open', orderQ='', orderForm=null, shipPO='';
   let prod={item:'',qty:'1',by:'',notes:''}, prodQ='';
@@ -139,7 +139,7 @@
     $('bbTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-bbtab]'); if(b) go(b.dataset.bbtab); });
     $('bbRefresh').onclick=()=>boot(true);
   }
-  function go(t,keepMsg){ if(t!==tab&&!keepMsg) msg(''); tab=t; render(); window.scrollTo(0,0); }
+  function go(t,keepMsg){ if(t!==tab&&!keepMsg) msg(''); if(shipPO) closeShip(); tab=t; render(); window.scrollTo(0,0); }
 
   async function boot(force){
     if(loading) return; if(D&&!force){ render(); return; }
@@ -148,7 +148,7 @@
     if(!apiUrl()){ renderConnect(); return; }
     loading=true; msg('Loading…');
     try{
-      const r=await api('bootstrap'); ME=r.me; ERR=''; ls.set(LS_OK,'1'); showNav(); msg(''); render();
+      const r=await api('bootstrap'); ME=r.me; DEF=r.defaults||null; ERR=''; ls.set(LS_OK,'1'); showNav(); msg(''); render();
     }catch(e){
       ERR=errText(e); ls.set(LS_OK,''); showNav(); msg(esc(ERR),'bad');
       if(['bad_reply','not_connected'].includes(e.message)) renderConnect(true); else if(!D) $('bbBody').innerHTML='';
@@ -215,7 +215,7 @@
   function renderOrders(){
     const rows=D.openOrders.filter(o=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(orderQ.trim().toLowerCase(),o.poNumber,o.customer,o.itemName,o.address));
     const count=f=>f==='All'?D.openOrders.length:D.openOrders.filter(o=>(o.status||'Open')===f).length;
-    $('bbBody').innerHTML=`${shipPO?shipPanel():''}${orderForm?orderFormHtml():''}
+    $('bbBody').innerHTML=`${orderForm?orderFormHtml():''}
       <div class="card pr-card"><div class="pr-cardhead"><h3>Orders <span class="pr-count">· ${rows.length}</span></h3>
         <div class="pr-dashact no-print"><button type="button" class="ghost pr-small" id="bbOX">Excel</button>${canEdit()?'<button type="button" class="pr-small" id="bbONew">+ New order</button>':''}</div></div>
         <div class="pr-dashbar no-print"><div class="pr-presets">${FILTERS.map(f=>`<button type="button" class="pr-preset${orderFilter===f?' on':''}" data-bbof="${f}">${f} (${count(f)})</button>`).join('')}</div></div>
@@ -225,95 +225,117 @@
       const q2=orderQ.trim().toLowerCase(), list=D.openOrders.filter(o=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(q2,o.poNumber,o.customer,o.itemName,o.address));
       $('bbOTable').innerHTML=list.length?`<div class="pr-scroll"><table class="pr-table"><thead><tr><th>PO #</th><th>Customer</th><th>Item</th><th class="r">Qty</th><th>Status</th><th>Priority</th><th class="r">Built, ready</th><th>Ordered</th><th class="no-print"></th></tr></thead><tbody>
         ${list.map(o=>{ const st=o.status||'Open', open=st==='Open'||st==='Pending', need=n(o.dueQuantity||o.orderQuantity), a=avail(o.itemName);
-          return `<tr${shipPO===o.poNumber?' class="bb-on"':''}><td><b>${esc(o.poNumber)}</b></td><td><b>${esc(o.customer)}</b>${o.address?`<div class="pr-small-t">${esc(o.address)}</div>`:''}${o.notes?`<div class="pr-small-t">${esc(o.notes)}</div>`:''}</td>
+          return `<tr${shipPO===o.poNumber?' class="bb-on"':''}><td><b>${esc(o.poNumber)}</b></td><td><b>${esc(o.customer)}</b>${addr(o.address)?`<div class="pr-small-t">${esc(addr(o.address))}</div>`:''}${o.notes?`<div class="pr-small-t">${esc(o.notes)}</div>`:''}</td>
             <td>${esc(o.itemName)}</td><td class="r">${int(need)}</td>
             <td>${badge(st,st==='Shipped'?'good':st==='Cancelled'?'bad':'warn')}</td>
-            <td>${o.priorityLevel==='Rush'?badge('Rush','bad'):o.priorityLevel==='High'?badge('High','warn'):esc(o.priorityLevel||'Normal')}</td>
+            <td>${prBadge(o.priorityLevel)}</td>
             <td class="r">${open?`<b class="${a>=need?'sr-good':'sr-low'}">${int(a)}</b>`:''}</td><td class="nw">${esc(String(o.orderDate||'').slice(0,10))}</td>
-            <td class="nw no-print">${open&&canEdit()?`<button type="button" class="pr-small" data-bbship="${esc(o.poNumber)}">Ship</button> <button type="button" class="ghost pr-small" data-bbedit="${esc(o.poNumber)}">Edit</button> <button type="button" class="ghost pr-small pr-danger" data-bbcancel="${esc(o.poNumber)}">Cancel</button>`:''}</td></tr>`; }).join('')}
+            <td class="nw no-print">${open&&canEdit()?`<button type="button" class="pr-small bb-shipbtn" data-bbship="${esc(o.poNumber)}">Ship</button> <button type="button" class="ghost pr-small" data-bbedit="${esc(o.poNumber)}">Edit</button> <button type="button" class="ghost pr-small pr-danger" data-bbcancel="${esc(o.poNumber)}">Cancel</button>`:''}</td></tr>`; }).join('')}
         </tbody></table></div>`:empty('No orders found.');
-      $('bbOTable').querySelectorAll('[data-bbship]').forEach(b=>b.onclick=()=>{ shipPO=b.dataset.bbship; orderForm=null; msg(''); renderOrders(); window.scrollTo(0,0); });
+      $('bbOTable').querySelectorAll('[data-bbship]').forEach(b=>b.onclick=()=>{ msg(''); openShip(b.dataset.bbship); });
       $('bbOTable').querySelectorAll('[data-bbedit]').forEach(b=>b.onclick=()=>{ const o=D.openOrders.find(x=>x.poNumber===b.dataset.bbedit); if(!o) return;
-        orderForm={isNew:false,poNumber:o.poNumber,customer:o.customer,address:o.address,itemName:o.itemName,qty:String(n(o.dueQuantity||o.orderQuantity)||1),priority:o.priorityLevel||'Normal',notes:o.notes}; shipPO=''; renderOrders(); window.scrollTo(0,0); });
+        orderForm={isNew:false,poNumber:o.poNumber,customer:o.customer,address:o.address,itemName:o.itemName,qty:String(n(o.dueQuantity||o.orderQuantity)||1),priority:o.priorityLevel||'',notes:o.notes}; renderOrders(); window.scrollTo(0,0); });
       $('bbOTable').querySelectorAll('[data-bbcancel]').forEach(b=>b.onclick=()=>{ const po=b.dataset.bbcancel;
         if(!confirm('Cancel order '+po+'?\n\nThe cancellation email goes to the usual list.')) return;
-        if(shipPO===po) shipPO=''; save(b,'cancelOrder',{poNumber:po}); });
+        save(b,'cancelOrder',{poNumber:po}); });
     };
     draw();
     $('bbOQ').oninput=e=>{ orderQ=e.target.value; draw(); };
     $('bbBody').querySelectorAll('[data-bbof]').forEach(b=>b.onclick=()=>{ orderFilter=b.dataset.bbof; renderOrders(); });
-    const nb=$('bbONew'); if(nb) nb.onclick=()=>{ orderForm={isNew:true,poNumber:'',customer:'',address:'',itemName:'',qty:'1',priority:'Normal',notes:''}; shipPO=''; renderOrders(); };
+    const nb=$('bbONew'); if(nb) nb.onclick=()=>{ const d=defs(); orderForm={isNew:true,poNumber:'',customer:d.customer,address:d.address,itemName:d.item,qty:'1',priority:d.priorities[0],notes:''}; renderOrders(); };
     $('bbOX').onclick=()=>excel('battery_box_orders_'+ymd(new Date())+'.xlsx','Orders',['Order Date','PO Number','Item','Order Qty','Shipped Qty','Due Qty','Customer','Priority','Status','Address','Notes'],
       D.openOrders.filter(o=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(orderQ.trim().toLowerCase(),o.poNumber,o.customer,o.itemName,o.address)).map(o=>[String(o.orderDate||'').slice(0,10),o.poNumber,o.itemName,n(o.orderQuantity),n(o.shippedQty),n(o.dueQuantity),o.customer,o.priorityLevel,o.status,o.address,o.notes]),[3,4,5]);
     if(orderForm) wireOrderForm();
-    if(shipPO) wireShip();
   }
 
+  // Order defaults come from the script (ORDER_DEFAULTS in BatteryBoxAPI.gs); these are only the fallback.
+  function defs(){ return Object.assign({customer:'ARCB',address:'Fort Smith, AR',item:'S19845',priorities:['FedEx 2-Day','Overnight'],ldPrefix:'LD'},DEF||{}); }
+  const addr=a=>String(a||'').replace(/^[\s,]+/,'');
+  function prBadge(p){ p=p||'Normal'; return p==='Overnight'||p==='Rush'?badge(p,'bad'):p==='High'?badge(p,'warn'):badge(p,'muted'); }
+
   function orderFormHtml(){
-    const f=orderForm;
+    const f=orderForm, d=defs(), it=bom(f.itemName||d.item);
+    const prs=d.priorities.slice(); if(f.priority&&!prs.includes(f.priority)) prs.push(f.priority);
     return `<div class="card pr-card pr-formcard no-print"><div class="pr-cardhead"><h3>${f.isNew?'New order':'Edit order — '+esc(f.poNumber)}</h3><button type="button" class="ghost pr-small" id="bbOFClose">Close</button></div>
       <div class="pr-grid2">
         <label>PO Number *<input id="bbOFpo" value="${esc(f.poNumber)}"${f.isNew?'':' disabled'} autocomplete="off"></label>
-        <label>Priority<select id="bbOFpr">${['Normal','High','Rush'].map(p=>`<option${p===f.priority?' selected':''}>${p}</option>`).join('')}</select></label>
-        <label>Customer *<select id="bbOFcs"><option value="">— Pick a saved customer, or type below —</option>${D.customers.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}${c.city?' — '+esc(c.city):''}</option>`).join('')}</select>
-          <input id="bbOFcu" value="${esc(f.customer)}" placeholder="Customer name" style="margin-top:6px"></label>
-        <label>Ship-to address<input id="bbOFad" value="${esc(f.address)}" placeholder="Address"></label>
-        <label>Item (BOM) *<select id="bbOFit">${itemOptions(f.itemName)}</select></label>
+        <label>Priority<select id="bbOFpr">${prs.map(p=>`<option${p===(f.priority||d.priorities[0])?' selected':''}>${esc(p)}</option>`).join('')}</select></label>
+        <div class="bb-fixed"><span>Customer</span><b>${esc(f.customer||d.customer)}</b><small>${esc(addr(f.address)||d.address)}</small></div>
+        <div class="bb-fixed"><span>Item</span><b>${esc(f.itemName||d.item)}</b><small>${esc(it?it.description:'')}${it?'':' <b class="sr-low">— not on BOM_Data</b>'}</small></div>
         <label>Order quantity *<input id="bbOFq" type="number" min="1" step="1" inputmode="numeric" value="${esc(f.qty)}"></label>
+        <label>Notes<input id="bbOFn" value="${esc(f.notes)}" placeholder="Special instructions…"></label>
       </div>
-      <label>Notes<input id="bbOFn" value="${esc(f.notes)}" placeholder="Special instructions…"></label>
       <div class="actions"><button type="button" id="bbOFSave">${f.isNew?'Create order':'Save changes'}</button></div></div>`;
   }
   function wireOrderForm(){
+    const d=defs();
     $('bbOFClose').onclick=()=>{ orderForm=null; renderOrders(); };
-    $('bbOFcs').onchange=e=>{ const c=D.customers.find(x=>x.name===e.target.value); if(c){ $('bbOFcu').value=c.name; $('bbOFad').value=[c.address,c.city].filter(Boolean).join(', '); } };
     $('bbOFSave').onclick=()=>{
-      const a={isNew:orderForm.isNew,poNumber:$('bbOFpo').value.trim(),customer:$('bbOFcu').value.trim(),address:$('bbOFad').value.trim(),
-        itemName:$('bbOFit').value,qty:$('bbOFq').value,priority:$('bbOFpr').value,notes:$('bbOFn').value.trim()};
-      if(!a.poNumber) return toast('PO Number is required.'); if(!a.customer) return toast('Customer is required.');
-      if(!a.itemName) return toast('Pick the item.'); if(!(n(a.qty)>0)) return toast('Enter the order quantity.');
+      const a={isNew:orderForm.isNew,poNumber:$('bbOFpo').value.trim(),customer:orderForm.customer||d.customer,address:addr(orderForm.address)||d.address,
+        itemName:orderForm.itemName||d.item,qty:$('bbOFq').value,priority:$('bbOFpr').value,notes:$('bbOFn').value.trim()};
+      if(!a.poNumber) return toast('PO Number is required.');
+      if(!bom(a.itemName)) return toast(a.itemName+' isn\'t on the BOM_Data tab.');
+      if(!(n(a.qty)>0)||Math.floor(n(a.qty))!==n(a.qty)) return toast('Enter the order quantity as a whole number.');
       save($('bbOFSave'),'saveOrder',a,()=>{ orderForm=null; orderFilter='Open'; });
     };
   }
 
-  function shipPanel(){
-    const o=D.openOrders.find(x=>x.poNumber===shipPO); if(!o){ shipPO=''; return ''; }
-    const qty=n(o.dueQuantity||o.orderQuantity)||1, a=avail(o.itemName), ok=a>=qty;
-    let rows=''; for(let i=0;i<qty;i++) rows+=`<div class="bb-trkrow"><span>Box ${i+1}</span><input data-bbt="${i}" placeholder="FedEx tracking #" autocomplete="off" autocapitalize="characters" spellcheck="false"><input data-bbl="${i}" placeholder="LD number" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" class="ghost pr-small" data-bbclr="${i}" tabindex="-1" aria-label="Clear box ${i+1}">✕</button></div>`;
-    return `<div class="card pr-card pr-formcard no-print"><div class="pr-cardhead"><h3>Ship order ${esc(o.poNumber)}</h3><button type="button" class="ghost pr-small" id="bbSClose">Close</button></div>
-      <div class="bb-shipsum"><div><b>${esc(o.customer)}</b><div class="pr-small-t">${esc(o.address)}</div><div>${esc(o.itemName)}</div></div><div class="bb-big">${int(qty)}<small>boxes / units</small></div></div>
-      <div class="pr-msg ${ok?'pr-msg-good':'pr-msg-bad'}">Master stock for ${esc(o.itemName)}: <b>${int(a)}</b> built and ready. ${ok?'Enough to ship this order.':'Not enough — record a build run first (Build tab).'}</div>
-      ${ok?`<div class="bb-trkhead"><span></span><span>FedEx tracking</span><span>LD number</span><span></span></div>
-      <div class="bb-prog"><i><em id="bbSProg"></em></i><b id="bbSProgT">0 / ${qty}</b></div>
-      <div id="bbSRows">${rows}</div>
-      <p class="hint">Scan or type each box. Enter jumps to the next field.</p>
-      <div class="pr-grid2"><label>Shipped by *<input id="bbSBy" value="${esc(ME?ME.name:'')}"></label><label>Notes<input id="bbSN" placeholder="Optional"></label></div>
-      <div class="actions"><button type="button" id="bbSSave">Ship order</button></div>`:`<div class="actions"><button type="button" id="bbSBuild">Go to Build</button></div>`}
+  // ---------------------------------------------------------------- SHIP pop-up (one row per box: FedEx tracking + LD number)
+  function closeShip(){ const m=$('bbShipModal'); if(m) m.remove(); document.body.classList.remove('bb-modal-open'); shipPO=''; document.removeEventListener('keydown',shipEsc); }
+  function shipEsc(e){ if(e.key==='Escape') closeShip(); }
+  function openShip(po){
+    const o=D.openOrders.find(x=>x.poNumber===po); if(!o) return;
+    closeShip(); shipPO=po;
+    const d=defs(), pre=esc(d.ldPrefix), qty=n(o.dueQuantity||o.orderQuantity)||1, a=avail(o.itemName), ok=a>=qty;
+    let rows=''; for(let i=0;i<qty;i++) rows+=`<div class="bb-trkrow"><span>Box ${i+1}</span>
+      <input data-bbt="${i}" placeholder="FedEx tracking #" inputmode="numeric" autocomplete="off" spellcheck="false">
+      <div class="bb-ldwrap"><em>${pre}</em><input data-bbl="${i}" placeholder="number" inputmode="numeric" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Box ${i+1} LD number after ${pre}"></div>
+      <button type="button" class="ghost pr-small" data-bbclr="${i}" tabindex="-1" aria-label="Clear box ${i+1}">✕</button></div>`;
+    const m=document.createElement('div'); m.id='bbShipModal'; m.className='bb-modal no-print'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true');
+    m.innerHTML=`<div class="bb-modal-card">
+      <div class="bb-modal-head"><h3>Ship Order — ${esc(o.poNumber)}</h3><button type="button" class="bb-x" id="bbSClose" aria-label="Close">✕</button></div>
+      <div class="bb-modal-body">
+        <div class="bb-stock ${ok?'ok':'bad'}"><div><span>Master stock — ${esc(o.itemName)}</span><div>${ok?`Enough built units to ship ${int(qty)}.`:`Not enough built units — record a production run first.${canEdit()?' <button type="button" class="ghost pr-small" id="bbSBuild">Go to Build</button>':''}`}</div></div><b>${int(a)}</b></div>
+        <div class="bb-shipsum"><div><b>${esc(o.customer)}</b> <span class="pr-small-t">${esc(addr(o.address))}</span><div>${esc(o.itemName)} · ${prBadge(o.priorityLevel)}</div></div><div class="bb-big">${int(qty)}<small>boxes</small></div></div>
+        <div class="bb-trkhead"><span></span><span>FedEx tracking</span><span>LD number</span><span></span></div>
+        <div class="bb-prog"><i><em id="bbSProg"></em></i><b id="bbSProgT">0 / ${qty}</b></div>
+        <div id="bbSRows">${rows}</div>
+        <p class="hint">Scan or type each box. Enter jumps to the next field. Type only the digits after ${pre} — it's added for you.</p>
+        <div class="pr-grid2"><label>Shipped by *<input id="bbSBy" value="${esc(ME?ME.name:'')}"></label><label>Notes<input id="bbSN" placeholder="Optional…"></label></div>
+      </div>
+      <div class="bb-modal-foot"><button type="button" class="ghost" id="bbSCancel">Cancel</button><button type="button" class="bb-shipbtn" id="bbSSave"${ok?'':' disabled'}>Ship Order</button></div>
     </div>`;
-  }
-  function wireShip(){
-    $('bbSClose').onclick=()=>{ shipPO=''; renderOrders(); };
-    const o=D.openOrders.find(x=>x.poNumber===shipPO); if(!o) return;
-    const gb=$('bbSBuild'); if(gb){ gb.onclick=()=>{ prod.item=o.itemName; prod.qty=String(Math.max(1,n(o.dueQuantity||o.orderQuantity)-avail(o.itemName))); go('build'); }; return; }
-    const qty=n(o.dueQuantity||o.orderQuantity)||1, box=$('bbSRows');
+    document.body.appendChild(m); document.body.classList.add('bb-modal-open'); document.addEventListener('keydown',shipEsc);
+    m.addEventListener('click',e=>{ if(e.target===m) closeShip(); });
+    $('bbSClose').onclick=closeShip; $('bbSCancel').onclick=closeShip;
+    const gb=$('bbSBuild'); if(gb) gb.onclick=()=>{ prod.item=o.itemName; prod.qty=String(Math.max(1,qty-a)); closeShip(); go('build'); };
+    const box=$('bbSRows'), preU=String(d.ldPrefix).toUpperCase();
+    const clean=(t)=>{ let v=t.value.replace(/[\s|]+/g,''); if(t.dataset.bbl!=null){ v=v.toUpperCase(); if(v.startsWith(preU)) v=v.slice(preU.length); } if(v!==t.value) t.value=v; };
     const prog=()=>{ const f=[...box.querySelectorAll('[data-bbt]')].filter(i=>i.value.trim()).length; $('bbSProg').style.width=Math.round(f/qty*100)+'%'; $('bbSProg').classList.toggle('done',f===qty); $('bbSProgT').textContent=f+' / '+qty; };
-    box.addEventListener('input',e=>{ const t=e.target; if(t.matches('input')){ t.value=t.value.replace(/[\s|]+/g,''); t.classList.toggle('bb-filled',!!t.value); prog(); } });
+    box.addEventListener('input',e=>{ const t=e.target; if(t.matches('input')){ clean(t); (t.closest('.bb-ldwrap')||t).classList.toggle('bb-filled',!!t.value); prog(); } });
     box.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const t=e.target; if(!t.matches('input')) return; e.preventDefault();
       const nx=t.dataset.bbt!=null?box.querySelector(`[data-bbl="${t.dataset.bbt}"]`):box.querySelector(`[data-bbt="${+t.dataset.bbl+1}"]`);
       (nx||$('bbSBy')).focus(); if(nx) nx.select(); });
     box.addEventListener('click',e=>{ const b=e.target.closest('[data-bbclr]'); if(!b) return; const i=b.dataset.bbclr;
-      [box.querySelector(`[data-bbt="${i}"]`),box.querySelector(`[data-bbl="${i}"]`)].forEach(x=>{ x.value=''; x.classList.remove('bb-filled'); }); prog(); box.querySelector(`[data-bbt="${i}"]`).focus(); });
+      [box.querySelector(`[data-bbt="${i}"]`),box.querySelector(`[data-bbl="${i}"]`)].forEach(x=>{ x.value=''; (x.closest('.bb-ldwrap')||x).classList.remove('bb-filled'); }); prog(); box.querySelector(`[data-bbt="${i}"]`).focus(); });
     setTimeout(()=>{ const f=box.querySelector('[data-bbt="0"]'); if(f) f.focus(); },60);
-    $('bbSSave').onclick=()=>{
-      const trk=[...box.querySelectorAll('[data-bbt]')].map(i=>i.value.trim()), ld=[...box.querySelectorAll('[data-bbl]')].map(i=>i.value.trim());
+    $('bbSSave').onclick=async()=>{
+      const trk=[...box.querySelectorAll('[data-bbt]')].map(i=>i.value.trim()), ldRaw=[...box.querySelectorAll('[data-bbl]')].map(i=>i.value.trim());
+      const ld=ldRaw.map(v=>v?preU+v:'');
       const filled=trk.filter(Boolean).length, by=$('bbSBy').value.trim();
       if(!filled) return toast('Enter at least one FedEx tracking number.');
       const orphan=ld.findIndex((l,i)=>l&&!trk[i]); if(orphan>=0) return toast('Box '+(orphan+1)+' has an LD number but no tracking number.');
-      const dup=trk.filter(Boolean).find((t,i,a)=>a.indexOf(t)!==i); if(dup) return toast('Tracking '+dup+' is entered twice.');
+      const dup=trk.filter(Boolean).find((t,i,arr)=>arr.indexOf(t)!==i); if(dup) return toast('Tracking '+dup+' is entered twice.');
+      const dupL=ld.filter(Boolean).find((t,i,arr)=>arr.indexOf(t)!==i); if(dupL) return toast(dupL+' is entered twice.');
+      const noLd=trk.filter((t,i)=>t&&!ld[i]).length;
       if(!by) return toast('Enter who is shipping.');
       if(filled<qty&&!confirm(filled+' of '+qty+' boxes have tracking. Ship anyway?')) return;
+      if(noLd&&!confirm(plural(noLd,'box')+' with tracking '+(noLd===1?'has':'have')+' no LD number. Ship anyway?')) return;
       if(!confirm('Ship '+o.poNumber+' — '+int(qty)+' × '+o.itemName+' to '+o.customer+'?\n\nThis takes '+int(qty)+' built units out of master stock and sends the shipment email.')) return;
-      save($('bbSSave'),'ship',{poNumber:o.poNumber,tracking:trk,ldNumbers:ld,shippedBy:by,notes:$('bbSN').value.trim()},()=>{ shipPO=''; });
+      const btn=$('bbSSave');
+      try{ const r=await busy(btn,'Shipping…',()=>api('ship',{poNumber:o.poNumber,tracking:trk,ldNumbers:ld,shippedBy:by,notes:$('bbSN').value.trim()}));
+        closeShip(); render(); msg(esc(r.message||'Shipped'),'good'); toast('Shipped'); }
+      catch(e){ toast(errText(e)); }
     };
   }
 

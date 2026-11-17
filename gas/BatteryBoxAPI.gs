@@ -28,6 +28,9 @@
 //      come from the Shipment_ID instead of matching item + date;
 //      receiving IDs no longer repeat
 //    - doGet() shows a "moved" page (?health=1 for a check)
+//  v4.1 (Toolkit v1.91.0) — ORDER_DEFAULTS: orders default to ARCB /
+//    Fort Smith, AR / S19845; priorities FedEx 2-Day and Overnight;
+//    LD numbers always start with "LD" (people type the digits).
 //  Setup: docs/BATTERY_BOX_SETUP.md in the Toolkit repo.
 //
 //  EMAIL PALETTE
@@ -2107,10 +2110,20 @@ function backfillHistoryShipmentIds() {
 // TOOLKIT API  (Warehouse Toolkit → Battery Box & BOM)
 // Everything below is new. It calls the same functions above that the old web page called.
 // =========================================================================================
-var TOOLKIT_API_VERSION = '1.89.0';
+var TOOLKIT_API_VERSION = '1.91.0';
 var API_SERVICE_NAME = 'LWH Battery Box BOM API';
 var ACCESS_TAB = 'Access';
 var STOCK_LOG_TAB = 'Stock_Log';
+// Order defaults for the Toolkit screen (v1.91.0). Every battery box order today goes to
+// ARCB in Fort Smith and is item S19845 — change these here if that ever changes.
+var ORDER_DEFAULTS = {
+  customer: 'ARCB',
+  address: 'Fort Smith, AR',
+  item: 'S19845',
+  priorities: ['FedEx 2-Day', 'Overnight'],   // first one is the default for new orders
+  ldPrefix: 'LD'                                // LD numbers always start with this
+};
+var OLD_PRIORITIES = ['Normal', 'High', 'Rush'];  // still accepted so older orders can be edited
 var SUPA_URL_DEFAULT = 'https://tjivcqxnkftujceumdtx.supabase.co';
 var SUPA_KEY_DEFAULT = 'sb_publishable_PYlWSW6-Gi-QZl91IXUq0Q_W5mO3sDT';
 
@@ -2279,7 +2292,7 @@ var API_ROUTES = {
 };
 
 function apiBootstrap_(b, who) {
-  return { me: who, version: TOOLKIT_API_VERSION, data: getFullPageData() };
+  return { me: who, version: TOOLKIT_API_VERSION, defaults: ORDER_DEFAULTS, data: getFullPageData() };
 }
 
 function bomItem_(code) { return getBOMItems().filter(function(x) { return x.item === code; })[0] || null; }
@@ -2309,7 +2322,13 @@ function apiShip_(b, who) {
   var qty = Number(o.dueQuantity || o.orderQuantity || 0);
   if (!(qty > 0)) bad_('Order ' + po + ' has no quantity due.');
   var trk = (Array.isArray(b.tracking) ? b.tracking : []).map(function(t) { return str_(t, 60).replace(/[\s|]+/g, ''); });
-  var ld  = (Array.isArray(b.ldNumbers) ? b.ldNumbers : []).map(function(t) { return str_(t, 60).replace(/[\s|]+/g, ''); });
+  // LD numbers always start with "LD": people type only the digits; a scanned "LD123" isn't doubled.
+  var ld  = (Array.isArray(b.ldNumbers) ? b.ldNumbers : []).map(function(t) {
+    var v = str_(t, 60).replace(/[\s|]+/g, '').toUpperCase();
+    if (!v) return '';
+    if (v.indexOf(ORDER_DEFAULTS.ldPrefix) !== 0) v = ORDER_DEFAULTS.ldPrefix + v;
+    return v === ORDER_DEFAULTS.ldPrefix ? '' : v;
+  });
   // Box i = tracking i + LD i. Boxes with no tracking are dropped; an LD with no tracking is refused.
   var boxT = [], boxL = [];
   for (var i = 0; i < Math.max(trk.length, ld.length); i++) {
@@ -2330,9 +2349,8 @@ function apiShip_(b, who) {
 function apiSaveOrder_(b) {
   var po = str_(b.poNumber, 100);
   if (!po) bad_('PO Number is required.');
-  var customer = str_(b.customer, 150);
-  if (!customer) bad_('Customer is required.');
-  var item = str_(b.itemName, 100);
+  var customer = str_(b.customer, 150) || ORDER_DEFAULTS.customer;
+  var item = str_(b.itemName, 100) || ORDER_DEFAULTS.item;
   if (!bomItem_(item)) bad_('Pick an item that is on the BOM.');
   var qty = wholeNumber_(b.qty, 'Order quantity');
   var existing = orderRow_(po);
@@ -2340,9 +2358,10 @@ function apiSaveOrder_(b) {
   if (!b.isNew && !existing) bad_('PO ' + po + ' isn\'t on the OpenOrders tab.');
   if (existing && (existing.status === 'Shipped' || existing.status === 'Cancelled')) bad_('Order ' + po + ' is ' + existing.status + ' and can\'t be changed.');
   var pr = str_(b.priority, 20);
+  if (ORDER_DEFAULTS.priorities.indexOf(pr) < 0 && OLD_PRIORITIES.indexOf(pr) < 0) pr = ORDER_DEFAULTS.priorities[0];
   var r = check_(saveOrder({
-    poNumber: po, customer: customer, address: str_(b.address, 300), itemName: item,
-    orderQty: qty, dueQty: qty, unit: 'Each', priority: /^(Normal|High|Rush)$/.test(pr) ? pr : 'Normal',
+    poNumber: po, customer: customer, address: str_(b.address, 300) || ORDER_DEFAULTS.address, itemName: item,
+    orderQty: qty, dueQty: qty, unit: 'Each', priority: pr,
     notes: str_(b.notes, 300)
   }), 'Save failed');
   return { message: r.message };
