@@ -10,7 +10,7 @@
 (function(){
   'use strict';
   // Apps Script web app URL (Deploy → Manage deployments → /exec). Can also be set per device on the Connect screen.
-  const API_DEFAULT='';
+  const API_DEFAULT='https://script.google.com/macros/s/AKfycbzf4V2s8qrClnHZXZGYBYkc8r19W3nItAScJ6HC-RbfvXniV161op7QnbMfi91aSXMq/exec';
   const LS_URL='lwh_bbApi', LS_OK='lwh_bbOk';
 
   const $=id=>document.getElementById(id);
