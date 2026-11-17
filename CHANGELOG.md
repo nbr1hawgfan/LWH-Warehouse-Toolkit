@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.87.1
+- **Production — date fix:** the Record screen kept the date it was opened with, so a screen left open over the weekend saved Monday's jobs as Friday. The date now follows the calendar unless someone picks one by hand, updates when the app comes back on a new day, shows "⚠ Not today" when a different date is picked, and asks before saving a new job for any day other than today.
+
 ## v1.87.0
 - **Sonoco Inventory & BOM** (new — Time & Hours on Home; in the menu once a device has got in). One screen replaces the two Apps Script pages "Spool Works Dashboard" and "Sonoco Component Inventory". Both Google Sheets stay the database.
   - **Open Orders:** every order with whether its components are in stock (tap for the component list), finished stock vs. what's ordered, and the total components needed for all open orders with what's short.

@@ -42,7 +42,7 @@
   // ---------------------------------------------------------------- state
   let B=null;                    // bootstrap: me, projects, employees, crews, settings, access
   let tab='record', loading=false, built=false;
-  const F={ jobId:'', date:today(), project:'', crew:[], units:'', custOt:'', notes:'', week:{before:{},total:{}}, filter:'' };
+  const F={ jobId:'', date:today(), dateAuto:true, project:'', crew:[], units:'', custOt:'', notes:'', week:{before:{},total:{}}, filter:'' };
   let weekSeq=0, weekTimer=null;
   let entries=null, entriesRange={start:today(),end:today()}, entriesFilter='';
   let dash=null, dashRange=null, dashPreset='thisweek', empSort={k:'name',dir:1}, openEmp='';
@@ -159,6 +159,7 @@
 
   // ================================================================ RECORD
   function renderRecord(){
+    rollDate();
     const projects=B.projects.filter(p=>p.active||p.key===F.project);
     const emps=B.employees.filter(e=>e.active||F.crew.some(c=>c.name===e.name));
     const editing=!!F.jobId;
@@ -167,7 +168,7 @@
       <div class="pr-rec">
         <div class="card pr-card">
           <div class="pr-grid2">
-            <label>Date<input type="date" id="prDate" value="${esc(F.date)}" max="${esc(addDays(today(),1))}"></label>
+            <label>Date<input type="date" id="prDate" value="${esc(F.date)}" max="${esc(addDays(today(),1))}"><span id="prDateWarn" class="pr-datewarn"></span></label>
             <label>Project<select id="prProject"><option value="">Select project…</option>${projects.map(p=>`<option value="${esc(p.key)}"${p.key===F.project?' selected':''}>${esc(p.name)}${isMoney()&&p.rate!=null?' — '+money(p.rate)+'/unit':''}${p.active?'':' (off)'}</option>`).join('')}</select></label>
           </div>
 
@@ -203,7 +204,8 @@
   }
 
   function wireRecord(){
-    $('prDate').onchange=e=>{ F.date=e.target.value; fetchWeek(); renderPreview(); };
+    $('prDate').onchange=e=>{ F.date=e.target.value; F.dateAuto=F.date===today(); dateWarn(); fetchWeek(); renderPreview(); };
+    dateWarn();
     $('prProject').onchange=e=>{ F.project=e.target.value; renderPreview(); };
     $('prUnits').oninput=e=>{ F.units=e.target.value; renderPreview(); };
     $('prCustOt').oninput=e=>{ F.custOt=e.target.value; renderPreview(); };
@@ -239,6 +241,13 @@
     $('prClear').onclick=()=>{ if(F.jobId){ clearForm(); setTab('entries'); } else { clearForm(); renderRecord(); } };
     const ce=$('prCancelEdit'); if(ce) ce.onclick=()=>{ clearForm(); setTab('entries'); };
     filterChips();
+  }
+  /** A date nobody picked follows the calendar: a screen left open since Friday saves for today, not Friday. */
+  function rollDate(){ if(!F.jobId&&F.dateAuto&&F.date!==today()){ F.date=today(); F.week={before:{},total:{}}; return true; } return false; }
+  function dateWarn(){
+    const w=$('prDateWarn'); if(!w) return;
+    const t=today();
+    w.textContent=F.date&&F.date!==t?(F.date<t?'⚠ Not today — saves for '+nice(F.date):'⚠ Future date — '+nice(F.date)):'';
   }
   function filterChips(){
     const q=F.filter.trim().toLowerCase();
@@ -323,6 +332,8 @@
   async function saveJob(){
     const btn=$('prSave');
     if(!F.date) return toast('Pick a date.');
+    if(rollDate()){ const d=$('prDate'); if(d) d.value=F.date; dateWarn(); fetchWeek(); }
+    if(!F.jobId&&F.date!==today()&&!confirm(`This job is dated ${niceLong(F.date)} — not today (${niceLong(today())}).\n\nSave it for ${nice(F.date)}?`)) return;
     if(!F.project) return toast('Pick a project.');
     if(!F.crew.length) return toast('Pick at least one person.');
     const bad=F.crew.find(c=>!(n(c.hours)>0)); if(bad) return toast('Enter hours for '+bad.name+'.');
@@ -342,8 +353,8 @@
         ls.set(LS_LAST,{project:F.project,crew:F.crew.map(c=>({name:c.name,hours:n(c.hours)}))});
         const j=r.job, wasEdit=!!F.jobId;
         entries=null; dash=null; tc=null;
-        const keepDate=F.date, keepProject=F.project;
-        clearForm(); F.date=keepDate; F.project=keepProject;
+        const keepDate=F.date, keepAuto=F.dateAuto, keepProject=F.project;
+        clearForm(); F.date=keepDate; F.dateAuto=keepAuto; F.project=keepProject;
         toast(wasEdit?'Changes saved':'Saved — '+units(j.units)+' units, '+j.crew.length+(j.crew.length===1?' person':' people'));
         if(wasEdit){ setTab('entries'); return; }
         renderRecord(); window.scrollTo(0,0);
@@ -351,10 +362,10 @@
       });
     }catch(e){ toast(errText(e)); msg(esc(errText(e)),'bad'); }
   }
-  function clearForm(){ Object.assign(F,{jobId:'',date:today(),crew:[],units:'',custOt:'',notes:'',week:{before:{},total:{}},filter:''}); }
+  function clearForm(){ Object.assign(F,{jobId:'',date:today(),dateAuto:true,crew:[],units:'',custOt:'',notes:'',week:{before:{},total:{}},filter:''}); }
   function loadJob(j){
     clearForm();
-    Object.assign(F,{jobId:j.jobId,date:j.date,project:j.project,crew:j.crew.map(c=>({name:c.name,hours:c.hours})),units:String(r2(j.units)),custOt:j.custOtHours?String(j.custOtHours):'',notes:j.notes||''});
+    Object.assign(F,{jobId:j.jobId,date:j.date,dateAuto:false,project:j.project,crew:j.crew.map(c=>({name:c.name,hours:c.hours})),units:String(r2(j.units)),custOt:j.custOtHours?String(j.custOtHours):'',notes:j.notes||''});
     msg(''); setTab('record'); window.scrollTo(0,0);
   }
 
@@ -821,6 +832,9 @@
     new MutationObserver(()=>{ if(sec.classList.contains('active')) onShow(); }).observe(sec,{attributes:true,attributeFilter:['class']});
     if(sec.classList.contains('active')) onShow();
     showNav(); [1500,4000,9000].forEach(t=>setTimeout(showNav,t));
+    const wake=()=>{ if(document.visibilityState!=='visible'||!sec.classList.contains('active')||tab!=='record'||!B) return;
+      if(rollDate()){ const d=$('prDate'); if(d){ d.value=F.date; d.max=addDays(today(),1); } dateWarn(); fetchWeek(); renderPreview(); } };
+    document.addEventListener('visibilitychange',wake); window.addEventListener('focus',wake);
     let rt=null; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(tab==='dash'&&dash&&sec.classList.contains('active')) drawChart(); },200); });
   });
   window.LWHProduction={ refresh:()=>boot(true), _test:{computePreview,F,setB:b=>{B=b;},render,setTab} };

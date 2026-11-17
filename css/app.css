@@ -2363,6 +2363,7 @@ button.pr-danger:hover{background:#fee2e2}
 .pr-t-good{background:#dcfce7;color:#166534}
 .pr-t-warn{background:#fef3c7;color:#92400e}
 .pr-t-bad{background:#fee2e2;color:#991b1b}
+label > .pr-datewarn{display:block;font-size:12px;font-weight:800;color:#b45309;margin-top:4px;min-height:0}
 label.pr-check{display:flex;align-items:center;gap:8px;font-weight:600;margin:12px 0}
 label.pr-check input{width:20px;height:20px;accent-color:var(--brand);margin:0}
 
