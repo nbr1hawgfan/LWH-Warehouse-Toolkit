@@ -1,5 +1,11 @@
 # Changelog
 
+## Sonoco Reels Apps Script — 5-minute rebuild (Nov 17, 2026)
+- `gas/SonocoReelsAPI.gs` only; the Toolkit app is unchanged.
+- The 5-minute Dashboard rebuild now skips when nothing it's built from has changed (Production, Employees, Standards, Incentives, Prices, Dashboard row count). Toolkit saves still rebuild straight away; edits made on the Sheet are picked up within 5 minutes as before.
+- A rebuild skipped because another one is running is no longer reported as an error.
+- Each rebuild logs how long the read, the Dashboard write and the Drive CSV took, so a slow run shows where it stalled.
+
 ## v1.90.1
 - **Production is now "Scrapping Production"** in the menu, on its Home tile and on its screen, so it isn't mixed up with Sonoco Reels / Sonoco Inventory & BOM / Battery Box & BOM. Same tool, same data; `?view=production` bookmarks still work. Searching "production" on Home still finds it.
 

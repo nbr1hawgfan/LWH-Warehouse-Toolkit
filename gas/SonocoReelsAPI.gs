@@ -115,11 +115,13 @@ function exportDashboardToDrive(syncRows) {
 
 function updateDashboard() {
   // One rebuild at a time (a new entry and the 5-minute trigger can land together).
+  // Returns true when rebuilt, 'busy' when another rebuild already holds the lock (not an error), false on error.
   var dashLock = LockService.getScriptLock();
   if (!dashLock.tryLock(25000)) {
     Logger.log('updateDashboard: another rebuild was still running after 25s — skipped.');
-    return false;
+    return 'busy';
   }
+  var t0 = Date.now(), lap = function (what) { Logger.log('updateDashboard: ' + what + ' at ' + ((Date.now() - t0) / 1000).toFixed(1) + 's'); };
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var dashboardSheet = ss.getSheetByName('Dashboard');
@@ -139,6 +141,8 @@ function updateDashboard() {
     var standardsData = standardsSheet.getDataRange().getValues();
     var incentivesData = incentivesSheet.getDataRange().getValues();
     var prices = getPrices();
+    var inputsFp = dashboardFingerprint_(productionData, employeesData, standardsData, incentivesData, prices);
+    lap('read ' + (productionData.length - 1) + ' production rows');
 
     // (No clear() up front any more — the old rows stay readable until the new ones are written.)
     var oldLastRow = dashboardSheet.getLastRow();
@@ -203,9 +207,14 @@ function updateDashboard() {
     if (dashboard.length > 1) {
       dashboardSheet.getRange(2, 1, dashboard.length - 1, 1).setNumberFormat('yyyy-MM-dd');
     }
+    SpreadsheetApp.flush();
+    lap('wrote Dashboard');
 
     exportDashboardToDrive(syncRows);
+    lap('wrote Drive CSV');
 
+    // Remember what this rebuild was built from, so the 5-minute trigger can skip when nothing has changed.
+    PropertiesService.getScriptProperties().setProperty(DASH_FP_KEY, inputsFp + '|' + dashboard.length);
     return true;
   } catch (e) {
     Logger.log('Error in updateDashboard: ' + e.toString());
@@ -333,7 +342,27 @@ function setupDashboardRebuildTrigger() {
   return 'Dashboard auto-rebuild trigger set: every 5 minutes.';
 }
 
+var DASH_FP_KEY = 'DASHBOARD_INPUTS_FP';
+
+/** A short hash of everything the Dashboard is calculated from. */
+function dashboardFingerprint_(productionData, employeesData, standardsData, incentivesData, prices) {
+  return hash_(JSON.stringify([productionData, employeesData, standardsData, incentivesData, prices]));
+}
+
+/**
+ * Runs every 5 minutes. Saves made in the Toolkit already rebuild the Dashboard straight away, so this is only
+ * here to pick up edits made directly on the Sheet (a fixed quantity, a new rate or standard). It reads the
+ * input tabs and skips the rebuild — no Dashboard write, no Drive write — when nothing has changed since the
+ * last rebuild. Most runs end in a second or two.
+ */
 function autoRebuildDashboard() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var read = function (name) { var sh = ss.getSheetByName(name); return sh ? sh.getDataRange().getValues() : []; };
+  var dash = ss.getSheetByName('Dashboard');
+  var current = dashboardFingerprint_(read('Production'), read('Employees'), read('Standards'), read('Incentives'), getPrices()) +
+    '|' + (dash ? dash.getLastRow() : 0);
+  if (current === PropertiesService.getScriptProperties().getProperty(DASH_FP_KEY)) return;   // nothing changed
+
   var ok = updateDashboard();
   if (!ok) notifyScriptError('autoRebuildDashboard', 'updateDashboard() returned false — check Logger for the underlying cause.');
 }
