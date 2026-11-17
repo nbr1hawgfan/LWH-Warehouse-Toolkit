@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.89.0
+- **Battery Box & BOM** (new — Time & Hours on Home; in the menu once a device has got in). One screen replaces the "BOM Inventory — Manager Portal" Apps Script page. The BOM Inventory Google Sheet stays the database.
+  - **Dashboard:** ready to ship, open orders (and how many need a build first), critical / low components, shipped today, master stock, recent shipments with tracking, last 7 days, top items.
+  - **Orders:** Open / Pending / Shipped / Cancelled / All with search, built units ready per order, new / edit / cancel, Excel.
+  - **Ship:** one row per box for FedEx tracking + LD number (scan, Enter jumps to the next field), progress bar, "Shipped by" filled with your name. Blocked if master stock can't cover the order, with a button to the Build tab.
+  - **Build:** what can be built now and which component limits it; pick an item and quantity to see every component needed / on hand / after; record the run. Production log with search and Excel.
+  - **Master Stock:** built / shipped / available for every BOM item, how many more the components allow, "Record build".
+  - **Components:** stock with low / critical status and filters, **Set count** with a reason (logged to a new Stock_Log tab), **change limits**, **Receive stock** against a PO with cost, **New component**, Excel.
+  - **BOM:** each item's components with stock and how many it's enough for; new BOM item and **edit an existing BOM**.
+  - **Shipments:** every shipment with PO, tracking links and LD numbers, search (any tracking or LD number), Excel with a column per box, print log.
+  - **Customers** and **Reports** (daily inventory, shipment history, open orders, receiving, weekly customer report + CSV, Battery Box tracking sheet sync, and the 8 AM / Saturday / 7 AM timers).
+  - **Access:** only employee IDs on the Sheet's new Access tab (edit or view), checked by the script on every request using the Toolkit sign-in.
+  - Script fixes: one save at a time (lock); shipping uses the order on the Sheet and can't ship an order twice; LD numbers stay with their box (a blank LD used to shift the rest up — older shipments display right too); re-saving a BOM item replaces its whole block (it used to leave component rows behind that attached to the item above); a component listed twice on a BOM is added up; exact PO lookup by Shipment_ID on reports; unique receiving IDs; who-did-it on builds, shipments and receiving.
+  - All emails, the timers and the external tracking sheet sync are unchanged.
+  - Backend: `gas/BatteryBoxAPI.gs` (replaces Code.gs in the existing project). Setup: `docs/BATTERY_BOX_SETUP.md`.
+
 ## v1.88.0
 - **Inspections** (new — Safety & Training on Home, and in the menu for managers). Monthly safety inspections of every warehouse, the Trailer Shop and the Corporate Office, replacing the Google Form.
   - **This Month:** every site and zone with its status (not started / in progress / done), progress for the month, open corrective actions per site. 5th St. is split into South End and North End so two people can each do half.
