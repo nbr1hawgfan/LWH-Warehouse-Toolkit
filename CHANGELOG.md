@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.88.0
+- **Inspections** (new — Safety & Training on Home, and in the menu for managers). Monthly safety inspections of every warehouse, the Trailer Shop and the Corporate Office, replacing the Google Form.
+  - **This Month:** every site and zone with its status (not started / in progress / done), progress for the month, open corrective actions per site. 5th St. is split into South End and North End so two people can each do half.
+  - **Checklist by site:** built from the site's kind (warehouse / shop / office) and equipment (propane lifts, electric lifts, air compressor, docks). The 39 Google Form items (wording fixed, form numbers kept) plus 14 new: eyewash, spill kit, SDS, wheel chocks / dock locks, trailer stands, compressor and 30 psi air, and 7 Trailer Shop items.
+  - **Doesn't Meet Standard** needs a comment and a photo (taken in the app, shrunk on the phone) and opens a **corrective action** with an owner, due date, notes, "fixed" photo and close note. Fails again next month = "found again", not a duplicate.
+  - Answers save as you go and on the device, so a dead spot in a building loses nothing. Submitted inspections are locked; admins can reopen.
+  - **Assignments (admins):** anyone can do any zone, or give the month to one person / per zone, with "next in rotation".
+  - **History:** any date range and site, open any inspection with its photos, Excel export, print.
+  - **Setup (admins):** sites, equipment and zones (add Dallas here), checklist wording / sections / which sites, per-site exceptions, email recipients, reminder timing, due days, rotation, extra inspectors, admins.
+  - **Emails + Sheet log:** report email on every submit, "your zones" on the 1st, "still open" before month end, and an Inspections / Findings log in a Google Sheet — `gas/InspectionMailer.gs`.
+  - Backend: `sql/facility_inspections.sql` (applied Nov 17, 2026), Edge Function `insp-photo` (private bucket `insp-photos`). Setup: `docs/INSPECTIONS_SETUP.md`.
+
 ## v1.87.1
 - **Production — date fix:** the Record screen kept the date it was opened with, so a screen left open over the weekend saved Monday's jobs as Friday. The date now follows the calendar unless someone picks one by hand, updates when the app comes back on a new day, shows "⚠ Not today" when a different date is picked, and asks before saving a new job for any day other than today.
 

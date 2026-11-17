@@ -1,6 +1,8 @@
-# LWH Warehouse Toolkit v1.87.0
+# LWH Warehouse Toolkit v1.88.0
 
-**New in v1.87.0 — Sonoco Inventory & BOM:** finished spools, components, builds, open orders and shipments in one screen, replacing two Apps Script pages (same two Google Sheets, same emails). Access lists only. Setup: `docs/SONOCO_INVENTORY_SETUP.md`.
+**New in v1.88.0 — Inspections:** monthly safety inspections for every warehouse, the Trailer Shop and the Corporate Office with photos, corrective actions, assignments and history, replacing the Google Form. Setup: `docs/INSPECTIONS_SETUP.md`.
+
+**v1.87.0 — Sonoco Inventory & BOM:** finished spools, components, builds, open orders and shipments in one screen, replacing two Apps Script pages (same two Google Sheets, same emails). Access lists only. Setup: `docs/SONOCO_INVENTORY_SETUP.md`.
 
 **v1.86.0 — Sonoco Reels:** production entry, incentive reports, issues and attendance for the Sonoco reels line, replacing the Employee Production Tracker page (same Google Sheet, same emails, same TLand export). Access list only. Setup: `docs/SONOCO_REELS_SETUP.md`.
 
