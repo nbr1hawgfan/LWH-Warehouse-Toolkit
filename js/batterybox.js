@@ -212,8 +212,19 @@
 
   // ================================================================ ORDERS (+ ship)
   const FILTERS=['Open','Pending','Shipped','Cancelled','All'];
+  /** Orders for the current filter + search. Open / Pending: oldest first (the work queue).
+      Shipped / Cancelled / All: newest first — latest ship date (from Shipments), then order date, then newest row. */
+  function orderList(){
+    const q=orderQ.trim().toLowerCase();
+    const list=D.openOrders.map((o,i)=>({o,i})).filter(({o})=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(q,o.poNumber,o.customer,o.itemName,o.address));
+    if(orderFilter==='Open'||orderFilter==='Pending') return list.map(x=>x.o);
+    const shipped={}; D.history.forEach(h=>{ const po=String(h.poNumber||'').trim(); if(po&&(!shipped[po]||String(h.date)>shipped[po])) shipped[po]=String(h.date||''); });
+    const key=x=>(shipped[String(x.o.poNumber).trim()]||String(x.o.orderDate||'').slice(0,10));
+    return list.sort((a,b)=>key(b).localeCompare(key(a))||String(b.o.orderDate||'').localeCompare(String(a.o.orderDate||''))||b.i-a.i).map(x=>x.o);
+  }
+
   function renderOrders(){
-    const rows=D.openOrders.filter(o=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(orderQ.trim().toLowerCase(),o.poNumber,o.customer,o.itemName,o.address));
+    const rows=orderList();
     const count=f=>f==='All'?D.openOrders.length:D.openOrders.filter(o=>(o.status||'Open')===f).length;
     $('bbBody').innerHTML=`${orderForm?orderFormHtml():''}
       <div class="card pr-card"><div class="pr-cardhead"><h3>Orders <span class="pr-count">· ${rows.length}</span></h3>
@@ -222,7 +233,7 @@
         <input type="search" id="bbOQ" class="no-print" placeholder="Search PO, customer, item or address" value="${esc(orderQ)}" aria-label="Search orders">
         <div id="bbOTable"></div></div>`;
     const draw=()=>{
-      const q2=orderQ.trim().toLowerCase(), list=D.openOrders.filter(o=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(q2,o.poNumber,o.customer,o.itemName,o.address));
+      const q2=orderQ.trim().toLowerCase(), list=orderList();
       $('bbOTable').innerHTML=list.length?`<div class="pr-scroll"><table class="pr-table"><thead><tr><th>PO #</th><th>Customer</th><th>Item</th><th class="r">Qty</th><th>Status</th><th>Priority</th><th class="r">Built, ready</th><th>Ordered</th><th class="no-print"></th></tr></thead><tbody>
         ${list.map(o=>{ const st=o.status||'Open', open=st==='Open'||st==='Pending', need=n(o.dueQuantity||o.orderQuantity), a=avail(o.itemName);
           return `<tr${shipPO===o.poNumber?' class="bb-on"':''}><td><b>${esc(o.poNumber)}</b></td><td><b>${esc(o.customer)}</b>${addr(o.address)?`<div class="pr-small-t">${esc(addr(o.address))}</div>`:''}${o.notes?`<div class="pr-small-t">${esc(o.notes)}</div>`:''}</td>
@@ -244,7 +255,7 @@
     $('bbBody').querySelectorAll('[data-bbof]').forEach(b=>b.onclick=()=>{ orderFilter=b.dataset.bbof; renderOrders(); });
     const nb=$('bbONew'); if(nb) nb.onclick=()=>{ const d=defs(); orderForm={isNew:true,poNumber:'',customer:d.customer,address:d.address,itemName:d.item,qty:'1',priority:d.priorities[0],notes:''}; renderOrders(); };
     $('bbOX').onclick=()=>excel('battery_box_orders_'+ymd(new Date())+'.xlsx','Orders',['Order Date','PO Number','Item','Order Qty','Shipped Qty','Due Qty','Customer','Priority','Status','Address','Notes'],
-      D.openOrders.filter(o=>(orderFilter==='All'||(o.status||'Open')===orderFilter)&&has(orderQ.trim().toLowerCase(),o.poNumber,o.customer,o.itemName,o.address)).map(o=>[String(o.orderDate||'').slice(0,10),o.poNumber,o.itemName,n(o.orderQuantity),n(o.shippedQty),n(o.dueQuantity),o.customer,o.priorityLevel,o.status,o.address,o.notes]),[3,4,5]);
+      orderList().map(o=>[String(o.orderDate||'').slice(0,10),o.poNumber,o.itemName,n(o.orderQuantity),n(o.shippedQty),n(o.dueQuantity),o.customer,o.priorityLevel,o.status,o.address,o.notes]),[3,4,5]);
     if(orderForm) wireOrderForm();
   }
 

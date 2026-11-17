@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.91.1
+- **Battery Box & BOM — Orders:** Shipped, Cancelled and All now list the most recent first (by ship date, then order date). Open and Pending stay oldest first as the work queue. Excel exports in the same order.
+
 ## v1.91.0
 - **Battery Box & BOM — set up the way the floor works.**
   - **Ship is a pop-up again**, like the old page: one row per box for the order quantity, FedEx tracking + LD number on each row, progress bar, Shipped by / Notes, Cancel / Ship Order. The rows show even when master stock is short (Ship Order stays off until a build is recorded, with a Go to Build button). Esc or the ✕ closes it.
