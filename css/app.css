@@ -2716,3 +2716,77 @@ button.in-linkbtn:disabled{color:#ccc;text-decoration:none}
   #inspections .in-sum>div{border-top-width:2px}
 }
 #inspections .in-res button,#inspections .in-thumbs button,#inspections .in-zone-btns button{box-shadow:none!important}
+
+/* =========================================================================
+   BATTERY BOX & BOM (v1.89.0) — js/batterybox.js
+   Uses the Production (.pr-*), Sonoco Reels (.sr-*) and Sonoco Inventory (.si-*) pieces.
+   ========================================================================= */
+#batteryBox{min-width:0;max-width:100%}
+#batteryBox .pr-wrap{max-width:1280px;margin:0 auto;min-width:0}
+#batteryBox .pr-card{min-width:0;margin-bottom:14px}
+#batteryBox .mh-entry-head{margin-bottom:12px}
+#batteryBox .pr-msg{margin-bottom:12px}
+.pr-tiles.bb-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+#batteryBox tr.bb-on td{background:var(--brand-tint,#fdf2f4)}
+.bb-trk{display:flex;flex-direction:column;gap:3px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.bb-trk>div{white-space:nowrap}
+.bb-trk a{color:#1F5FA8;text-decoration:none}
+.bb-trk a:hover{text-decoration:underline}
+.bb-box{display:inline-block;min-width:44px;font-size:11px;color:var(--muted)}
+.bb-ld{margin-left:8px;padding:1px 6px;background:rgba(125,25,53,.08);border:1px solid rgba(125,25,53,.3);color:#7D1935;font-weight:700;font-size:11px}
+.bb-shipsum{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px;border:1.5px solid var(--line);border-left:4px solid var(--frame-black,#111);margin-bottom:10px}
+.bb-big{font-size:30px;font-weight:800;line-height:1;text-align:right;color:var(--good)}
+.bb-big small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+.bb-trkhead,.bb-trkrow{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) 38px;gap:6px;align-items:center}
+.bb-trkhead{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 2px}
+.bb-trkhead span:nth-child(3){color:#7D1935}
+.bb-trkrow{margin-bottom:5px}
+.bb-trkrow>span{font-size:12px;font-weight:800;color:var(--muted);text-align:right}
+.bb-trkrow input{font-family:ui-monospace,Consolas,monospace;letter-spacing:.03em;margin:0}
+.bb-trkrow input.bb-filled[data-bbt]{border-color:var(--good);background:rgba(21,122,79,.05)}
+.bb-trkrow input.bb-filled[data-bbl]{border-color:#7D1935;background:rgba(125,25,53,.05)}
+.bb-prog{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.bb-prog i{flex:1;height:5px;background:var(--line);overflow:hidden;display:block}
+.bb-prog em{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
+.bb-prog em.done{background:var(--good)}
+.bb-prog b{font-size:12px;color:var(--muted);min-width:48px;text-align:right}
+.bb-capline{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 8px;font-size:13px}
+.bb-capline b{font-size:20px;margin-left:4px}
+.bb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:10px}
+.bb-ms{border:1.5px solid var(--line);border-left:4px solid var(--good);padding:12px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.bb-ms-low{border-left-color:#B86E00}
+.bb-ms-zero{border-left-color:var(--bad);background:rgba(176,0,32,.03)}
+.bb-ms-none{border-left-color:var(--line);opacity:.9}
+.bb-ms-code{font-weight:800;color:var(--brand);font-family:ui-monospace,Consolas,monospace}
+.bb-ms-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.bb-ms-stats>div{border:1px solid var(--line);padding:6px;text-align:center}
+.bb-ms-stats span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.bb-ms-stats b{font-size:18px}
+.bb-ms button{align-self:flex-start}
+.bb-bomline{display:grid;grid-template-columns:minmax(0,1fr) 90px 38px;gap:6px;align-items:center;margin-bottom:6px}
+.bb-bomline select,.bb-bomline input{margin:0}
+.bb-bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:6px}
+.bb-bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
+.bb-bar i{display:block;width:100%;max-width:46px;background:var(--brand);min-height:2px}
+.bb-bar b{font-size:12px;order:-1}
+.bb-bar span{font-size:11px;color:var(--muted);font-weight:700}
+.bb-hbar{display:grid;grid-template-columns:minmax(0,170px) 1fr 52px;gap:8px;align-items:center;margin-bottom:7px;font-size:13px}
+.bb-hbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,Consolas,monospace}
+.bb-hbar i{display:block;height:12px;background:var(--line)}
+.bb-hbar em{display:block;height:100%;background:var(--frame-black,#111)}
+.bb-hbar b{text-align:right}
+.bb-reports{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.bb-reports .pr-card{margin-bottom:0}
+@media(max-width:640px){
+  #batteryBox .mh-entry-head{flex-wrap:wrap}
+  .pr-tiles.bb-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bb-trkhead{display:none}
+  .bb-trkrow{grid-template-columns:44px minmax(0,1fr) 34px;grid-template-areas:"n t x" "n l x"}
+  .bb-trkrow>span{grid-area:n}.bb-trkrow [data-bbt]{grid-area:t}.bb-trkrow [data-bbl]{grid-area:l}.bb-trkrow button{grid-area:x}
+  .bb-hbar{grid-template-columns:minmax(0,110px) 1fr 44px}
+}
+@media print{
+  #batteryBox .pr-tabs,#batteryBox .mh-entry-head,#batteryBox button,#batteryBox .no-print{display:none!important}
+  #batteryBox .pr-card{break-inside:avoid;box-shadow:none}
+  #batteryBox .pr-scroll{overflow:visible}
+}

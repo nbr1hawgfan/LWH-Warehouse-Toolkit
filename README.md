@@ -1,6 +1,8 @@
-# LWH Warehouse Toolkit v1.88.0
+# LWH Warehouse Toolkit v1.89.0
 
-**New in v1.88.0 — Inspections:** monthly safety inspections for every warehouse, the Trailer Shop and the Corporate Office with photos, corrective actions, assignments and history, replacing the Google Form. Setup: `docs/INSPECTIONS_SETUP.md`.
+**New in v1.89.0 — Battery Box & BOM:** battery box build runs, master stock, components and receiving, BOMs, and shipping orders with FedEx tracking + LD numbers per box, replacing the BOM Inventory Apps Script page (same Google Sheet, same emails and timers, same tracking-sheet sync). Access list only. Setup: `docs/BATTERY_BOX_SETUP.md`.
+
+**v1.88.0 — Inspections:** monthly safety inspections for every warehouse, the Trailer Shop and the Corporate Office with photos, corrective actions, assignments and history, replacing the Google Form. Setup: `docs/INSPECTIONS_SETUP.md`.
 
 **v1.87.0 — Sonoco Inventory & BOM:** finished spools, components, builds, open orders and shipments in one screen, replacing two Apps Script pages (same two Google Sheets, same emails). Access lists only. Setup: `docs/SONOCO_INVENTORY_SETUP.md`.
 
