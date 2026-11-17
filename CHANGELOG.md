@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.90.0
+- **Red header and side menu.** The header and the side menu (and the phone menu) are now the company red, shading to maroon, with black accents: black rule under the header, black cap on the menu, black for the tool that's open, "Logistics Warehouse" as a small black tag, smoked-black header buttons. Still the locked company theme (red / maroon / black on white). Screen only — printing is unchanged. All in one block at the end of `css/app.css`.
+
 ## v1.89.0
 - **Battery Box & BOM** (new — Time & Hours on Home; in the menu once a device has got in). One screen replaces the "BOM Inventory — Manager Portal" Apps Script page. The BOM Inventory Google Sheet stays the database.
   - **Dashboard:** ready to ship, open orders (and how many need a build first), critical / low components, shipped today, master stock, recent shipments with tracking, last 7 days, top items.
