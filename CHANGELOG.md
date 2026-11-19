@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.92.0
+- **Forklift Inspection (new, Safety & Training):** the daily pre-shift forklift checklist is now in the Toolkit.
+  - Sends to the **same Apps Script and Sheet** as the stand-alone Forklift Inspections app, so records, PM tracking and report emails are unchanged and both apps can be used side by side while people move over.
+  - Operator is the signed-in employee (no typing names). Their forklift certification from Forklift Certs shows at the top — certified / renewal coming up / expired / none on file (a warning, not a block).
+  - Lift list, locations and checklist cached on the device; works with no signal and sends queued inspections when the connection is back (the script's submission ID check prevents duplicates). Remembers the last lift and location.
+  - Propane vs electric items hide automatically; All Pass, then tap only what's wrong; a failed item adds itself to the notes, and notes are required when something fails. PM countdown banner, low-hour-meter warning, up to 6 photos, finger signature.
+  - Submissions are tagged `source: Warehouse Toolkit` and `employeeId` (extra fields the script can ignore or log).
+- **Cycle Counts (new, Inventory & Lookup):** count a **customer, item, item + lot, or bays** in any warehouse against BirdsEye inventory.
+  - Managers (Manager Messages list) start counts; preview shows pallets / qty / bays before starting (max 3,000 pallets per count). Options: **blind** (counters don't see expected pallets or qty until submit) and **count qty** (off = just confirm each pallet and its bay).
+  - Anyone signed in can count: set the bay (type or scan the bay label), scan LWH ID or customer tag with a scanner gun or the camera, type qty. Green = match, amber = wrong bay, red = not part of this count (shows where the system thinks it is). Undo any scan. Bay tiles show progress.
+  - Submit marks unscanned pallets missing and checks every difference against live inventory (gone from BirdsEye since, moved since, bay already fixed).
+  - Managers mark how each difference was handled, send a count back for recount, cancel, or close it. Excel export and print.
+  - Data: `sql/cycle_counts.sql` (new `cyc_*` tables/functions — separate from the Trane / customer-portal `cc_*` cycle counts). Already applied to Supabase.
+
 ## v1.91.1
 - **Battery Box & BOM — Orders:** Shipped, Cancelled and All now list the most recent first (by ship date, then order date). Open and Pending stay oldest first as the work queue. Excel exports in the same order.
 
