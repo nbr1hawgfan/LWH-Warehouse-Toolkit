@@ -134,11 +134,11 @@
   const cleanId=()=>String($('wmEmpId').value||'').replace(/\D/g,'');
   async function doLogin(){
     const id=cleanId(), pin=($('wmPin').value||'').trim();
-    if(!/^\d{4,6}$/.test(id)||!/^\d{6}$/.test(pin)) return showLoginErr('Enter your employee ID and your 6-digit PIN.');
+    if(!/^\d{4,6}$/.test(id)||!/^\d{4,6}$/.test(pin)) return showLoginErr('Enter your employee ID and your PIN (same as your time off PIN).');
     const b=$('wmLoginBtn'); b.disabled=true; b.textContent='Signing in…';
     try{
       const r=await rpc('emp_login',{p_emp_id:Number(id),p_pin:pin});
-      if(!r.ok) return showLoginErr(r.error+' First time? Tap “First time sign-in”.');
+      if(!r.ok) return showLoginErr(r.error);
       S.set('whMsgLastId',$('wmKeep').checked?id:''); await afterSignIn(r.token);
     }catch(e){ showLoginErr('No signal — try again in a minute.'); }
     finally{ b.disabled=false; b.textContent='Sign In'; }
@@ -156,7 +156,7 @@
     }catch(e){ showLoginErr('No signal — try again in a minute.'); }
     finally{ b.disabled=false; b.textContent='Create PIN & Sign In'; }
   }
-  function setSetupMode(on){ $('wmSetupBox').hidden=!on; $('wmPinBox').hidden=on; $('wmSetupToggle').textContent=on?'I already have a PIN':'First time sign-in'; showLoginErr(''); }
+  function setSetupMode(on){ $('wmSetupBox').hidden=!on; $('wmPinBox').hidden=on; $('wmSetupToggle').textContent=on?'I already have a PIN':'No PTO PIN? Use a setup code'; showLoginErr(''); }
   async function doLogout(){
     if(window.LWHAuth) return LWHAuth.signOut();
     if(!confirm('Sign out of Messages on this device?')) return;

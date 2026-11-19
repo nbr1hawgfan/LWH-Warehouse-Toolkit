@@ -139,9 +139,9 @@ html.embed .login{margin:10px auto}
   <!-- Sign in -->
   <section id="loginView" class="card login">
     <h2>Manager sign-in</h2>
-    <p class="hint" style="margin:0 0 14px">Use your employee ID and 6-digit PIN — the same sign-in employees use for Messages in the Warehouse Toolkit. Only people on the <b>warehouse manager list</b> can send messages.</p>
+    <p class="hint" style="margin:0 0 14px">Use your employee ID and PIN — your PTO / time off PIN works. Only people on the <b>warehouse manager list</b> can send messages.</p>
     <label>Employee ID<input type="text" id="lgId" autocomplete="username" inputmode="numeric" maxlength="6" /></label>
-    <div id="lgPinBox"><label>6-digit PIN<input type="password" id="lgPin" inputmode="numeric" maxlength="6" autocomplete="current-password" /></label>
+    <div id="lgPinBox"><label>PIN <small style="font-weight:400">(PTO / time off PIN)</small><input type="password" id="lgPin" inputmode="numeric" maxlength="6" autocomplete="current-password" /></label>
       <button type="button" id="lgBtn">Sign in</button></div>
     <div id="lgSetupBox" hidden>
       <label>Setup code<input type="text" id="lgCode" autocapitalize="characters" autocomplete="off" /></label>
@@ -290,7 +290,7 @@ html.embed .login{margin:10px auto}
   }
   async function doLogin(){
     const id=$('lgId').value.replace(/\D/g,''), pin=$('lgPin').value.trim();
-    if(!id||!/^\d{6}$/.test(pin)) return lgErr('Enter your employee ID and 6-digit PIN.');
+    if(!id||!/^\d{4,6}$/.test(pin)) return lgErr('Enter your employee ID and your PIN.');
     $('lgBtn').disabled=true;
     try{ const r=await fetch(API+'emp_login',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_emp_id:Number(id),p_pin:pin})}).then(r=>r.json());
       if(!r.ok){ lgErr(r.error+' First time? Tap “First time sign-in” below.'); return; }
