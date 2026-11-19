@@ -1,4 +1,4 @@
-/* MANAGER (v1.94.0) — one place for warehouse managers.
+/* MANAGER (v1.94.0; home card v1.94.1) — one place for warehouse managers.
    Shown only to people on the warehouse manager list (same sign-in as everything else — PTO PIN).
    Top: "Needs attention" cards with live counts (mgr_attention() in sql/manager_hub.sql, plus forklift PM
    from the forklift-pm Edge Function). Below: every manager / admin tool in the Toolkit and the related
@@ -69,7 +69,7 @@
 
   async function load(force){
     if(!isMgr()) return;
-    $('mhWho').textContent=(me().name||'')+' · warehouse manager';
+    if($('mhWho')) $('mhWho').textContent=(me().name||'')+' · warehouse manager';
     if(last&&!force) render(last.a,last.pm);
     let a=null, pm=null;
     try{
@@ -103,16 +103,37 @@
       if(over) cards.push({n:over,t:'forklifts overdue for PM',sub:soon?`${soon} more due soon`:'',level:'bad',view:'forkliftInsp'});
       else if(soon) cards.push({n:soon,t:'forklifts due for PM soon',level:'warn',view:'forkliftInsp'});
     }
+    homeCard(a||pm?cards.length:null);
     const box=$('mhAtt'); if(!box) return;
     if(!a&&!pm){ box.innerHTML='<div class="mh-sub">Couldn\'t load — check your connection, then tap Refresh.</div>'; return; }
     box.innerHTML=(cards.length?cards.map(card).join(''):'<div class="mh-allgood">✓ Nothing waiting on you right now.</div>')
       +(stale?'<div class="mh-sub">No connection — showing the last numbers.</div>':'');
   }
 
-  function navVis(){ const n=$('navManagerHub'); if(n) n.hidden=!isMgr(); }
+  // Home page card (managers only) — right under Messages so nobody has to open the side menu to find it.
+  function homeCard(n){
+    const c=$('mhHomeCard'); if(!c) return;
+    const sub=$('mhHomeSub'), b=$('mhHomeBadge');
+    if(n==null) return;
+    b.textContent=n; b.hidden=!n;
+    sub.textContent=n?`${n} thing${n===1?'':'s'} need${n===1?'s':''} attention — tap to see them and every manager tool.`:'Nothing waiting on you right now. Tap for every manager tool.';
+  }
+  let peeked=0;
+  function navVis(){
+    const m=isMgr(), n=$('navManagerHub'), c=$('mhHomeCard');
+    if(n) n.hidden=!m; if(c) c.hidden=!m;
+    // Keep the home card count fresh (every 5 minutes while Home is showing).
+    if(m&&c&&$('home')&&$('home').classList.contains('active')&&!document.hidden&&Date.now()-peeked>300000){ peeked=Date.now(); load(); }
+  }
   document.addEventListener('DOMContentLoaded',()=>{
     navVis(); setInterval(navVis,5000);
     last=ls.get('lwh_mhLast',null);
+    const wm=$('wmHomeCard');
+    if(wm&&!$('mhHomeCard')) wm.insertAdjacentHTML('afterend',`<button type="button" id="mhHomeCard" class="wm-home mh-home" data-view="managerHub" hidden>
+      <span class="wm-home-ic"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span>
+      <span class="wm-home-text"><b>Manager</b><span id="mhHomeSub">Needs attention and every manager tool, in one place.</span></span>
+      <span id="mhHomeBadge" class="wm-badge" hidden>0</span></button>`);
+    navVis();
     const sec=$(VIEW); if(!sec) return;
     const onShow=()=>{ if(!isMgr()){ if(window.LWHUI) LWHUI.show('home'); return; } build(); load(); };
     new MutationObserver(()=>{ if(sec.classList.contains('active')) onShow(); }).observe(sec,{attributes:true,attributeFilter:['class']});

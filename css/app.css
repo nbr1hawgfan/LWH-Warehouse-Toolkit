@@ -3031,3 +3031,5 @@ button.mh-att.mh-info{border-top-color:#2563eb}
 .mh-tool b{font-size:15px}
 .mh-tool span{font-size:13px;color:var(--muted)}
 .mh-tool em{font-size:12px;font-style:normal;color:var(--brand);font-weight:700}
+#home .wm-home.mh-home{margin-top:-6px;border-left-color:var(--brand)}
+#home .wm-home.mh-home .wm-home-ic{background:var(--brand)}
