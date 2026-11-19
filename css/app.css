@@ -3004,3 +3004,30 @@ button.cy-x{min-height:32px;padding:3px 9px;font-size:13px}
 .fi-pm-overdue .fi-pmhrs{color:var(--bad)}
 .fi-pm-actions{display:flex;gap:8px;margin-bottom:10px}
 .fi-pm-h{margin:14px 0 4px;font-size:13px;letter-spacing:.07em;text-transform:uppercase}
+
+/* =========================================================================
+   Manager hub (v1.94.0) — js/manager.js
+   ========================================================================= */
+.nav-btn.nav-mgr{border:1.5px solid var(--brand);margin:4px 0}
+.mh-wrap{max-width:1100px;margin:0 auto}
+.mh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.mh-top h2{margin:0}
+.mh-sub{font-size:13px;color:var(--muted)}
+button.mh-small{min-height:38px;padding:6px 12px;font-size:14px}
+.mh-h{margin:22px 0 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:4px}
+.mh-attgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+button.mh-att{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-top:5px solid var(--good);font-weight:400;padding:12px 14px;min-height:0}
+button.mh-att:hover{background:var(--brand-tint)}
+button.mh-att b{font-size:30px;line-height:1}
+.mh-att-t{font-weight:700;font-size:14.5px}
+.mh-att-s{font-size:12.5px;color:var(--muted)}
+button.mh-att.mh-bad{border-top-color:var(--bad)} button.mh-att.mh-bad b{color:var(--bad)}
+button.mh-att.mh-warn{border-top-color:#d97706} button.mh-att.mh-warn b{color:#b45309}
+button.mh-att.mh-info{border-top-color:#2563eb}
+.mh-allgood{grid-column:1/-1;padding:14px;border-left:5px solid var(--good);background:#effaf0;font-weight:700}
+.mh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.mh-tool{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-left:4px solid var(--brand);font-weight:400;padding:11px 13px;min-height:0;text-decoration:none;border-radius:0;font:inherit;cursor:pointer}
+.mh-tool:hover{background:var(--brand-tint)}
+.mh-tool b{font-size:15px}
+.mh-tool span{font-size:13px;color:var(--muted)}
+.mh-tool em{font-size:12px;font-style:normal;color:var(--brand);font-weight:700}
