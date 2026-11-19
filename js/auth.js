@@ -1,5 +1,6 @@
 // TOOLKIT SIGN-IN (v1.80.0)
-// Everyone signs in with their employee ID + 6-digit PIN (setup code from a manager the first time) —
+// Everyone signs in with their employee ID + PIN. v1.93.0: the PIN is their PTO / time off PIN (4 digits) when
+// they're in the PTO tracker; people who aren't use a 6-digit Toolkit PIN (setup code from a manager the first time) —
 // the same sign-in Messages uses, so signing in once covers both. Sessions last 30 days from last use
 // ("Keep me signed in" off = until the tab is closed, for shared computers).
 //
@@ -70,7 +71,7 @@
         <h2 id="authTitle">Sign in</h2>
         <p class="auth-msg" id="authMsg"></p>
         <label>Employee ID<input id="authId" inputmode="numeric" autocomplete="username" maxlength="6" placeholder="5-digit ID"></label>
-        <div id="authPinBox"><label>6-digit PIN<input id="authPin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="••••••"></label></div>
+        <div id="authPinBox"><label>PIN <small style="font-weight:400">(same as your PTO / time off PIN)</small><input id="authPin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="••••"></label></div>
         <div id="authSetupBox" hidden>
           <label>Setup code from your manager<input id="authCode" autocapitalize="characters" spellcheck="false" autocomplete="off" placeholder="8 letters and numbers"></label>
           <div class="auth-two"><label>New 6-digit PIN<input id="authNew1" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></label>
@@ -79,15 +80,15 @@
         <label class="auth-check"><input type="checkbox" id="authKeep"> Keep me signed in on this device <span>(uncheck on a shared computer)</span></label>
         <div class="auth-err" id="authErr" hidden></div>
         <button type="button" id="authGo" class="auth-go">Sign In</button>
-        <button type="button" id="authToggle" class="auth-link">First time? Set up your PIN</button>
-        <p class="auth-help">Your PIN is the same one you use for Messages. Forgot it, or no setup code yet? Ask a warehouse manager — they can give you a new code.</p>
+        <button type="button" id="authToggle" class="auth-link">No PTO PIN? Use a setup code</button>
+        <p class="auth-help">Use the same PIN as the PTO / time off app. Forgot it? It's reset in the PTO tracker. Not in the PTO tracker? Ask a warehouse manager for a setup code.</p>
       </div>`;
       document.body.appendChild(g);
       const $=id=>document.getElementById(id);
       let setup=false;
       $('authKeep').checked=keep();
       $('authId').value=(ls.get('lwh_whMsgLastId')||'');
-      const setMode=on=>{ setup=on; $('authSetupBox').hidden=!on; $('authPinBox').hidden=on; $('authGo').textContent=on?'Create PIN & Sign In':'Sign In'; $('authToggle').textContent=on?'I already have a PIN':'First time? Set up your PIN'; err(''); };
+      const setMode=on=>{ setup=on; $('authSetupBox').hidden=!on; $('authPinBox').hidden=on; $('authGo').textContent=on?'Create PIN & Sign In':'Sign In'; $('authToggle').textContent=on?'I already have a PIN':'No PTO PIN? Use a setup code'; err(''); };
       const err=m=>{ $('authErr').textContent=m||''; $('authErr').hidden=!m; };
       $('authToggle').onclick=()=>setMode(!setup);
       const go=async()=>{
@@ -104,10 +105,10 @@
             r=await rpc('emp_create_pin',{p_emp_id:Number(id),p_setup_code:code,p_pin:a});
           }else{
             const pin=$('authPin').value.trim();
-            if(!/^\d{6}$/.test(pin)){ err('Enter your 6-digit PIN.'); return; }
+            if(!/^\d{4,6}$/.test(pin)){ err('Enter your PIN — the same one you use for time off.'); return; }
             r=await rpc('emp_login',{p_emp_id:Number(id),p_pin:pin});
           }
-          if(!r.ok){ err(r.error+(setup?'':' First time? Tap “Set up your PIN”.')); return; }
+          if(!r.ok){ err(r.error); return; }
           const keepIt=$('authKeep').checked;
           saveToken(r.token,keepIt);
           ls.set('lwh_whMsgLastId',keepIt?id:'');

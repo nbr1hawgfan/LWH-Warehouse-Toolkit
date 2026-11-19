@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.93.0
+- **One PIN — the PTO / time off PIN.** Everyone in the PTO tracker signs in to the Toolkit (and Messages, and the Manager Message Center) with the same 4-digit PIN they use for time off. The PTO tracker's `TimeClock_PinPush.gs` now sends every active employee's PIN (hashed on arrival); `sql/pto_pin_signin.sql` matches each to their Toolkit employee by name (or the `emp_pin_map` table for names that differ — e.g. legal names). Wrong PTO PINs share the Time Clock's lockout. People who aren't in the PTO tracker keep their 6-digit Toolkit PIN and setup codes; a Toolkit PIN someone already made still works. The Employee Sign-in tab only lists setup codes for people who can't use a PTO PIN. Forgot PIN → reset in the PTO tracker.
+
 ## v1.92.0
 - **Forklift Inspection (new, Safety & Training):** the daily pre-shift forklift checklist is now in the Toolkit.
   - Sends to the **same Apps Script and Sheet** as the stand-alone Forklift Inspections app, so records, PM tracking and report emails are unchanged and both apps can be used side by side while people move over.
