@@ -2994,3 +2994,13 @@ button.cy-x{min-height:32px;padding:3px 9px;font-size:13px}
   #cycleCount .no-print,#cycleCount select{display:none!important}
   .cy-tablewrap{overflow:visible}
 }
+/* Forklift PM Admin (v1.93.1) */
+.fi-pmadmin{border-top:4px solid var(--ink)}
+.fi-pmlist{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.fi-pmrow{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-left:5px solid var(--good)}
+.fi-pmrow.fi-pm-dueSoon{border-left-color:#d97706;background:#fffbeb}
+.fi-pmrow.fi-pm-overdue{border-left-color:var(--bad);background:#fff1f1}
+.fi-pmhrs{font-weight:800;white-space:nowrap}
+.fi-pm-overdue .fi-pmhrs{color:var(--bad)}
+.fi-pm-actions{display:flex;gap:8px;margin-bottom:10px}
+.fi-pm-h{margin:14px 0 4px;font-size:13px;letter-spacing:.07em;text-transform:uppercase}

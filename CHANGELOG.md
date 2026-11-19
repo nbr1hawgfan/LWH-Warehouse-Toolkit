@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.93.1
+- **Forklift PM Admin in the Toolkit (managers):** at the bottom of Forklift Inspection, warehouse managers see fleet PM status (overdue / due soon), export CSV, print, and log a completed PM — with their normal sign-in, no shared passcode. The `forklift-pm` Edge Function checks the manager and holds the admin passcode as the Supabase secret `FORKLIFT_PM_PASSCODE`. The old PM Admin page still works with the passcode.
+- Cortney Woods linked to her PTO record (Cortney M. Robertson).
+
 ## v1.93.0
 - **One PIN — the PTO / time off PIN.** Everyone in the PTO tracker signs in to the Toolkit (and Messages, and the Manager Message Center) with the same 4-digit PIN they use for time off. The PTO tracker's `TimeClock_PinPush.gs` now sends every active employee's PIN (hashed on arrival); `sql/pto_pin_signin.sql` matches each to their Toolkit employee by name (or the `emp_pin_map` table for names that differ — e.g. legal names). Wrong PTO PINs share the Time Clock's lockout. People who aren't in the PTO tracker keep their 6-digit Toolkit PIN and setup codes; a Toolkit PIN someone already made still works. The Employee Sign-in tab only lists setup codes for people who can't use a PTO PIN. Forgot PIN → reset in the PTO tracker.
 
