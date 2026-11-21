@@ -1,0 +1,9 @@
+-- Access (Warehouse Toolkit v1.96.0) — one place to turn a person's access off / back on. Already applied
+-- (Supabase migration access_control_center). Summary:
+--   acc_admins(emp_id)       who can use it (Tim 93945 to start). Add someone:  insert into acc_admins(emp_id,note) values (12345,'name');
+--   acc_blocks               record of every turn-off / turn-on (who, when, why, what was undone)
+--   acc_blocked_emp / acc_blocked_driver   checked by whm_session_emp, whm_is_manager, drv_session_driver, emp_login, drv_login,
+--                            so a blocked person can't sign in even if the server sync marks them active again.
+--   acc_me, acc_search, acc_block, acc_unblock, acc_list   (all need an access admin's sign-in)
+-- acc_block also: msg_wh_managers off, drivers.status Inactive, deletes emp_sessions / drv_sessions / tc_devices,
+-- revokes tc_badges, removes push_subs.  acc_unblock restores the manager flag and driver status (cards need reprinting).
