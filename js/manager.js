@@ -22,7 +22,8 @@
     {sec:'People',items:[
       {t:'Manager Message Center',d:'Messages from employees, send to employees, read receipts.',view:'msgCenter'},
       {t:'Employee Sign-in',d:'Who has no PIN, setup codes for people not in the PTO tracker, sign someone out.',view:'msgCenter',hint:'Employee Sign-in tab'},
-      {t:'PTO Approvals',d:'PTO Manager app — approvals, team calendar, time off asks.',href:'https://nbr1hawgfan.github.io/LWH_PTO/manager/'},
+      {t:'PTO Approvals',d:'Approve or deny PTO requests and time off asks — right here, no extra PIN.',view:'timeOff',tab:'mgr'},
+      {t:'PTO Manager app',d:'Record absences, reports, team analytics.',href:'https://nbr1hawgfan.github.io/LWH_PTO/manager/'},
       {t:'Absence Calendar',d:'PTO and absences from the PTO tracker, by month.',view:'absenceCal'}
     ]},
     {sec:'Inventory',items:[
@@ -59,9 +60,10 @@
     </div>`;
     $('mhTools').innerHTML=TOOLS.map(g=>`<h3 class="mh-h">${esc(g.sec)}</h3><div class="mh-grid">${g.items.map(i=>
       i.href?`<a class="mh-tool" href="${i.href}" target="_blank" rel="noopener"><b>${esc(i.t)}</b><span>${esc(i.d)}</span><em>Opens ↗</em></a>`
-            :`<button type="button" class="mh-tool" data-mh-view="${i.view}"><b>${esc(i.t)}</b><span>${esc(i.d)}</span>${i.hint?`<em>${esc(i.hint)}</em>`:''}</button>`).join('')}</div>`).join('');
+            :`<button type="button" class="mh-tool" data-mh-view="${i.view}"${i.tab?` data-mh-tab="${i.tab}"`:''}><b>${esc(i.t)}</b><span>${esc(i.d)}</span>${i.hint?`<em>${esc(i.hint)}</em>`:''}</button>`).join('')}</div>`).join('');
     sec.addEventListener('click',e=>{
       const b=e.target.closest('[data-mh-view]'); if(!b) return;
+      if(b.dataset.mhTab==='mgr'&&window.LWHTimeOff){ LWHTimeOff.openApprovals(); return; }
       if(window.LWHUI&&LWHUI.show) LWHUI.show(b.dataset.mhView);
     });
     $('mhRefresh').onclick=()=>load(true);
