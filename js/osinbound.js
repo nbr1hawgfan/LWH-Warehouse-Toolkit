@@ -4,20 +4,21 @@
   //  • Checks: duplicate Pallet ID (this load or any load from any synced device), PGID equal to
   //    the Pallet ID, QTY must be a whole number 1-9999 (catches a wrong label scanned into QTY).
   //  • Local-first: every scan saves on this device (IndexedDB + localStorage mirror) before anything
-  //    else. With a sync code, changes push to Supabase (os_inbound_sync) and other devices' loads
+  //    else. v1.97: no shared sync code — people on the One Source Inbound list (Supabase
+  //    os_inbound_users), signed in to the Toolkit, sync to Supabase (os_inbound_sync) and other devices' loads
   //    pull down. Merge-safe: pallets upsert by load + Pallet ID, removals are soft deletes.
   //  • Scan sheet: one page per load, Code 128 barcode for every Pallet ID, PGID, QTY, "In WMS" box.
   //  • Shares its storage with the standalone LWH-OneSource-Inbound app (same site), so loads scanned
   //    there show up here on the same device.
   const SB_URL='https://tjivcqxnkftujceumdtx.supabase.co';
-  const SB_KEY='sb_publishable_PYlWSW6-Gi-QZl91IXUq0Q_W5mO3sDT';   // public key; the sync code gates access
+  const SB_KEY='sb_publishable_PYlWSW6-Gi-QZl91IXUq0Q_W5mO3sDT';   // public key; the person's Toolkit sign-in gates access
   const DB_NAME='lwh-os-inbound', STORE='loads';
   const LS_KEY='lwh-os-inbound-mirror', SET_KEY='lwh-os-inbound-settings', KB_KEY='osiHideKb';
   const QTY_MAX=9999, SYNC_EVERY_MS=20000;
 
   let loads=[], current=null, editingId=null, step='pallet', pending={palletId:'',pgid:''}, lastAddedTs=null, screen='list';
   let settings=loadSettings();
-  const sync={busy:false,timer:null,lastOk:null,error:null};
+  const sync={busy:false,timer:null,lastOk:null,error:null,allowed:null};
   let audio=null, ready=false;
 
   const el=id=>document.getElementById(id);
@@ -121,7 +122,7 @@
     const pallets=live().reduce((a,l)=>a+l.pallets.length,0);
     el('osiStorageInfo').textContent=`${live().length} load(s), ${pallets} pallet(s) on this device.`;
   }
-  function openList(){ current=null; renderList(); el('osiCode').value=settings.code; el('osiDevice').value=settings.device||userName(); show('list'); updateSyncUI(); }
+  function openList(){ current=null; renderList(); el('osiDevice').value=settings.device||userName(); show('list'); updateSyncUI(); }
   function openForm(L){
     editingId=L?L.id:null;
     el('osiFormTitle').textContent=L?'Edit load info':'New load';
@@ -309,10 +310,19 @@
     if(changed){ l.pallets.sort((a,b)=>(a.scannedAt||'').localeCompare(b.scannedAt||'')); await persist(l); }
     return changed;
   }
+  // Is the signed-in person on the One Source Inbound list? (asked once per page load, re-asked after a refusal)
+  async function checkAllowed(){
+    if(sync.allowed!==null) return sync.allowed;
+    try{
+      const r=await fetch(SB_URL+'/rest/v1/rpc/os_inbound_me',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:'{}'});
+      const j=await r.json(); sync.allowed=!!(j&&j.allowed);
+    }catch(e){ return false; }
+    return sync.allowed;
+  }
   async function syncNow(){
     clearTimeout(sync.timer);
     if(sync.busy) return;
-    if(!settings.code||!navigator.onLine){ updateSyncUI(); return; }
+    if(!navigator.onLine||!(await checkAllowed())){ updateSyncUI(); if(navigator.onLine===false) scheduleSync(SYNC_EVERY_MS); return; }
     sync.busy=true; updateSyncUI();
     let again=false;
     try{
@@ -320,13 +330,14 @@
       const since=settings.since?new Date(Date.parse(settings.since)-120000).toISOString():null;
       const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),25000);
       const res=await fetch(SB_URL+'/rest/v1/rpc/os_inbound_sync',{method:'POST',signal:ctrl.signal,headers:{apikey:SB_KEY,'Content-Type':'application/json'},
-        body:JSON.stringify({p_code:settings.code,p_loads:payload,p_since:since,p_device:deviceName()})});
+        body:JSON.stringify({p_code:'',p_loads:payload,p_since:since,p_device:deviceName()})});
       clearTimeout(to);
       if(!res.ok) throw new Error('HTTP '+res.status);
       const out=await res.json();
       if(!out.ok){
-        sync.error=out.error==='bad_code'?'The sync code is wrong. Check it under "Sync between devices".'
-          :out.error==='locked'?'Sync is locked for 10 minutes after too many wrong codes.':'Sync was refused ('+out.error+').';
+        if(out.error==='not_allowed'||out.error==='signed_out') sync.allowed=false;
+        sync.error=out.error==='not_allowed'?'Sync is only for the One Source Inbound team. Ask Tim to add you.'
+          :out.error==='signed_out'?'Sign in to the Toolkit to sync.':'Sync was refused ('+out.error+').';
         return;
       }
       for(const [id,s] of snap){
@@ -361,14 +372,14 @@
     if(!ready) return;
     const waiting=loads.reduce((a,l)=>a+pendingCount(l),0);
     let text, cls;
-    if(!settings.code){ text='Sync off — scans are saved on this device only. Add the sync code under "Sync between devices" on the loads list.'; cls='warn'; }
-    else if(sync.error&&/code|locked|refused/.test(sync.error)){ text=sync.error; cls='bad'; }
+    if(sync.allowed===false){ text=sync.error||'Sync off — only the One Source Inbound team (signed in) syncs. Scans are saved on this device.'; cls='warn'; }
+    else if(sync.error&&/refused|Sign in/.test(sync.error)){ text=sync.error; cls='bad'; }
     else if(sync.busy){ text='Syncing…'; cls='idle'; }
     else if(waiting){ text=`${waiting} change(s) waiting to sync`+(navigator.onLine?(sync.error?' — '+sync.error:''):' — no signal; scans are safe on this device'); cls='warn'; }
     else if(sync.lastOk){ text='✓ Synced '+fmtTime(sync.lastOk); cls='ok'; }
     else { text='Not synced yet'; cls='idle'; }
     ['osiListSync','osiSync'].forEach(id=>{ const b=el(id); if(b){ b.textContent=text; b.className='ls-sync ls-sync-'+cls; } });
-    const st=el('osiSyncStatus'); if(st) st.textContent=settings.code?(sync.lastOk?'Last synced '+fmtTime(sync.lastOk)+'. ':'')+(waiting?waiting+' change(s) waiting.':'Nothing waiting to upload.'):'Enter the sync code to share loads between devices.';
+    const st=el('osiSyncStatus'); if(st) st.textContent=sync.allowed?(sync.lastOk?'Last synced '+fmtTime(sync.lastOk)+'. ':'')+(waiting?waiting+' change(s) waiting.':'Nothing waiting to upload.'):'Syncing uses your Toolkit sign-in. Only the One Source Inbound team (Tim, Ryan, Brandie) can sync.';
   }
 
   // ---------------------------------------------------------------- wiring
@@ -404,7 +415,7 @@
       if(current.status==='open'){ flash('','Load reopened. Scan the Pallet ID.'); goStep('pallet'); } else toast('Load closed');
     };
     el('osiDelete').onclick=async()=>{
-      const typed=prompt(`This deletes load ${current.loadNo} and its ${current.pallets.length} pallets${settings.code?' from every synced device':' from this device'}.\n\nType the load number to confirm:`);
+      const typed=prompt(`This deletes load ${current.loadNo} and its ${current.pallets.length} pallets${sync.allowed?' from every synced device':' from this device'}.\n\nType the load number to confirm:`);
       if(typed==null) return;
       if(norm(typed)!==norm(current.loadNo)) return alert('Load number did not match. Nothing was deleted.');
       current.deleted=true; current._headDirty=true; await saveLoad(current); openList(); toast('Load deleted');
@@ -414,9 +425,8 @@
     el('osiRestoreBtn').onclick=()=>el('osiRestore').click();
     el('osiRestore').onchange=async()=>{ const f=el('osiRestore').files[0]; el('osiRestore').value=''; if(f) await restoreFile(f); };
     el('osiSaveSync').onclick=()=>{
-      const code=clean(el('osiCode').value), dev=clean(el('osiDevice').value);
-      if(code!==settings.code){ settings.since=null; sync.error=null; }
-      settings.code=code; settings.device=dev.slice(0,60); saveSettings(); updateSyncUI(); syncNow(); toast('Sync settings saved');
+      const dev=clean(el('osiDevice').value);
+      settings.device=dev.slice(0,60); if(settings.code){ settings.code=''; } saveSettings(); sync.allowed=null; sync.error=null; updateSyncUI(); syncNow(); toast('Saved');
     };
     el('osiSyncNow').onclick=()=>syncNow();
     // Camera: the shared scanner modal reads one barcode into the field that's up next
