@@ -3041,3 +3041,29 @@ button.mh-att.mh-info{border-top-color:#2563eb}
 .push-b-btns{display:flex;gap:8px}
 [data-push-status][data-state="on"]{color:#1d6b2a}
 [data-push-status][data-state="blocked"],[data-push-status][data-state="ios_home"]{color:#8a5200}
+/* v1.96: Access (admin) */
+.acc .card{margin-bottom:14px}
+.acc-results{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.acc-person{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;text-align:left;background:#fff;border:1px solid var(--line,#ddd);padding:10px 12px;cursor:pointer;color:inherit;font:inherit}
+.acc-person:hover{border-color:var(--brand,#c8102e)}
+.acc-person span{color:#555;font-size:13.5px}
+.acc-tag{font-style:normal;font-size:12px;font-weight:800;background:#c8102e;color:#fff;padding:2px 8px;border-radius:999px;margin-left:auto}
+.acc-tag.back{background:#e3f3e3;color:#1d6b2a}
+.acc-pick{border-left:5px solid #c8102e}
+.acc-recs{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.acc-rec{display:flex;gap:10px;align-items:flex-start;font-weight:400}
+.acc-rec input{width:20px;height:20px;margin-top:2px}
+#accGo{background:#a50d24;color:#fff;border-color:#a50d24}
+.acc-ok{background:#e3f3e3;padding:10px 14px;margin-top:12px}
+.acc-ok ul,.acc-check ul{margin:6px 0 0 18px;padding:0}
+.acc-check{background:#fff7e6;padding:10px 14px;margin-top:10px}
+.acc-check ul{list-style:none;margin-left:0}
+.acc-check label{display:flex;gap:8px;font-weight:400}
+.acc-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid var(--line,#ddd);border-left:5px solid #c8102e;padding:10px 12px;margin-bottom:8px}
+.acc-row.off{border-left-color:#9a9a9a;opacity:.8}
+.acc-what{color:#555;font-size:13px}
+.acc-hub{border-left:4px solid #c8102e}
+.acc-check label{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:10px;text-align:left;margin:4px 0}
+.acc-check label input{width:18px!important;height:18px;flex:0 0 18px;margin:2px 0 0;padding:0}
+.acc-rec{flex-direction:row!important}
+.acc-rec input{flex:0 0 20px;width:20px!important}
