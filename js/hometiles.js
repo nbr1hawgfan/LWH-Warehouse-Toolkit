@@ -5,7 +5,7 @@
    To add a new tool to Home, add one line to TOOLS below. */
 (function () {
   const CATS = [
-    { id: 'msg',    label: 'Messages' },
+    { id: 'msg',    label: 'Messages & Time Off' },
     { id: 'inv',    label: 'Inventory & Lookup' },
     { id: 'ship',   label: 'Shipping & Receiving' },
     { id: 'labels', label: 'Labels & Badges' },
@@ -16,6 +16,8 @@
   const TOOLS = [
     { view: "messages", cat: "msg", name: "Messages", desc: "Messages from your managers — read them, open attached files, answer with one tap. Send a manager a message or a photo.", kw: "messages message manager inbox text chat notice announcement reply photo bol",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 5h16v11H9l-5 4z\"/><path d=\"M8 9.5h8M8 12.5h5\"/></svg>" },
+    { view: "timeOff", cat: "msg", name: "Time Off", desc: "Your PTO balance, request PTO (it shows how many days), ask to leave early or come in late, and see what's approved. Managers: approvals.", kw: "time off pto vacation request leave early come in late ask approve approvals balance days off",
+      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"17\" rx=\"1.5\"/><path d=\"M3 9h18M8 2v4M16 2v4\"/><path d=\"M12 12v6M9 15h6\"/></svg>" },
     { view: "quickLookup", cat: "inv", name: "Quick Lookup", desc: "One box: type, scan or speak an LWH ID, item, customer ID, bay or lot. See pallets, summary and history, print with barcodes, or send it to Excel.", kw: "quick lookup search scan speak voice find pallet item bay customer id lot history excel export print barcode",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M4 6v12M7 6v12M10 6v8M13 6v8\"/><circle cx=\"16.5\" cy=\"15.5\" r=\"3.5\"/><path d=\"M19 18l2.5 2.5\"/></svg>" },
     { view: "customerLookup", cat: "inv", name: "Master Lookup", desc: "Search anything: LWH ID, INV Receipt, customer, item, lot, vendor, bay, or customer-specific fields.", kw: "search find inventory lwh id invrec receipt item lot vendor bay customer",
@@ -102,8 +104,6 @@
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><path d=\"M8 8h8M8 12h5\"/><path d=\"M13 17l2 2 4-4\"/></svg>" },
     { view: "fcVerify", cat: "safety", name: "Verify Forklift Cert", desc: "Check that an operator's forklift certification is current \u2014 scan the card's QR or type the cert number.", kw: "verify forklift cert check valid expired card",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>" },
-    { view: "spotterTimesheets", cat: "time", name: "Spotter Timesheets", desc: "Weekly hours synced from drivers' phones \u2014 search, print, or export.", kw: "spotter timesheets drivers hours",
-      icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"17\" rx=\"1.5\"/><path d=\"M3 9h18M8 3v3M16 3v3\"/><path d=\"M7 13h3M12 13h3M7 17h3\"/></svg>" },
     { view: "utilities", cat: "tools", name: "Warehouse Tools", desc: "Calculator, unit converter, pallet footprint, notepad, Quick Message, trailer cube, date calc, age calc, loan calc, cost per foot, health, storage revenue, distance planner, and more.", kw: "calculator converter notepad message cube date loan cost per foot footprint distance",
       icon: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z\"/><path d=\"M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3\"/><path d=\"M3 13h18\"/></svg>" },
     { view: "formulas", cat: "tools", name: "Formula Builder", desc: "Answer a few plain-English questions and get the Excel formula: XLOOKUP, VLOOKUP, IF / IFS, SUMIFS / COUNTIFS. Copy, paste into Excel, done \u2014 plus fixes for #N/A and other errors.", kw: "excel formula spreadsheet vlookup xlookup lookup if ifs sumif sumifs countif countifs average sheets help error n/a",
