@@ -27,8 +27,7 @@
       {t:'Absence Calendar',d:'PTO and absences from the PTO tracker, by month.',view:'absenceCal'}
     ]},
     {sec:'Inventory',items:[
-      {t:'Cycle Counts',d:'Start counts, review differences, close counts, Excel export.',view:'cycleCount'},
-      {t:'Bay Scan',d:'Customer bays and pallet tag locations.',view:'bayScan'}
+      {t:'Cycle Counts',d:'Start counts, review differences, close counts, Excel export.',view:'cycleCount'}
     ]},
     {sec:'Safety & equipment',items:[
       {t:'Monthly Facility Inspections',d:'Assign, inspect, corrective actions, reports.',view:'inspections'},
