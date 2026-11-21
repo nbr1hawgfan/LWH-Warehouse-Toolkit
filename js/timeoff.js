@@ -1,4 +1,4 @@
-/* TIME OFF (v1.99.0) — PTO requests and time off asks inside the Toolkit, plus approvals for PTO managers.
+/* TIME OFF (v1.99.0; shared with the Driver Toolkit v1.55.0) — PTO requests and time off asks inside the Toolkit, plus approvals for PTO managers.
    A second door into the SAME PTO tracker the LWH_PTO apps use (one source of truth): requests made here
    show up in the PTO app and the other way around, with the same emails, PDFs and balance math.
 
@@ -16,8 +16,16 @@
   // notes saved by the old portals may already be HTML-escaped — decode once, then escape
   const txt=s=>esc(String(s==null?'':s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&'));
   const toast=t=>{ try{ LWHUI.toast(t); }catch(e){} };
-  const appTok=()=>(window.LWHAuth&&LWHAuth.token&&LWHAuth.token())||'';
-  const me=()=>(window.LWHAuth&&LWHAuth.me&&LWHAuth.me())||null;
+  // Same file in the Warehouse Toolkit and the Driver Toolkit. Each app can set window.LWHTimeOffCfg
+  // { token(), who() -> id, signIn(msg), calendarView } — defaults are the Warehouse Toolkit's.
+  const CFG=Object.assign({
+    token:()=>(window.LWHAuth&&LWHAuth.token&&LWHAuth.token())||'',
+    who:()=>{ const m=window.LWHAuth&&LWHAuth.me&&LWHAuth.me(); return m&&m.emp_id; },
+    signIn:msg=>{ if(window.LWHAuth) LWHAuth.requireSignIn(msg); },
+    calendarView:'absenceCal'
+  },window.LWHTimeOffCfg||{});
+  const appTok=()=>CFG.token()||'';
+  const me=()=>{ const id=CFG.who(); return id?{emp_id:id}:null; };
   const num=v=>{ const x=parseFloat(v); return isNaN(x)?0:Math.round(x*100)/100; };
   const todayIso=()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
   const mdy2iso=s=>{ const m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m?m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0'):String(s||'').slice(0,10); };
@@ -45,7 +53,7 @@
     if(!j.ok){
       const e=String(j.error||'');
       if(/Unknown action/i.test(e)){ setupNeeded=true; throw new Error('setup'); }
-      if(e==='SIGNED_OUT'){ if(window.LWHAuth) LWHAuth.requireSignIn('Please sign in again.'); throw new Error('Please sign in again.'); }
+      if(e==='SIGNED_OUT'){ CFG.signIn('Please sign in again.'); throw new Error('Please sign in again.'); }
       if(/not linked/i.test(e)){ notLinked=e; throw new Error('notlinked'); }
       throw new Error(e||'Could not open Time Off.');
     }
@@ -194,7 +202,7 @@
             <label>Note to employee (optional)<input data-rec-note maxlength="300"></label>
             <button type="button" data-to-askrecgo="${esc(a.askId)}" data-start="${esc(a.startDate)}" data-end="${esc(a.endDate)}" data-t1="${esc(a.startTime)}" data-t2="${esc(a.endTime)}">Record it</button></div></div>
         <div class="to-act"><button type="button" data-to-askrec="${esc(a.askId)}">Yes — record</button><button type="button" class="ghost" data-to-askdecl="${esc(a.askId)}" data-name="${esc(a.employeeName)}">Decline</button></div></div>`).join(''):'<div class="mh-sub">No asks waiting.</div>'}</div>
-      <p class="mh-sub" style="margin-top:14px">Approving sends the same emails and PDF as the PTO Manager app and takes the days off their balance. For recording absences, reports and team analytics, use the <a href="${PTO_MGR_APP}" target="_blank" rel="noopener">PTO Manager app</a>; for the month view, the <a href="#" data-to-cal>Absence Calendar</a>.</p>`;
+      <p class="mh-sub" style="margin-top:14px">Approving sends the same emails and PDF as the PTO Manager app and takes the days off their balance. For recording absences, reports and team analytics, use the <a href="${PTO_MGR_APP}" target="_blank" rel="noopener">PTO Manager app</a>${CFG.calendarView?'; for the month view, the <a href="#" data-to-cal>Absence Calendar</a>':''}.</p>`;
   }
   async function act(btn,fn,okMsg){
     btn.disabled=true; const t=btn.textContent; btn.textContent='…';
@@ -206,7 +214,7 @@
     const T=e.target;
     const tb=T.closest('[data-to-tab]'); if(tb){ setTab(tb.dataset.toTab); return; }
     if(T.id==='toRefresh'||T.id==='toRetry'){ emp=null; mgr=null; load(true); return; }
-    if(T.closest('[data-to-cal]')){ e.preventDefault(); LWHUI.show('absenceCal'); return; }
+    if(T.closest('[data-to-cal]')){ e.preventDefault(); if(CFG.calendarView) LWHUI.show(CFG.calendarView); return; }
     const c=T.closest('[data-to-cancel]'); if(c){ const why=prompt('Withdraw this request? Give a short reason (your manager sees it):',''); if(why===null) return;
       if(!why.trim()){ toast('A reason is required.'); return; }
       act(c,()=>call('employee','emp.cancel',{requestId:c.dataset.toCancel,reason:why.trim()}),'Request withdrawn'); return; }
