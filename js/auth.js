@@ -128,6 +128,7 @@
   function requireSignIn(msg){
     if(isPublicView()&&!token()) return;
     if(token()&&!msg) return;
+    if(window.LWHPush){ try{ LWHPush.signedOut(); }catch(e){} }
     clearSession();
     if(document.body) buildGate(msg); else document.addEventListener('DOMContentLoaded',()=>buildGate(msg));
   }
@@ -136,6 +137,7 @@
   }
   async function signOut(){
     if(!confirm('Sign out of the Warehouse Toolkit on this device?')) return;
+    if(window.LWHPush){ try{ await LWHPush.signedOut(); }catch(e){} }
     const t=token(); clearSession();
     try{ await rpc('emp_logout',{p_token:t}); }catch(e){}
     location.replace(location.pathname);

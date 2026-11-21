@@ -3033,3 +3033,11 @@ button.mh-att.mh-info{border-top-color:#2563eb}
 .mh-tool em{font-size:12px;font-style:normal;color:var(--brand);font-weight:700}
 #home .wm-home.mh-home{margin-top:-6px;border-left-color:var(--brand)}
 #home .wm-home.mh-home .wm-home-ic{background:var(--brand)}
+/* v1.95: notifications */
+.push-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-left:4px solid var(--brand,#c8102e);margin-top:12px}
+.push-banner[hidden]{display:none}
+.push-b-txt{display:flex;flex-direction:column;gap:3px;min-width:200px;flex:1}
+.push-b-txt span{font-size:14px;color:#555}
+.push-b-btns{display:flex;gap:8px}
+[data-push-status][data-state="on"]{color:#1d6b2a}
+[data-push-status][data-state="blocked"],[data-push-status][data-state="ios_home"]{color:#8a5200}
