@@ -1,4 +1,4 @@
-/* CYCLE COUNTS (v1.92.0) — count what's on the floor against BirdsEye inventory.
+/* CYCLE COUNTS (v1.92.0; Analytics tab v1.102.0) — count what's on the floor against BirdsEye inventory.
 
    Managers start a count: pick a warehouse, then what to count —
      a customer · an item · an item + lot · one or more bays.
@@ -82,7 +82,10 @@
   async function showList(which){
     stopCam(); C=null; ls.set('lwh_cyOpen',null); if(which) tab=which;
     const body=$('cyBody');
-    body.innerHTML=`<div class="pr-tabs no-print"><button type="button" data-cy-tab="active" class="${tab==='active'?'active':''}">Open &amp; to review</button><button type="button" data-cy-tab="closed" class="${tab==='closed'?'active':''}">Finished</button></div>
+    if(tab==='analytics'&&!isMgr()) tab='active';
+    const tabs=`<div class="pr-tabs no-print"><button type="button" data-cy-tab="active" class="${tab==='active'?'active':''}">Open &amp; to review</button><button type="button" data-cy-tab="closed" class="${tab==='closed'?'active':''}">Finished</button>${isMgr()?`<button type="button" data-cy-tab="analytics" class="${tab==='analytics'?'active':''}">Analytics</button>`:''}</div>`;
+    if(tab==='analytics'){ body.innerHTML=tabs+'<div id="cyaBody"></div>'; showAnalytics(); return; }
+    body.innerHTML=`${tabs}
       <div class="cy-listbar">${isMgr()?'<button type="button" data-cy="new">+ New count</button>':'<span class="fi-sub">Managers start counts. Pick one below to help count.</span>'}<button type="button" class="ghost fi-small" data-cy="refresh">Refresh</button></div>
       <div id="cyList" class="cy-list"><div class="fi-sub">Loading…</div></div>`;
     try{ list=(await rpc('cyc_list',{p_which:tab})).counts; }catch(e){ $('cyList').innerHTML=`<div class="fi-note fi-bad">${esc(e.message)}</div>`; return; }
@@ -351,6 +354,167 @@
     LWHXlsx.download(`Cycle Count ${c.id} - ${c.title.replace(/[^\w .-]+/g,' ').trim()}.xlsx`,[{name:'Count '+c.id,columns:cols,rows}]);
   }
 
+  // ---------------------------------------------------------------- analytics (managers) — v1.102.0
+  // Combines Toolkit counts and customer-app counts (Trane app etc.). Server: cyc_analytics.
+  let A=null;                      // last analytics result
+  const iso=d=>{ const x=new Date(d.getTime()-d.getTimezoneOffset()*60000); return x.toISOString().slice(0,10); };
+  const monday=d=>{ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
+  const pctTxt=v=>v==null?'—':Number(v).toFixed(Number(v)%1?1:0)+'%';
+  const accTxt=v=>v==null?'—':Number(v).toFixed(2).replace(/\.00$/,'')+'%';
+  const dshort=s=>{ if(!s) return ''; const [y,m,d]=String(s).slice(0,10).split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); };
+  const RESNAME={match:'Match',qty:'Qty off',bay:'Wrong bay',qty_bay:'Qty + bay off',missing:'Missing',extra:'Extra'};
+
+  function cyaFilters(){ return ls.get('lwh_cyaF',null)||(()=>{ const t=new Date(), f=monday(new Date(t.getTime()-12*7*864e5)); return {from:iso(f),to:iso(t),wh:'',cust:''}; })(); }
+  function showAnalytics(){
+    const F=cyaFilters();
+    $('cyaBody').innerHTML=`<div class="cya-filters no-print">
+        <label>From<input type="date" id="cyaFrom" value="${esc(F.from)}"></label>
+        <label>To<input type="date" id="cyaTo" value="${esc(F.to)}"></label>
+        <label>Warehouse<select id="cyaWh"><option value="">All warehouses</option>${B.warehouses.map(w=>`<option value="${esc(w.code)}"${w.code===F.wh?' selected':''}>${whLabel(w.code)}</option>`).join('')}</select></label>
+        <label>Customer<select id="cyaCust"><option value="">All customers</option>${F.cust?`<option value="${esc(F.cust)}" selected>${esc(F.cust)}</option>`:''}</select></label>
+        <div class="cya-quick"><button type="button" class="ghost fi-small" data-cya-quick="week">This week</button><button type="button" class="ghost fi-small" data-cya-quick="4">Last 4 weeks</button><button type="button" class="ghost fi-small" data-cya-quick="13">Last 13 weeks</button><button type="button" class="ghost fi-small" data-cya-quick="year">This year</button></div>
+        <div class="cya-go"><button type="button" data-cy="cya-run">Show</button><button type="button" class="ghost" data-cy="cya-xlsx">Excel</button><button type="button" class="ghost" data-cy="cya-print">Print report</button></div>
+      </div>
+      <div id="cyaOut"><div class="fi-sub">Loading…</div></div>`;
+    runAnalytics();
+  }
+  function cyaQuick(k){
+    const t=new Date(); let f;
+    if(k==='week') f=monday(t); else if(k==='year') f=new Date(t.getFullYear(),0,1); else f=monday(new Date(t.getTime()-(Number(k)-1)*7*864e5));
+    $('cyaFrom').value=iso(f); $('cyaTo').value=iso(t); runAnalytics();
+  }
+  async function runAnalytics(){
+    const F={from:$('cyaFrom').value,to:$('cyaTo').value,wh:$('cyaWh').value,cust:$('cyaCust').value};
+    if(!F.from||!F.to){ toast('Pick a from and to date.'); return; }
+    ls.set('lwh_cyaF',F);
+    $('cyaOut').innerHTML='<div class="fi-sub">Loading…</div>';
+    try{ A=await rpc('cyc_analytics',{p_from:F.from,p_to:F.to,p_wh:F.wh||null,p_customer:F.cust||null}); }
+    catch(e){ A=null; $('cyaOut').innerHTML=`<div class="fi-note fi-bad">${esc(e.message)}</div>`; return; }
+    const sel=$('cyaCust'); sel.innerHTML='<option value="">All customers</option>'+(A.customers||[]).map(c=>`<option value="${esc(c)}"${c===F.cust?' selected':''}>${esc(c)}</option>`).join('');
+    $('cyaOut').innerHTML=analyticsHtml(A);
+  }
+
+  // every week in the range, including weeks with no count (those matter for a weekly requirement)
+  function allWeeks(r){
+    const have={}; (r.weeks||[]).forEach(w=>have[String(w.week).slice(0,10)]=w);
+    const out=[]; const [y1,m1,d1]=r.from.split('-').map(Number), [y2,m2,d2]=r.to.split('-').map(Number);
+    for(let d=monday(new Date(y1,m1-1,d1)), end=new Date(y2,m2-1,d2); d<=end; d.setDate(d.getDate()+7)){
+      const k=iso(d); out.push(have[k]||{week:k,none:true});
+    }
+    return out;
+  }
+  function scopeLabel(r){ return [r.customer||'All customers', r.warehouse?whLabel(r.warehouse):'All warehouses'].join(' · '); }
+
+  function chartSvg(weeks,target){
+    const W=Math.max(weeks.length*46,320), H=170, top=10, bot=28, lo=90, y=v=>top+(H-top-bot)*(1-(Math.max(lo,Math.min(100,v))-lo)/(100-lo));
+    const bw=Math.min(30,W/weeks.length-10);
+    let g=`<line x1="0" x2="${W}" y1="${y(target)}" y2="${y(target)}" class="cya-tline"/><text x="${W-4}" y="${y(target)-4}" text-anchor="end" class="cya-tlab">${target}% target</text>`;
+    [90,95,100].forEach(v=>g+=`<text x="2" y="${y(v)+4}" class="cya-ax">${v}%</text>`);
+    weeks.forEach((w,i)=>{
+      const x=40+i*((W-44)/weeks.length), lab=dshort(w.week).replace(/, \d{4}$/,'');
+      if(w.none){ g+=`<text x="${x+bw/2}" y="${H-bot-6}" text-anchor="middle" class="cya-none">none</text>`; }
+      else{ const v=w.accuracy_reviewed??0, ok=v>=target; g+=`<rect x="${x}" y="${y(v)}" width="${bw}" height="${H-bot-y(v)}" class="${ok?'cya-ok':'cya-bad'}"><title>${lab}: ${accTxt(v)}</title></rect><text x="${x+bw/2}" y="${y(v)-3}" text-anchor="middle" class="cya-val">${Math.floor(v*10)/10}</text>`; }
+      g+=`<text x="${x+bw/2}" y="${H-10}" text-anchor="middle" class="cya-ax">${esc(lab)}</text>`;
+    });
+    return `<svg class="cya-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" role="img" aria-label="Weekly accuracy after review against the ${target}% target">${g}</svg>`;
+  }
+  function grpTable(rows,label,withChecked){
+    if(!rows.length) return '<p class="fi-sub">Nothing counted.</p>';
+    return `<div class="cy-tablewrap"><table class="cy-t"><thead><tr><th>${label}</th><th>Counts</th>${withChecked?'<th>Pallets checked</th>':''}<th>Lines</th><th>Differences</th><th>Errors after review</th><th>Accuracy (scanned)</th><th>Accuracy (after review)</th></tr></thead><tbody>${
+      rows.map(g=>`<tr><td><b>${esc(label==='Warehouse'?whLabel(g.key):g.key)}</b></td><td>${num(g.counts)}</td>${withChecked?`<td>${num(g.checked)}</td>`:''}<td>${num(g.lines)}</td><td>${num(g.lines-g.match)}</td><td>${num(g.errors_reviewed)}</td><td>${accTxt(g.accuracy)}</td><td class="${g.accuracy_reviewed>=A.target?'cya-good':'cya-low'}"><b>${accTxt(g.accuracy_reviewed)}</b></td></tr>`).join('')}</tbody></table></div>`;
+  }
+  function analyticsHtml(r){
+    const T=r.totals, tgt=r.target, weeks=allWeeks(r), oh=r.onhand||{};
+    const weekly=!!r.customer;  // the % of warehouse column means most for one customer
+    const met=weeks.filter(w=>!w.none&&w.accuracy_reviewed>=tgt).length, counted=weeks.filter(w=>!w.none).length;
+    const bayPct=oh.bays?Math.round(T.bays/oh.bays*1000)/10:null;
+    const tile=(v,l,cls)=>`<div class="${cls||''}"><b>${v}</b><span>${l}</span></div>`;
+    if(!T.lines) return `<div class="cya-printhead">${printHead(r)}</div><div class="cya-sec"><p>No finished counts for <b>${esc(scopeLabel(r))}</b> between ${dshort(r.from)} and ${dshort(r.to)}.</p><p class="fi-sub">Only closed counts are included. Counts from the Toolkit and from the customer inventory apps (Trane, Franklin) both show here.</p></div>`;
+    return `<div class="cya-printhead">${printHead(r)}</div>
+    <div class="cya-sec">
+      <div class="cy-sum cya-tiles">
+        ${tile(accTxt(T.accuracy_reviewed),`Accuracy after review · target ${tgt}%`,T.accuracy_reviewed>=tgt?'':'bad')}
+        ${tile(accTxt(T.accuracy),'Accuracy as scanned',T.accuracy>=tgt?'':'warn')}
+        ${tile(num(T.checked),'Pallets checked')}
+        ${tile(num(T.counts),'Counts finished')}
+        ${tile(`${num(T.bays)}${oh.bays?` <small>of ${num(oh.bays)}</small>`:''}`,'Bays counted'+(bayPct!=null?` · ${pctTxt(bayPct)} of bays on hand`:''))}
+        ${tile(num(T.lines-T.match),'Differences found',T.lines-T.match?'warn':'')}
+        ${weekly?tile(`${met} of ${weeks.length}`,`Weeks at ${tgt}% or better`,met===weeks.length?'':'bad'):''}
+      </div>
+      <p class="fi-sub cya-scope">${esc(scopeLabel(r))} · ${dshort(r.from)} – ${dshort(r.to)} · on hand now: ${num(oh.pallets)} pallets in ${num(oh.bays)} bays</p>
+    </div>
+    <div class="cya-sec">
+      <h4 class="cy-h4">Weekly accuracy (after review)</h4>
+      <div class="cya-chartwrap">${chartSvg(weeks,tgt)}</div>
+      <div class="cy-tablewrap"><table class="cy-t cya-weeks"><thead><tr><th>Week of</th><th>Counts</th><th>Pallets checked</th><th>On hand</th><th>% checked</th><th>Bays</th><th>Differences</th><th>Errors after review</th><th>Accuracy (scanned)</th><th>Accuracy (after review)</th><th>${tgt}%?</th></tr></thead><tbody>${
+        weeks.map(w=>w.none?`<tr class="cya-miss"><td><b>${dshort(w.week).replace(/, \d{4}$/,'')}</b></td><td colspan="9">No finished count this week</td><td>${weekly?'<span class="cy-badge cy-bad">No count</span>':'—'}</td></tr>`
+          :`<tr><td><b>${dshort(w.week).replace(/, \d{4}$/,'')}</b></td><td>${num(w.counts)}</td><td>${num(w.checked)}</td><td>${num(w.onhand)}</td><td>${pctTxt(w.coverage)}</td><td>${num(w.bays)}</td><td>${num(w.diffs)}</td><td>${num(w.errors_reviewed)}</td><td>${accTxt(w.accuracy)}</td><td><b>${accTxt(w.accuracy_reviewed)}</b></td><td>${w.accuracy_reviewed>=tgt?'<span class="cy-badge cy-ok">Met</span>':'<span class="cy-badge cy-bad">Below</span>'}</td></tr>`).join('')}</tbody></table></div>
+      ${r.snapshots_since?`<p class="fi-sub">"On hand" is what was in inventory that week (daily snapshots began ${dshort(r.snapshots_since)}; earlier weeks use today's on-hand).</p>`:''}
+    </div>
+    <div class="cya-sec cya-two">
+      <div><h4 class="cy-h4">By warehouse</h4>${grpTable(r.by_warehouse,'Warehouse',true)}</div>
+      ${r.customer?'':`<div><h4 class="cy-h4">By customer</h4>${grpTable(r.by_customer,'Customer',true)}</div>`}
+    </div>
+    <div class="cya-sec cya-two">
+      <div><h4 class="cy-h4">What the differences were</h4><div class="cy-tablewrap"><table class="cy-t"><thead><tr><th>Result</th><th>Lines</th></tr></thead><tbody>${
+        ['qty','bay','qty_bay','missing','extra'].filter(k=>T[k]).map(k=>`<tr><td>${RESNAME[k]}</td><td>${num(T[k])}</td></tr>`).join('')||'<tr><td colspan="2">None — every pallet matched.</td></tr>'}</tbody></table></div></div>
+      <div><h4 class="cy-h4">How they were handled</h4><div class="cy-tablewrap"><table class="cy-t"><thead><tr><th>Resolution</th><th>Lines</th><th>Counts as error</th></tr></thead><tbody>${
+        (r.resolutions||[]).map(x=>`<tr><td>${esc(x.resolution)}</td><td>${num(x.n)}</td><td>${x.counts_as_error?'Yes':'No'}</td></tr>`).join('')||'<tr><td colspan="3">No differences.</td></tr>'}</tbody></table></div></div>
+    </div>
+    ${(r.problem_bays||[]).length||(r.problem_items||[]).length?`<div class="cya-sec cya-two">
+      <div><h4 class="cy-h4">Bays with the most differences</h4><div class="cy-tablewrap"><table class="cy-t"><thead><tr><th>Warehouse</th><th>Bay</th><th>Differences</th><th>Lines</th></tr></thead><tbody>${(r.problem_bays||[]).map(b=>`<tr><td>${whLabel(b.warehouse)}</td><td><b>${esc(b.bay||'—')}</b></td><td>${num(b.diffs)}</td><td>${num(b.lines)}</td></tr>`).join('')||'<tr><td colspan="4">None</td></tr>'}</tbody></table></div></div>
+      <div><h4 class="cy-h4">Items with the most differences</h4><div class="cy-tablewrap"><table class="cy-t"><thead><tr><th>Customer</th><th>Item</th><th>Differences</th><th>Lines</th></tr></thead><tbody>${(r.problem_items||[]).map(b=>`<tr><td>${esc(b.customer)}</td><td><b>${esc(b.item)}</b></td><td>${num(b.diffs)}</td><td>${num(b.lines)}</td></tr>`).join('')||'<tr><td colspan="4">None</td></tr>'}</tbody></table></div></div>
+    </div>`:''}
+    <div class="cya-sec"><h4 class="cy-h4">By counter</h4>${grpTable(r.by_counter,'Counter',false)}</div>
+    <div class="cya-sec"><h4 class="cy-h4">Counts included (${num(r.counts.length)})</h4><div class="cy-tablewrap"><table class="cy-t"><thead><tr><th>Date</th><th>Count</th><th>From</th><th>Warehouse</th><th>Customer</th><th>Lines</th><th>Differences</th><th>Accuracy (after review)</th><th>Counted by</th></tr></thead><tbody>${
+      r.counts.map(c=>`<tr><td>${dshort(c.day)}</td><td>${c.src==='toolkit'?`<button type="button" class="cya-link" data-cy-open="${c.id}">#${c.id}</button>`:'#'+c.id} ${esc(c.title||'')}</td><td>${c.src==='toolkit'?'Toolkit':'Customer app'}</td><td>${esc(String(c.warehouse||'').split(', ').map(whLabel).join(', '))}</td><td>${esc(c.customers||'')}</td><td>${num(c.lines)}</td><td>${num(c.lines-c.match)}</td><td>${accTxt(c.accuracy_reviewed)}</td><td>${esc(c.counters||'')}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="cya-sec cya-defs">
+      <h4 class="cy-h4">How these numbers work</h4>
+      <p><b>Accuracy as scanned</b> = pallets that matched (right pallet, right bay and right qty when qty was counted) ÷ every line in the count, including extras found.</p>
+      <p><b>Accuracy after review</b> = the same, but a difference is not counted as an error when the manager marked it <i>Found — count was wrong</i>, <i>Shipped / moved during count</i> or <i>Recounted — OK</i> (the inventory record was right). For counts done in the customer apps, a difference stays an error if it was adjusted in the WMS or not marked. The ${tgt}% target is checked against this number.</p>
+      <p><b>% of pallets checked</b> = pallets on the count list that were checked that week ÷ pallets on hand that week. Only closed counts are included.</p>
+    </div>
+    <div class="cya-sign"><div>Reviewed by: ______________________________</div><div>Date: ______________</div></div>`;
+  }
+  function printHead(r){
+    const me=B&&B.me?B.me.name:'';
+    return `<div class="cya-ph"><div class="cya-ph-badge">LWH</div><div><h2>Cycle Count Accuracy Report</h2><div>${esc(scopeLabel(r))} · ${dshort(r.from)} – ${dshort(r.to)}</div></div><div class="cya-ph-r">Logistics Warehouse, Inc.<br>Printed ${esc(new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}))}${me?' by '+esc(me):''}</div></div>`;
+  }
+  function analyticsPrint(){
+    if(!A||!A.ok){ toast('Show the analytics first.'); return; }
+    const old=document.title; document.title=`Cycle Count Accuracy ${A.customer||'All'} ${A.from} to ${A.to}`;
+    document.body.classList.add('cya-printing'); window.print();
+    setTimeout(()=>{ document.body.classList.remove('cya-printing'); document.title=old; },500);
+  }
+  function analyticsXlsx(){
+    if(!A||!A.ok){ toast('Show the analytics first.'); return; }
+    const r=A, T=r.totals, weeks=allWeeks(r), n=v=>v==null?'':Number(v);
+    const N=(label,w)=>({label,type:'n',width:w||14}), S=(label,w)=>({label,width:w||16});
+    const grp=(rows,label)=>({columns:[S(label,18),N('Counts',10),N('Pallets checked'),N('Lines',10),N('Differences'),N('Errors after review',18),N('Accuracy % (scanned)',18),N('Accuracy % (after review)',22)],
+      rows:rows.map(g=>[label==='Warehouse'?whLabel(g.key):g.key,g.counts,n(g.checked),g.lines,g.lines-g.match,g.errors_reviewed,n(g.accuracy),n(g.accuracy_reviewed)])});
+    const sheets=[
+      {name:'Summary',columns:[S('Measure',34),S('Value',30)],rows:[
+        ['Report','Cycle Count Accuracy'],['Customer',r.customer||'All customers'],['Warehouse',r.warehouse?whLabel(r.warehouse):'All warehouses'],
+        ['From',r.from],['To',r.to],['Target accuracy %',r.target],['Accuracy % (after review)',n(T.accuracy_reviewed)],['Accuracy % (as scanned)',n(T.accuracy)],
+        ['Counts finished',T.counts],['Pallets checked',T.checked],['Lines (incl. extras)',T.lines],['Differences found',T.lines-T.match],['Errors after review',T.errors_reviewed],
+        ['Bays counted',T.bays],['Bays on hand now',n(r.onhand&&r.onhand.bays)],['Pallets on hand now',n(r.onhand&&r.onhand.pallets)],
+        ['Weeks in range',weeks.length],['Weeks with a finished count',weeks.filter(w=>!w.none).length],['Weeks at target or better',weeks.filter(w=>!w.none&&w.accuracy_reviewed>=r.target).length],
+        ['Printed',new Date().toLocaleString('en-US')],['Printed by',B&&B.me?B.me.name:'']]},
+      {name:'Weekly',columns:[S('Week of (Mon)',14),N('Counts',10),N('Pallets checked'),N('On hand'),N('% of pallets checked',18),N('Bays',10),N('Differences'),N('Errors after review',18),N('Accuracy % (scanned)',18),N('Accuracy % (after review)',22),S('Target met',12)],
+        rows:weeks.map(w=>w.none?[w.week,0,0,'','','','','','','','No count']:[String(w.week).slice(0,10),w.counts,w.checked,n(w.onhand),n(w.coverage),w.bays,w.diffs,w.errors_reviewed,n(w.accuracy),n(w.accuracy_reviewed),w.accuracy_reviewed>=r.target?'Yes':'No'])},
+      Object.assign({name:'By Warehouse'},grp(r.by_warehouse,'Warehouse')),
+      Object.assign({name:'By Customer'},grp(r.by_customer,'Customer')),
+      Object.assign({name:'By Counter'},grp(r.by_counter,'Counter')),
+      {name:'Problem Bays',columns:[S('Warehouse',12),S('Bay',14),N('Differences'),N('Lines',10)],rows:(r.problem_bays||[]).map(b=>[whLabel(b.warehouse),b.bay,b.diffs,b.lines])},
+      {name:'Problem Items',columns:[S('Customer',12),S('Item',20),N('Differences'),N('Lines',10)],rows:(r.problem_items||[]).map(b=>[b.customer,b.item,b.diffs,b.lines])},
+      {name:'Resolutions',columns:[S('Resolution',34),N('Lines',10),S('Counts as error',16)],rows:(r.resolutions||[]).map(x=>[x.resolution,x.n,x.counts_as_error?'Yes':'No'])},
+      {name:'Counts',columns:[S('Date',12),S('From',14),N('Count #',10),S('Title',34),S('Warehouse',14),S('Customer',14),N('Lines',10),N('Differences'),N('Errors after review',18),N('Accuracy % (scanned)',18),N('Accuracy % (after review)',22),S('Counted by',24)],
+        rows:r.counts.map(c=>[c.day,c.src==='toolkit'?'Toolkit':'Customer app',c.id,c.title||'',String(c.warehouse||'').split(', ').map(whLabel).join(', '),c.customers||'',c.lines,c.lines-c.match,c.errors_reviewed,n(c.accuracy),n(c.accuracy_reviewed),c.counters||''])}
+    ];
+    LWHXlsx.download(`Cycle Count Accuracy ${r.customer||'All'} ${r.from} to ${r.to}.xlsx`,sheets);
+  }
+
+
   // ---------------------------------------------------------------- clicks
   async function onClick(e){
     const t=e.target.closest('button,[data-cy-setbay]'); if(!t||!$(VIEW).contains(t)) return;
@@ -362,6 +526,7 @@
     if(d.cySetbay){ $('cyCurBay').value=d.cySetbay; ls.set('lwh_cyBay_'+C.count.id,d.cySetbay); refreshCounting(); $('cyScan').focus(); return; }
     if(d.cyUndo){ try{ await rpc('cyc_undo',{p_line:+d.cyUndo}); await reload(); }catch(err){ toast(err.message); } return; }
     if(d.cyFilt){ filt=d.cyFilt; drawReview(); return; }
+    if(d.cyaQuick){ cyaQuick(d.cyaQuick); return; }
     switch(d.cy){
       case 'new': showNew(); break;
       case 'list': showList(); break;
@@ -377,6 +542,9 @@
       case 'print': window.print(); break;
       case 'reopen': if(confirm('Send this count back to counting? Differences not marked handled are cleared so people can rescan.')&&await manage('reopen')){ openCount(C.count.id); } break;
       case 'close': { if(C.count.open_diffs&&!confirm(`${plural(C.count.open_diffs,'difference')} aren't marked handled. Close anyway?`)) break; const n=prompt('Closing note (optional):','')??null; if(n===null) break; if(await manage('close',null,n)){ toast('Count closed.'); showList('closed'); } break; }
+      case 'cya-run': runAnalytics(); break;
+      case 'cya-xlsx': analyticsXlsx(); break;
+      case 'cya-print': analyticsPrint(); break;
       case 'cancelcount': { const n=prompt('Cancel this count? Reason (optional):',''); if(n===null) break; if(await manage('cancel',null,n)){ toast('Count cancelled.'); showList(); } break; }
     }
   }
