@@ -29,9 +29,14 @@
 // PIN. This server asks Supabase who the app's sign-in belongs to (pto_bridge_who) and gets back
 // their PTO Employee ID. Anyone turned off in the Toolkit's Access screen, or inactive, gets nothing.
 // Manager access still comes only from this sheet's Managers tab.
+//
+// v1.3.0: phone notifications. When a PTO request or time off ask is sent, the employee's manager gets
+// one (Warehouse Toolkit / Driver Toolkit, if they turned notifications on). When it's approved, denied,
+// recorded or declined, the employee gets one. Uses the same PTO_SUPABASE_SECRET Script Property as the
+// hourly Absence Calendar push. A notification problem never stops the request itself.
 // ============================================================================
 
-const API_VERSION = '1.2.0';
+const API_VERSION = '1.3.0';
 const API_EMPLOYEE_SESSION_HOURS = 24 * 14; // employees: 14 days ("keep me signed in")
 const API_MANAGER_SESSION_HOURS  = 12;      // managers: 12 hours
 const API_MAX_PIN_FAILS          = 5;
@@ -285,6 +290,7 @@ function apiEmpSubmit_(b, s) {
   apiCheckDates_(start, end);
   const res = submitPTORequest(s.i, type, start, end, String(b.notes || '').slice(0, 1000), '', '');
   if (!res || !res.success) throw new Error((res && res.message) || 'Submit failed.');
+  apiNotifyManagerOf_(s.i, 'PTO request: ' + apiFirstName_(s.i), type + ' · ' + apiNiceRange_(start, end) + ' · ' + apiNum_(res.daysCount) + ' day' + (res.daysCount == 1 ? '' : 's') + '. Tap to approve or deny.');
   return res;
 }
 
@@ -296,8 +302,10 @@ function apiEmpCancel_(b, s) {
   if (!row) throw new Error('Request not found.');
   if (row.employeeId !== s.i) throw new Error('You can only withdraw your own requests.');
   if (row.status !== 'Pending' && row.status !== 'Approved') throw new Error('This request is already ' + row.status + '.');
+  const info = apiRequestInfo_(reqId);
   const res = cancelPTORequest(reqId, reason.slice(0, 500));
   if (!res || !res.success) throw new Error((res && res.message) || 'Cancel failed.');
+  if (info) apiNotifyManagerOf_(s.i, 'Request withdrawn: ' + apiFirstName_(s.i), info.type + ' · ' + apiNiceRange_(info.start, info.end) + ' (was ' + row.status + '). Reason: ' + reason.slice(0, 120));
   return res;
 }
 
@@ -333,8 +341,10 @@ function apiMgrApprove_(b, s) {
   if (row.status !== 'Pending') throw new Error('This request is already ' + row.status + ' — refresh to see the latest.');
   // approvePTORequest() looks up the approver's name by matching this value to
   // a Managers ID — passing the verified manager ID records the right name.
+  const info = apiRequestInfo_(reqId);
   const res = approvePTORequest(reqId, s.i);
   if (!res || !res.success) throw new Error((res && res.message) || 'Approve failed.');
+  if (info) apiNotify_([info.employeeId], 'employee', 'Time off approved ✓', info.type + ' · ' + apiNiceRange_(info.start, info.end) + ' — approved by ' + (s.n || 'your manager') + '.');
   return res;
 }
 
@@ -345,8 +355,10 @@ function apiMgrDeny_(b, s) {
   const row = apiFindRequest_(reqId);
   if (!row) throw new Error('Request not found.');
   if (row.status !== 'Pending') throw new Error('This request is already ' + row.status + ' — refresh to see the latest.');
+  const info = apiRequestInfo_(reqId);
   const res = denyPTORequest(reqId, s.i, apiMaybeEsc_(reason.slice(0, 500)));
   if (!res || !res.success) throw new Error((res && res.message) || 'Deny failed.');
+  if (info) apiNotify_([info.employeeId], 'employee', 'Time off denied', info.type + ' · ' + apiNiceRange_(info.start, info.end) + '. ' + (s.n || 'Your manager') + ': ' + reason.slice(0, 120));
   return res;
 }
 
@@ -486,6 +498,7 @@ function apiEmpAsk_(b, s) {
       emp.name + ' is asking for time off: ' + start + (end !== start ? ' to ' + end : '') + ' · ' + ask.timingLabel + '\nReason: ' + reason +
       '\n\nThis is an ask, not an official request. Record it in the PTO Manager app if approved.');
   }
+  apiNotifyManagerOf_(s.i, 'Time off ask: ' + apiFirstName_(s.i), ask.timingLabel + ' · ' + apiNiceRange_(start, end) + ' — ' + reason.slice(0, 100));
   return ask;
 }
 
@@ -511,6 +524,7 @@ function apiMgrAskRecord_(b, s) {
   const res = recordManualAbsence(ask.employeeId, type, start, end, reason, String(b.startTime || ''), String(b.endTime || ''));
   if (!res || !res.success) throw new Error((res && res.message) || 'Record failed.');
   apiSetAskStatus_(ask, 'Recorded', s.n, String(b.note || '').slice(0, 300), type);
+  apiNotify_([ask.employeeId], 'employee', 'Your ask: yes ✓', ask.timingLabel + ' · ' + apiNiceRange_(ask.startDate, ask.endDate) + ' — OK\'d by ' + (s.n || 'your manager') + ' (' + type + ').');
   return { success: true, daysCount: res.daysCount, message: res.message };
 }
 
@@ -520,11 +534,61 @@ function apiMgrAskDecline_(b, s) {
   const note = String(b.note || '').trim().slice(0, 500);
   if (!note) throw new Error('Please add a short note for the employee.');
   apiSetAskStatus_(ask, 'Declined', s.n, note, '');
+  apiNotify_([ask.employeeId], 'employee', 'Your ask was declined', apiNiceRange_(ask.startDate, ask.endDate) + '. ' + (s.n || 'Your manager') + ': ' + note.slice(0, 120));
   const emp = getEmployeeById(ask.employeeId);
   if (emp && typeof emAskDeclined_ === 'function') emAskDeclined_(ask, emp.email, s.n, note);
   else if (emp) GmailApp.sendEmail(emp.email, 'Time Off Ask Declined — ' + ask.startDate, s.n + ': ' + note);
   return { success: true };
 }
+
+
+// ============================================================================
+// PHONE NOTIFICATIONS (v1.3.0) — never throws; a notification problem never blocks a request
+// ============================================================================
+const API_NOTIFY_URL = 'https://tjivcqxnkftujceumdtx.supabase.co/rest/v1/rpc/pto_notify';
+
+function apiNotify_(ptoIds, kind, title, body) {
+  try {
+    const secret = PropertiesService.getScriptProperties().getProperty('PTO_SUPABASE_SECRET');
+    const ids = (ptoIds || []).map(function (x) { return String(x || '').trim(); }).filter(String);
+    if (!secret || !ids.length) return;
+    UrlFetchApp.fetch(API_NOTIFY_URL, {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { apikey: API_BRIDGE_KEY },
+      payload: JSON.stringify({ p_secret: secret, p_to: ids.slice(0, 20), p_kind: kind, p_title: String(title || '').slice(0, 120), p_body: String(body || '').slice(0, 200) })
+    });
+  } catch (e) { Logger.log('⚠️ notify skipped: ' + e); }
+}
+
+/** The employee's own manager(s): the Managers tab row(s) whose email matches the employee's Manager Email. */
+function apiNotifyManagerOf_(employeeId, title, body) {
+  try {
+    const emp = getEmployeeById(employeeId);
+    const mEmail = String((emp && emp.managerEmail) || '').trim().toLowerCase();
+    if (!mEmail) return;
+    const all = getAllManagers();
+    const ids = Object.keys(all).filter(function (id) { return String(all[id].email || '').trim().toLowerCase() === mEmail && String(id) !== String(employeeId); });
+    if (ids.length) apiNotify_(ids, 'manager', title, body);
+  } catch (e) { Logger.log('⚠️ notify (manager) skipped: ' + e); }
+}
+
+function apiRequestInfo_(requestId) {
+  try {
+    const sheet = SS.getSheetByName(SHEET_NAMES.PTO_REQUESTS);
+    if (!sheet || sheet.getLastRow() < 2) return null;
+    const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 10).getValues();
+    for (let i = 0; i < data.length; i++) {
+      if (String(data[i][0]) === String(requestId)) return { employeeId: String(data[i][1]), type: String(data[i][4] || ''), start: data[i][5], end: data[i][6], days: data[i][7] };
+    }
+  } catch (e) {}
+  return null;
+}
+function apiFirstName_(id) { const e = getEmployeeById(id); return e ? String(e.name || id) : String(id); }
+function apiNum_(n) { const x = parseFloat(n); return isNaN(x) ? '0' : String(Math.round(x * 100) / 100); }
+function apiNiceDate_(v) {
+  const d = Object.prototype.toString.call(v) === '[object Date]' ? v : parseDate(String(v || '').trim());
+  return d && !isNaN(d.getTime()) ? Utilities.formatDate(d, SS.getSpreadsheetTimeZone(), 'EEE MMM d') : String(v || '');
+}
+function apiNiceRange_(a, b) { const A = apiNiceDate_(a), B = apiNiceDate_(b || a); return A === B ? A : A + ' – ' + B; }
 
 // ============================================================================
 // HELPERS
@@ -629,6 +693,7 @@ function apiSelfTest() {
   Logger.log('Token sign/verify: ' + (apiVerifyToken_(t) ? 'OK ✅' : 'FAILED ❌'));
   CacheService.getScriptCache().put('api_selftest', '1', 10);
   Logger.log('Cache + Properties + Lock: OK ✅');
+  Logger.log('Phone notifications: ' + (PropertiesService.getScriptProperties().getProperty('PTO_SUPABASE_SECRET') ? 'ready ✅ (uses PTO_SUPABASE_SECRET)' : 'OFF — Script Property PTO_SUPABASE_SECRET is missing ❌'));
   try {
     const r = UrlFetchApp.fetch(API_BRIDGE_WHO_URL, { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
       headers: { apikey: API_BRIDGE_KEY }, payload: JSON.stringify({ p_token: 'self-test-not-a-real-sign-in' }) });
