@@ -15,7 +15,7 @@
   const SUPA='https://tjivcqxnkftujceumdtx.supabase.co';
   const API=SUPA+'/rest/v1/rpc/';
   const KEY='sb_publishable_PYlWSW6-Gi-QZl91IXUq0Q_W5mO3sDT';
-  const LOCKED_FUNCS=/^https:\/\/tjivcqxnkftujceumdtx\.supabase\.co\/(rest\/v1\/|functions\/v1\/(master-lookup-csv|transaction-history-csv|load-details-csv)(\?|$))/;
+  const LOCKED_FUNCS=/^https:\/\/tjivcqxnkftujceumdtx\.supabase\.co\/(rest\/v1\/|functions\/v1\/(master-lookup-csv|transaction-history-csv|load-details-csv|forklift-pm)(\?|$))/;
   const PUBLIC_VIEWS=['fcVerify'];
   const TK='lwh_whMsgToken', ME='lwh_whMsgMe', KEEP='lwh_whMsgKeep';
 

@@ -31,7 +31,7 @@
     ]},
     {sec:'Safety & equipment',items:[
       {t:'Monthly Facility Inspections',d:'Assign, inspect, corrective actions, reports.',view:'inspections'},
-      {t:'Forklift PM Admin',d:'Fleet PM status, overdue lifts, log a completed PM.',view:'forkliftInsp',hint:'bottom of the screen'},
+      {t:'Forklift PM',d:'Fleet PM status, overdue lifts, log a completed PM.',view:'forkliftPm'},
       {t:'Forklift Certs',d:'Driving evaluations, certificates, wallet cards, renewals.',view:'forkliftCerts'},
       {t:'Forklift Costing',d:'PM and repair costs per lift.',href:'https://nbr1hawgfan.github.io/LWH_Forklift_Repair_Costing/'}
     ]},

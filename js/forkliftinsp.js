@@ -85,19 +85,8 @@
 
       <button type="button" id="fiSubmit" class="fi-submit">Submit Inspection</button>
       <div id="fiPmAdmin" class="card fi-card fi-pmadmin" hidden>
-        <div class="fi-cl-head"><h3>PM Admin <span class="fi-sub">(managers)</span></h3><span class="fi-sub" id="fiPmStatus"></span><button type="button" class="ghost fi-small" id="fiPmLoad">Show fleet PM status</button></div>
-        <div id="fiPmBody" hidden>
-          <div id="fiPmList" class="fi-pmlist"></div>
-          <div class="fi-pm-actions no-print"><button type="button" class="ghost fi-small" id="fiPmCsv">Export CSV</button><button type="button" class="ghost fi-small" id="fiPmPrint">Print</button></div>
-          <h4 class="fi-pm-h">Log a completed PM</h4>
-          <div class="fi-grid">
-            <label>Forklift<select id="fiPmLift"></select></label>
-            <label>Meter reading at PM<input id="fiPmMeter" type="number" inputmode="numeric" min="0" step="1"></label>
-            <label>Performed by<input id="fiPmBy" maxlength="80" placeholder="Mechanic / vendor name"></label>
-            <label>Notes (optional)<input id="fiPmNotes" maxlength="400" placeholder="e.g. oil change, filters"></label>
-          </div>
-          <button type="button" id="fiPmSave">Record PM completion</button>
-        </div>
+        <div class="fi-cl-head"><h3>Forklift PM <span class="fi-sub">(managers)</span></h3><button type="button" class="ghost fi-small" id="fiPmOpen">Open Forklift PM →</button></div>
+        <div class="fi-sub">Fleet PM status and logging a completed PM are on their own screen now (also in Manager).</div>
       </div>
     </div>`;
 
@@ -115,50 +104,10 @@
       setStatus(b.dataset.fiId,b.dataset.fiSt);
     });
     sig=sigPad($('fiSig'));
-    $('fiPmLoad').onclick=pmLoad; $('fiPmSave').onclick=pmSave; $('fiPmCsv').onclick=pmCsv; $('fiPmPrint').onclick=()=>window.print();
+    $('fiPmOpen').onclick=()=>LWHUI.show('forkliftPm');
   }
 
-  // ---------------------------------------------------------------- PM Admin (warehouse managers)
-  // Uses the manager's Toolkit sign-in; the forklift-pm Edge Function holds the admin passcode.
-  const PM_FN='https://tjivcqxnkftujceumdtx.supabase.co/functions/v1/forklift-pm';
-  let fleet=[];
-  async function pmCall(action,body){
-    const r=await fetch(PM_FN+'?action='+action,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body||{})});
-    let j={}; try{ j=await r.json(); }catch(e){}
-    if(!j.ok){
-      if(j.error==='signed_out'&&window.LWHAuth) LWHAuth.requireSignIn('Please sign in again.');
-      throw new Error(j.error==='setup_needed'?'PM Admin needs one-time setup (the forklift admin passcode in Supabase). Ask Tim.':(j.error||'Could not reach the forklift server.'));
-    }
-    return j;
-  }
-  async function pmLoad(){
-    $('fiPmStatus').textContent='Loading…';
-    try{
-      const j=await pmCall('status'); fleet=(j.data||[]).slice().sort((a,b)=>a.hoursUntilPm-b.hoursUntilPm);
-      $('fiPmBody').hidden=false; $('fiPmLoad').textContent='Refresh';
-      const over=fleet.filter(l=>l.status==='overdue').length, soon=fleet.filter(l=>l.status==='dueSoon').length;
-      $('fiPmStatus').textContent=`${fleet.length} lifts · ${over} overdue · ${soon} due soon`;
-      $('fiPmList').innerHTML=fleet.map(l=>`<div class="fi-pmrow fi-pm-${esc(l.status)}"><div><b>${esc(l.liftNumber)}</b> <span class="fi-sub">(${esc(l.type)})</span><div class="fi-sub">Last PM ${esc(l.lastPmDate)} @ ${esc(l.lastPmMeter)} hrs · now ${esc(l.currentReading)} hrs · every ${esc(l.pmInterval)}</div></div><div class="fi-pmhrs">${l.status==='overdue'?Math.abs(l.hoursUntilPm)+' hrs overdue':esc(l.hoursUntilPm)+' hrs left'}</div></div>`).join('')||'<div class="fi-sub">No lifts.</div>';
-      const keep=$('fiPmLift').value;
-      $('fiPmLift').innerHTML=fleet.map(l=>`<option value="${esc(l.liftNumber)}">${esc(l.liftNumber)} (${esc(l.type)})</option>`).join('');
-      if(keep) $('fiPmLift').value=keep;
-      if(!$('fiPmBy').value&&me()) $('fiPmBy').placeholder='Mechanic / vendor name';
-    }catch(e){ $('fiPmStatus').textContent=''; toast(e.message); }
-  }
-  async function pmSave(){
-    const body={liftNumber:$('fiPmLift').value,meterReading:$('fiPmMeter').value,performedBy:$('fiPmBy').value.trim(),notes:$('fiPmNotes').value.trim()};
-    if(!body.liftNumber||!/^\d+$/.test(body.meterReading)||!body.performedBy){ toast('Forklift, meter reading and performed-by are required.'); return; }
-    const b=$('fiPmSave'); b.disabled=true; b.textContent='Saving…';
-    try{ await pmCall('record',body); toast('PM recorded for '+body.liftNumber); $('fiPmMeter').value=''; $('fiPmBy').value=''; $('fiPmNotes').value=''; pmLoad(); ls.set(K.boot,null); }
-    catch(e){ toast(e.message); }
-    finally{ b.disabled=false; b.textContent='Record PM completion'; }
-  }
-  function pmCsv(){
-    if(!fleet.length){ toast('Load the fleet first.'); return; }
-    const q=v=>{ const s=String(v==null?'':v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
-    const rows=[['Lift Number','Type','PM Interval (hrs)','Last PM Meter','Last PM Date','Current Reading','Hours Until PM','Status']].concat(fleet.map(l=>[l.liftNumber,l.type,l.pmInterval,l.lastPmMeter,l.lastPmDate,l.currentReading,l.hoursUntilPm,l.status]));
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'})); a.download='forklift-pm-status-'+today()+'.csv'; a.click();
-  }
+  // PM Admin moved to its own screen: js/forkliftpm.js (view forkliftPm).
 
   // ---------------------------------------------------------------- signature pad (no library)
   function sigPad(c){
