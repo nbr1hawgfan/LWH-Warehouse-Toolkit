@@ -1,4 +1,6 @@
-# LWH Warehouse Toolkit v1.103.0
+# LWH Warehouse Toolkit v1.104.0
+
+**v1.104.0:** Email Employees can also post to Toolkit Messages, and reaches people with no email that way.
 
 **New in v1.103.0 — Email Employees:** managers pick people from the PTO Employees list and send them an email (one each, reply-to the manager), with "Not here" for people who have left, saved groups and a send log. Setup: `docs/EMAIL_EMPLOYEES_SETUP.md`.
 

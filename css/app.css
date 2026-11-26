@@ -3214,3 +3214,11 @@ button.cya-link{background:none;border:0;color:var(--brand);padding:0;min-height
 .eb-recent{display:flex;flex-direction:column;gap:6px;margin-bottom:24px}
 .eb-rec{border:1px solid var(--line);border-left:4px solid var(--frame-black);padding:8px 12px;background:#fff}
 .eb-rec .mh-sub{overflow:hidden;text-overflow:ellipsis}
+/* Email Employees — Toolkit Messages (v1.104.0) */
+.eb-ch{display:inline-block;font-style:normal;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;margin-left:4px;vertical-align:2px;background:var(--frame-black);color:#fff}
+.eb-ch.tk{background:var(--brand)}
+.eb-row.none{cursor:default;opacity:.6}
+.eb-sub{margin-left:26px;font-size:13px}
+.eb-sub[hidden]{display:none}
+.eb-how{margin:4px 0 0}
+.eb-warn{color:#9a5b00;font-weight:700}
