@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.103.0
+- **Email Employees (new, Manager → People):** managers check off the people they want from the PTO tracker's Employees list (only people with an email on file), type or paste a subject and message, and send. Each person gets their own company-branded email, optionally starting "Hi [first name],"; replies go to the manager who sent it, with an optional copy to the sender.
+  - Search by name / email / department / manager, department filter, Select all shown, Clear, and **saved groups** on the device.
+  - **Not here:** hide people who no longer work here from the list for every manager, without touching the PTO sheet (Inactive on the sheet = hidden automatically). Undo with Back on list.
+  - Live email preview, draft kept while you work, Google daily quota shown, up to 250 people per send, double-tap safe.
+  - Every send logged on a new **Email_Broadcast_Log** tab on the PTO sheet; the last 15 show under Recent sends.
+  - Backend: PTO `Api.gs` **v1.4.0** (`gas/PTO_Api_v1.4.0.gs`, replaces v1.3.0) adds `bridge.emailList`, `bridge.emailSend`, `bridge.emailHide`. Addresses are looked up on the sheet — the Toolkit only sends IDs. Allowed: PTO Managers tab or Toolkit warehouse managers (checked with `whm_me`). No Supabase changes.
+  - Setup: `docs/EMAIL_EMPLOYEES_SETUP.md`.
+
 ## v1.93.1
 - **Forklift PM Admin in the Toolkit (managers):** at the bottom of Forklift Inspection, warehouse managers see fleet PM status (overdue / due soon), export CSV, print, and log a completed PM — with their normal sign-in, no shared passcode. The `forklift-pm` Edge Function checks the manager and holds the admin passcode as the Supabase secret `FORKLIFT_PM_PASSCODE`. The old PM Admin page still works with the passcode.
 - Cortney Woods linked to her PTO record (Cortney M. Robertson).

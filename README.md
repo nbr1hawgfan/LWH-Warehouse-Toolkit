@@ -1,4 +1,6 @@
-# LWH Warehouse Toolkit v1.90.0
+# LWH Warehouse Toolkit v1.103.0
+
+**New in v1.103.0 — Email Employees:** managers pick people from the PTO Employees list and send them an email (one each, reply-to the manager), with "Not here" for people who have left, saved groups and a send log. Setup: `docs/EMAIL_EMPLOYEES_SETUP.md`.
 
 **v1.90.0:** red header and side menu with black accents (company theme).
 
