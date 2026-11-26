@@ -1,17 +1,16 @@
-# Battery Box & BOM — v1.89.0
+# Email Employees — v1.103.0
 
-## 1. Script (once) — full steps in docs/BATTERY_BOX_SETUP.md
-BOM Inventory Sheet → Extensions → Apps Script → paste `gas/BatteryBoxAPI.gs` over Code.gs → run `setupToolkitApi()` →
-add employee IDs to the Access tab → Deploy → Manage deployments → edit → New version (same /exec link).
-Put the /exec link in `js/batterybox.js` (`API_DEFAULT`) or paste it on the Connect screen.
+## 1. PTO Apps Script (once) — full steps in docs/EMAIL_EMPLOYEES_SETUP.md
+PTO Sheet → Extensions → Apps Script → paste `gas/PTO_Api_v1.4.0.gs` over Api.gs → Save →
+Deploy → Manage deployments → edit → New version (same /exec link). Optional: run `apiSelfTest`.
 
 ## 2. Files in this release
-- `js/batterybox.js` — **new file**
-- `index.html` — menu entry, screen, script tag, version 1.89.0
-- `js/hometiles.js` — Battery Box & BOM tile (Time & Hours)
+- `js/emailblast.js` — **new file**
+- `index.html` — screen, script tag, version 1.103.0
+- `js/manager.js` — Email Employees card under People
 - `css/app.css` — styles at the end
-- `service-worker.js` — cache v1-89-0, new file cached
-- `gas/BatteryBoxAPI.gs`, `docs/BATTERY_BOX_SETUP.md` — reference copies
+- `service-worker.js` — cache v1-103-0, new file cached
+- `gas/PTO_Api_v1.4.0.gs` (was PTO_Api_v1.3.0.gs), `docs/EMAIL_EMPLOYEES_SETUP.md` — reference copies
 - `CHANGELOG.md`, `README.md`, `REDEPLOY_NOTES.md` — docs
 
 Hard refresh after it's live; on phones close and reopen the app once with signal.

@@ -20,6 +20,7 @@
   // Every manager / admin function. view = a Toolkit screen; href = another app (opens a new tab).
   const TOOLS=[
     {sec:'People',items:[
+      {t:'Email Employees',d:'Pick people from the PTO list and send them an email — announcements, closings, reminders.',view:'emailBlast'},
       {t:'Manager Message Center',d:'Messages from employees, send to employees, read receipts.',view:'msgCenter'},
       {t:'Employee Sign-in',d:'Who has no PIN, setup codes for people not in the PTO tracker, sign someone out.',view:'msgCenter',hint:'Employee Sign-in tab'},
       {t:'PTO Approvals',d:'Approve or deny PTO requests and time off asks — right here, no extra PIN.',view:'timeOff',tab:'mgr'},

@@ -36,7 +36,7 @@
 // hourly Absence Calendar push. A notification problem never stops the request itself.
 // ============================================================================
 
-const API_VERSION = '1.3.0';
+const API_VERSION = '1.4.0';
 const API_EMPLOYEE_SESSION_HOURS = 24 * 14; // employees: 14 days ("keep me signed in")
 const API_MANAGER_SESSION_HOURS  = 12;      // managers: 12 hours
 const API_MAX_PIN_FAILS          = 5;
@@ -114,6 +114,10 @@ const API_ACTIONS_ = {
   'setupPin':  { role: 'public', write: true, fn: apiSetupPin_ },
   'login':     { role: 'public', fn: apiLogin_ },
   'bridge.login': { role: 'public', fn: apiBridgeLogin_ },
+  // Email Employees (v1.4.0) — checks the Toolkit sign-in itself (appToken), managers only
+  'bridge.emailList': { role: 'public', fn: apiBcList_ },
+  'bridge.emailSend': { role: 'public', fn: apiBcSend_ },          // no script lock — a big send takes a while
+  'bridge.emailHide': { role: 'public', write: true, fn: apiBcHide_ },
 
   // ---------- employee ----------
   'emp.bootstrap': { role: 'employee', fn: apiEmpBootstrap_ },
@@ -267,6 +271,186 @@ function apiBridgeLogin_(b) {
   s.isManager = isMgr;
   return s;
 }
+
+// ============================================================================
+// EMAIL EMPLOYEES (v1.4.0)
+// ============================================================================
+const BC_MAX_RECIPIENTS = 250;
+const BC_LOG_TAB        = 'Email_Broadcast_Log';
+const BC_WHM_URL        = 'https://tjivcqxnkftujceumdtx.supabase.co/rest/v1/rpc/whm_me';
+const BC_EMAIL_RE       = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Who is sending, and are they allowed? PTO Managers tab, or a Toolkit warehouse manager. */
+function apiBcWho_(appToken) {
+  const who = apiBridgeWho_(appToken);
+  if (!who.ok && who.error !== 'not_linked') throw new Error('SIGNED_OUT');
+  const id = who.ok ? String(who.pto_id || '') : '';
+  const m = id ? getAllManagers()[id] : null;
+  let whm = false;
+  if (!m) {
+    const cache = CacheService.getScriptCache();
+    const key = 'bcwhm_' + apiB64_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(appToken))).slice(0, 40);
+    const hit = cache.get(key);
+    if (hit) whm = hit === '1';
+    else {
+      const res = UrlFetchApp.fetch(BC_WHM_URL, {
+        method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+        headers: { apikey: API_BRIDGE_KEY }, payload: JSON.stringify({ p_token: String(appToken) })
+      });
+      let me = null; try { me = JSON.parse(res.getContentText()); } catch (e) {}
+      if (res.getResponseCode() !== 200 || !me) throw new Error('Could not check your Toolkit sign-in. Try again.');
+      if (me.ok === false) throw new Error('SIGNED_OUT');
+      whm = !!me.is_manager;
+      cache.put(key, whm ? '1' : '0', 300);
+    }
+  }
+  if (!m && !whm) throw new Error('Email Employees is for managers only.');
+  const emp = id ? getEmployeeById(id) : null;
+  const email = String((m && m.email) || (emp && emp.email) || '').trim();
+  return { id: id, name: String((m && m.name) || (emp && emp.name) || who.name || 'Manager'), email: BC_EMAIL_RE.test(email) ? email : '' };
+}
+
+function apiBcHidden_() {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('BCAST_HIDDEN') || '[]').map(String); }
+  catch (e) { return []; }
+}
+
+function apiBcLogSheet_() {
+  let sh = SS.getSheetByName(BC_LOG_TAB);
+  if (!sh) {
+    sh = SS.insertSheet(BC_LOG_TAB);
+    sh.appendRow(['Sent', 'Send ID', 'Sent By', 'Subject', 'Sent To (count)', 'Failed (count)', 'Recipients', 'Failed', 'Message']);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, 9).setFontWeight('bold');
+  }
+  return sh;
+}
+
+function apiBcList_(b) {
+  const me = apiBcWho_(b.appToken);
+  const hidden = apiBcHidden_();
+  const all = getAllEmployees();
+  let noEmail = 0;
+  const people = Object.keys(all).map(function (k) { return all[k]; }).filter(function (e) {
+    const ok = BC_EMAIL_RE.test(String(e.email || '').trim());
+    if (!ok && String(e.status || '').trim().toLowerCase() !== 'inactive') noEmail++;
+    return ok;
+  }).map(function (e) {
+    return {
+      id: String(e.id), name: String(e.name || ''), email: String(e.email || '').trim(),
+      department: String(e.department || ''), manager: String(e.manager || ''),
+      inactive: String(e.status || '').trim().toLowerCase() === 'inactive',
+      hidden: hidden.indexOf(String(e.id)) !== -1
+    };
+  }).sort(function (x, y) { return x.name.localeCompare(y.name); });
+
+  let recent = [];
+  const sh = SS.getSheetByName(BC_LOG_TAB);
+  if (sh && sh.getLastRow() > 1) {
+    const n = Math.min(15, sh.getLastRow() - 1);
+    const tz = Session.getScriptTimeZone();
+    recent = sh.getRange(sh.getLastRow() - n + 1, 1, n, 7).getValues().reverse().map(function (r) {
+      return { at: r[0] instanceof Date ? Utilities.formatDate(r[0], tz, 'MMM d, yyyy h:mm a') : String(r[0]),
+               by: String(r[2]), subject: String(r[3]), count: r[4], failed: r[5], to: String(r[6]).slice(0, 600) };
+    });
+  }
+  let quota = null; try { quota = MailApp.getRemainingDailyQuota(); } catch (e) {}
+  return { me: { name: me.name, email: me.email }, people: people, noEmail: noEmail, recent: recent, quota: quota, max: BC_MAX_RECIPIENTS };
+}
+
+function apiBcHide_(b) {
+  apiBcWho_(b.appToken);
+  const id = String(b.employeeId || '');
+  if (!id || !getEmployeeById(id)) throw new Error('Employee not found.');
+  let list = apiBcHidden_().filter(function (x) { return x !== id; });
+  if (b.hide !== false) list.push(id);
+  PropertiesService.getScriptProperties().setProperty('BCAST_HIDDEN', JSON.stringify(list));
+  return { hidden: b.hide !== false };
+}
+
+function apiBcSend_(b) {
+  const me = apiBcWho_(b.appToken);
+  const subject = String(b.subject || '').replace(/\s+/g, ' ').trim().slice(0, 150);
+  const message = String(b.message || '').replace(/\r\n/g, '\n').trim().slice(0, 10000);
+  if (!subject) throw new Error('Please enter a subject.');
+  if (!message) throw new Error('Please type a message.');
+  const sendId = String(b.sendId || '').slice(0, 40);
+  const cache = CacheService.getScriptCache();
+  if (sendId) {
+    const done = cache.get('bcsend_' + sendId);
+    if (done) return JSON.parse(done);           // double tap / retry — already sent, don't send again
+  }
+
+  // Look up every address on the sheet — never trust addresses from the browser.
+  const all = getAllEmployees();
+  const seen = {};
+  const people = (b.ids || []).map(String).filter(function (id) {
+    if (seen[id]) return false; seen[id] = true;
+    const e = all[id]; return !!(e && BC_EMAIL_RE.test(String(e.email || '').trim()));
+  }).map(function (id) { return all[id]; });
+  if (!people.length) throw new Error('Pick at least one person with an email address.');
+  if (people.length > BC_MAX_RECIPIENTS) throw new Error('Up to ' + BC_MAX_RECIPIENTS + ' people per send. Split the list and send twice.');
+  const copyMe = !!b.copyMe && !!me.email;
+  let quota = null; try { quota = MailApp.getRemainingDailyQuota(); } catch (e) {}
+  if (quota !== null && quota < people.length + (copyMe ? 1 : 0)) {
+    throw new Error('Google only lets this account send ' + quota + ' more email' + (quota === 1 ? '' : 's') + ' today. Pick fewer people or send tomorrow.');
+  }
+
+  const greet = b.greet !== false;
+  const opts = { name: 'Logistics Warehouse — ' + me.name };
+  if (me.email) opts.replyTo = me.email;
+  const sent = [], failed = [];
+  people.forEach(function (e) {
+    const first = String(e.name || '').trim().split(/\s+/)[0] || '';
+    try {
+      const html = apiBcHtml_(subject, message, greet ? first : '', me);
+      const plain = (greet && first ? 'Hi ' + first + ',\n\n' : '') + message + '\n\n— ' + me.name + '\nLogistics Warehouse';
+      GmailApp.sendEmail(String(e.email).trim(), subject, plain, Object.assign({ htmlBody: html }, opts));
+      sent.push(String(e.name));
+    } catch (err) {
+      failed.push(String(e.name) + ' (' + String(err && err.message || err).slice(0, 80) + ')');
+    }
+  });
+  if (copyMe) {
+    try {
+      GmailApp.sendEmail(me.email, '[Copy] ' + subject, 'Your email went to ' + sent.length + ' people:\n' + sent.join(', ') + '\n\n' + message,
+        Object.assign({ htmlBody: '<p style="font:13px Arial;color:#555">Your copy — sent to ' + sent.length + ' people: ' + apiBcEsc_(sent.join(', ')) + '</p>' + apiBcHtml_(subject, message, '', me) }, opts));
+    } catch (e) {}
+  }
+
+  const lock = LockService.getScriptLock();
+  if (lock.tryLock(20000)) {
+    try {
+      apiBcLogSheet_().appendRow([new Date(), sendId, me.name, subject, sent.length, failed.length, sent.join(', '), failed.join(', '), message.slice(0, 5000)]);
+    } catch (e) { Logger.log('Broadcast log failed: ' + e); }
+    finally { lock.releaseLock(); }
+  }
+  const out = { sent: sent.length, failed: failed };
+  if (sendId) cache.put('bcsend_' + sendId, JSON.stringify(out), 1800);
+  return out;
+}
+
+/** Company-branded email: red bar, white body, black footer rule. Message is plain text (escaped). */
+function apiBcHtml_(subject, message, firstName, me) {
+  const body = apiBcEsc_(message)
+    .replace(/(https?:\/\/[^\s<\"']+)/g, '<a href="$1" style="color:#c8102e">$1</a>')
+    .replace(/\n/g, '<br>');
+  return '<div style="background:#f4f4f4;padding:20px 0;font-family:Arial,Helvetica,sans-serif">'
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e2e0e4">'
+    + '<tr><td style="background:#c8102e;border-bottom:4px solid #161616;padding:16px 22px;color:#ffffff">'
+    + '<div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;opacity:.9">Logistics Warehouse</div>'
+    + '<div style="font-size:20px;font-weight:bold;margin-top:4px">' + apiBcEsc_(subject) + '</div></td></tr>'
+    + '<tr><td style="padding:22px;color:#1c1c2b;font-size:15px;line-height:1.55">'
+    + (firstName ? '<p style="margin:0 0 14px">Hi ' + apiBcEsc_(firstName) + ',</p>' : '')
+    + body
+    + '<p style="margin:18px 0 0">— ' + apiBcEsc_(me.name) + '</p></td></tr>'
+    + '<tr><td style="padding:12px 22px;border-top:1px solid #e2e0e4;color:#5c5c6b;font-size:12px">'
+    + 'Sent by ' + apiBcEsc_(me.name) + ' through the Warehouse Toolkit.'
+    + (me.email ? ' Reply to this email to reach ' + apiBcEsc_(me.name) + '.' : '')
+    + '</td></tr></table></div>';
+}
+
+function apiBcEsc_(s) { return apiEscapeHtml_(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
 // ============================================================================
 // EMPLOYEE
@@ -688,6 +872,11 @@ function apiSelfTest() {
   Logger.log('Absence types: ' + Object.keys(getAbsenceTypes()).join(', '));
   Logger.log('Requests on file: ' + getDetailedEmployeeHistory('', null).length);
   Logger.log('Time off asks on file: ' + apiAskList_().length + ' (tab "' + ASK_SHEET + '" is created on the first ask)');
+  try {
+    const allE = getAllEmployees();
+    const withEmail = Object.keys(allE).filter(function (k) { return BC_EMAIL_RE.test(String(allE[k].email || '').trim()); }).length;
+    Logger.log('Email Employees: ' + withEmail + ' people with an email, ' + apiBcHidden_().length + ' hidden, Gmail quota left today: ' + MailApp.getRemainingDailyQuota());
+  } catch (e) { Logger.log('Email Employees check: ' + e); }
   Logger.log('Branded emails (Emails.gs): ' + (typeof emInstallBrandedEmails_ === 'function' ? 'ON ✅' : 'not installed — old email look'));
   const t = apiSignToken_({ i: 'TEST', r: 'employee', x: Date.now() + 60000 });
   Logger.log('Token sign/verify: ' + (apiVerifyToken_(t) ? 'OK ✅' : 'FAILED ❌'));
