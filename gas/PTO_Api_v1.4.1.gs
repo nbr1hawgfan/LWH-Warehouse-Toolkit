@@ -34,9 +34,19 @@
 // one (Warehouse Toolkit / Driver Toolkit, if they turned notifications on). When it's approved, denied,
 // recorded or declined, the employee gets one. Uses the same PTO_SUPABASE_SECRET Script Property as the
 // hourly Absence Calendar push. A notification problem never stops the request itself.
+//
+// v1.4.0 (Nov 2026): Email Employees. Managers pick people in the Warehouse Toolkit and send them
+// one email each (from this script's Gmail, reply-to the manager). Emails come ONLY from this sheet's
+// Employees tab — the Toolkit sends IDs, never addresses. Allowed: anyone on the Managers tab, or a
+// warehouse manager in the Toolkit (Supabase whm_me). People who no longer work here can be hidden
+// from the list (Script Property BCAST_HIDDEN) without touching the Employees tab. Every send is logged
+// on the 'Email_Broadcast_Log' tab (made automatically).
+//
+// v1.4.1: the list also includes people with NO email, so the Toolkit can post to their Toolkit Messages
+// instead. Emails still only go to people with an email; the log gets a 'Toolkit Messages' count.
 // ============================================================================
 
-const API_VERSION = '1.4.0';
+const API_VERSION = '1.4.1';
 const API_EMPLOYEE_SESSION_HOURS = 24 * 14; // employees: 14 days ("keep me signed in")
 const API_MANAGER_SESSION_HOURS  = 12;      // managers: 12 hours
 const API_MAX_PIN_FAILS          = 5;
@@ -319,9 +329,9 @@ function apiBcLogSheet_() {
   let sh = SS.getSheetByName(BC_LOG_TAB);
   if (!sh) {
     sh = SS.insertSheet(BC_LOG_TAB);
-    sh.appendRow(['Sent', 'Send ID', 'Sent By', 'Subject', 'Sent To (count)', 'Failed (count)', 'Recipients', 'Failed', 'Message']);
+    sh.appendRow(['Sent', 'Send ID', 'Sent By', 'Subject', 'Sent To (count)', 'Failed (count)', 'Recipients', 'Failed', 'Message', 'Toolkit Messages (count)']);
     sh.setFrozenRows(1);
-    sh.getRange(1, 1, 1, 9).setFontWeight('bold');
+    sh.getRange(1, 1, 1, 10).setFontWeight('bold');
   }
   return sh;
 }
@@ -332,12 +342,13 @@ function apiBcList_(b) {
   const all = getAllEmployees();
   let noEmail = 0;
   const people = Object.keys(all).map(function (k) { return all[k]; }).filter(function (e) {
-    const ok = BC_EMAIL_RE.test(String(e.email || '').trim());
-    if (!ok && String(e.status || '').trim().toLowerCase() !== 'inactive') noEmail++;
-    return ok;
+    return String(e.id || '') && String(e.name || '').trim();
   }).map(function (e) {
+    const em = String(e.email || '').trim();
+    const has = BC_EMAIL_RE.test(em);
+    if (!has && String(e.status || '').trim().toLowerCase() !== 'inactive') noEmail++;
     return {
-      id: String(e.id), name: String(e.name || ''), email: String(e.email || '').trim(),
+      id: String(e.id), name: String(e.name || ''), email: has ? em : '', hasEmail: has,
       department: String(e.department || ''), manager: String(e.manager || ''),
       inactive: String(e.status || '').trim().toLowerCase() === 'inactive',
       hidden: hidden.indexOf(String(e.id)) !== -1
@@ -349,13 +360,13 @@ function apiBcList_(b) {
   if (sh && sh.getLastRow() > 1) {
     const n = Math.min(15, sh.getLastRow() - 1);
     const tz = Session.getScriptTimeZone();
-    recent = sh.getRange(sh.getLastRow() - n + 1, 1, n, 7).getValues().reverse().map(function (r) {
+    recent = sh.getRange(sh.getLastRow() - n + 1, 1, n, Math.max(7, Math.min(10, sh.getLastColumn()))).getValues().reverse().map(function (r) {
       return { at: r[0] instanceof Date ? Utilities.formatDate(r[0], tz, 'MMM d, yyyy h:mm a') : String(r[0]),
-               by: String(r[2]), subject: String(r[3]), count: r[4], failed: r[5], to: String(r[6]).slice(0, 600) };
+               by: String(r[2]), subject: String(r[3]), count: r[4], failed: r[5], to: String(r[6]).slice(0, 600), toolkit: r[9] || 0 };
     });
   }
   let quota = null; try { quota = MailApp.getRemainingDailyQuota(); } catch (e) {}
-  return { me: { name: me.name, email: me.email }, people: people, noEmail: noEmail, recent: recent, quota: quota, max: BC_MAX_RECIPIENTS };
+  return { v: API_VERSION, me: { name: me.name, email: me.email }, people: people, noEmail: noEmail, recent: recent, quota: quota, max: BC_MAX_RECIPIENTS };
 }
 
 function apiBcHide_(b) {
@@ -388,7 +399,8 @@ function apiBcSend_(b) {
     if (seen[id]) return false; seen[id] = true;
     const e = all[id]; return !!(e && BC_EMAIL_RE.test(String(e.email || '').trim()));
   }).map(function (id) { return all[id]; });
-  if (!people.length) throw new Error('Pick at least one person with an email address.');
+  const toolkitCount = Math.max(0, Math.min(1000, parseInt(b.toolkitCount, 10) || 0));
+  if (!people.length && !toolkitCount) throw new Error('Pick at least one person with an email address.');
   if (people.length > BC_MAX_RECIPIENTS) throw new Error('Up to ' + BC_MAX_RECIPIENTS + ' people per send. Split the list and send twice.');
   const copyMe = !!b.copyMe && !!me.email;
   let quota = null; try { quota = MailApp.getRemainingDailyQuota(); } catch (e) {}
@@ -411,7 +423,7 @@ function apiBcSend_(b) {
       failed.push(String(e.name) + ' (' + String(err && err.message || err).slice(0, 80) + ')');
     }
   });
-  if (copyMe) {
+  if (copyMe && sent.length) {
     try {
       GmailApp.sendEmail(me.email, '[Copy] ' + subject, 'Your email went to ' + sent.length + ' people:\n' + sent.join(', ') + '\n\n' + message,
         Object.assign({ htmlBody: '<p style="font:13px Arial;color:#555">Your copy — sent to ' + sent.length + ' people: ' + apiBcEsc_(sent.join(', ')) + '</p>' + apiBcHtml_(subject, message, '', me) }, opts));
@@ -421,7 +433,9 @@ function apiBcSend_(b) {
   const lock = LockService.getScriptLock();
   if (lock.tryLock(20000)) {
     try {
-      apiBcLogSheet_().appendRow([new Date(), sendId, me.name, subject, sent.length, failed.length, sent.join(', '), failed.join(', '), message.slice(0, 5000)]);
+      const logSh = apiBcLogSheet_();
+      if (logSh.getLastColumn() < 10) logSh.getRange(1, 10).setValue('Toolkit Messages (count)').setFontWeight('bold');
+      logSh.appendRow([new Date(), sendId, me.name, subject, sent.length, failed.length, sent.join(', '), failed.join(', '), message.slice(0, 5000), toolkitCount]);
     } catch (e) { Logger.log('Broadcast log failed: ' + e); }
     finally { lock.releaseLock(); }
   }

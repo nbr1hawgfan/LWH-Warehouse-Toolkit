@@ -1,4 +1,4 @@
-# Email Employees — setup (Toolkit v1.103.0 + PTO Api.gs v1.4.0)
+# Email Employees — setup (Toolkit v1.104.0 + PTO Api.gs v1.4.1)
 
 Managers open **Manager → Email Employees**, check the people they want, type a subject and message, and send.
 Each person gets their own branded email ("Hi [first name]," optional). Replies go to the manager who sent it.
@@ -9,13 +9,20 @@ The Toolkit sends employee IDs only — the PTO script looks up the addresses it
 
 ## One-time step (about 2 minutes)
 1. Open the PTO tracker Google Sheet → **Extensions → Apps Script**.
-2. Open **Api.gs**, select everything, and paste the contents of `gas/PTO_Api_v1.4.0.gs` over it. Save.
+2. Open **Api.gs**, select everything, and paste the contents of `gas/PTO_Api_v1.4.1.gs` over it. Save.
 3. **Deploy → Manage deployments → ✏️ edit → Version: New version → Deploy.** (Same /exec link — nothing else changes.)
 4. Optional check: pick `apiSelfTest` in the function list → Run. The log shows how many people have an email,
    how many are hidden, and how many emails Google lets the account send today.
 5. The first time someone sends, Google may ask the script owner to allow "Send email as you" — approve it once.
 
 Until step 3 is done, the screen says "One-time setup needed" — nothing breaks.
+
+## Toolkit Messages (v1.104.0)
+"Also post in their Toolkit Messages" (on by default) sends the same message to each person's Toolkit Messages,
+with the usual phone notification. Tick "Ask them to tap Got it" to see who read it in Manager Messages.
+People with no email on the PTO sheet are reached this way only. The link between a PTO person and their
+Toolkit sign-in is the same one the PTO PIN uses (`whm_pto_map`, `sql/email_employees_map.sql`); someone
+with neither an email nor a Toolkit sign-in is greyed out. Toolkit messages are capped at 1,000 characters.
 
 ## Who can send
 - Anyone on the PTO sheet's **Managers** tab, **or**

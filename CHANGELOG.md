@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.104.0
+- **Email Employees → also post in their Toolkit Messages** (on by default): the same message goes to each person's Toolkit Messages with the normal phone notification. Optional **"Ask them to tap Got it"** so you see who read it in Manager Messages.
+  - People with **no email** on the PTO sheet are now listed and reached by Toolkit message only. Each row shows Email / Toolkit tags; people with neither are greyed out. The Send button counts everyone reached and lists anyone who can't be.
+  - Toolkit messages are capped at 1,000 characters — long ones are shortened with "full message in your email" (or a note for people without email). Subject goes on top with 📣.
+  - Data: new read-only `whm_pto_map` (managers only) in `sql/email_employees_map.sql` links PTO IDs to Toolkit employees — applied Nov 26, 2026.
+  - PTO `Api.gs` **v1.4.1** (`gas/PTO_Api_v1.4.1.gs`): list includes people without email; log gets a "Toolkit Messages (count)" column. The Toolkit side still works on v1.4.0 (people with email only) until it's pasted.
+
 ## v1.103.0
 - **Email Employees (new, Manager → People):** managers check off the people they want from the PTO tracker's Employees list (only people with an email on file), type or paste a subject and message, and send. Each person gets their own company-branded email, optionally starting "Hi [first name],"; replies go to the manager who sent it, with an optional copy to the sender.
   - Search by name / email / department / manager, department filter, Select all shown, Clear, and **saved groups** on the device.
